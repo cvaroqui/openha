@@ -1,0 +1,160 @@
+#!/bin/sh
+#
+# starts / stops everything.
+#
+# CHANGES (br)
+#	* Removed OS/platform dependancies.
+#	* Cleanup.
+#
+# TODO (br)
+#	* Remove $EZ dependency. We should not care.
+#	* No need for nohup. Should be handled by daemons (if they are).
+#	* Maybe a /var/run/something instead of pkill (not portable)? (not sure).
+#	* Start does a forced-stop first. Should be a check instead: Status to be
+#	  added to avoid this.
+#	* Remove env.sh (dirty) and $EZ (this goes together).
+#	* Remove "sleep x". If this does depends on time, it does not work.
+#	  -> one day, we will semaphore for this stuff (sam)
+LD_LIBRARY_PATH=/usr/local/lib; export LD_LIBRARY_PATH
+EZ=/usr/local/cluster
+AWK=/bin/awk
+NODE=`uname -n`
+FROZEN_STOP=6
+
+export AWK
+export EZ
+. $EZ/env.sh
+[ ! -d $EZ/bin ] && exit 1
+[ ! -x $AWK ] && exit 1
+[ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
+[ ! -f $EZ_NODES -o ! -f $EZ_MONITOR ] && exit 1
+
+PATH=$EZ_BIN:$PATH; export PATH
+
+case "$1" in
+'start')
+	if [ -f $EZ_SERVICES ]
+	then
+		cat $EZ_SERVICES | while read SERVICE DUMMY
+		do
+			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
+			[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" force-stop
+		done
+	fi
+	echo "Starting EZ-HA heartbeat process" > /dev/console
+	if [ -f $EZ_MONITOR ] ; then
+		cat $EZ_MONITOR |
+		while read HOST TYPE ARG1 ARG2 ARG3 ARG4 DUMMY
+		do
+			if [ $HOST = `uname -n` ]
+			then
+				case "$TYPE" in
+				net)
+					$EZ_BIN/heartd $ARG1 $ARG2 $ARG3
+					;;
+				disk)
+					$EZ_BIN/heartd_raw $ARG1 $ARG2
+					;;
+				*)
+					echo "Oooops. What is $TYPE? Ignoring."
+					;;
+				esac
+			else
+				case "$TYPE" in
+				net)
+					$EZ_BIN/heartc $ARG1 $ARG2 $ARG3 $ARG4
+					;;
+				disk)
+					$EZ_BIN/heartc_raw $ARG1 $ARG2 $ARG3
+					;;
+				*)
+					echo "Oooops. What is $TYPE? Ignoring."
+					;;
+				esac
+			
+			fi
+		done
+	fi
+	# let's the heart process talk a bit ...
+	sleep 2
+	$EZ_BIN/nmond >> $EZ_LOG/nmond.log 2>&1 
+
+;;
+'stop')
+	echo "Stopping EZ-HA node monitor" > /dev/console
+	pkill nmond 
+	echo "Stopping services if started" > /dev/console
+	cat $EZ_SERVICES | while read SERVICE DUMMY
+	do
+		STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
+		[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" stop
+	done
+	echo "Stopping EZ-HA heartbeat" > /dev/console
+	pkill heartc 
+	pkill heartd 
+	pkill heartc_raw 
+	pkill heartd_raw 
+
+;;
+'kill')
+	echo "Stopping EZ-HA daemons"
+	pkill nmond
+	pkill heartc 
+	pkill heartd 
+	pkill heartc_raw 
+	pkill heartd_raw 
+
+;;
+'restart')
+	echo "Stopping EZ-HA daemons"
+	pkill nmond
+	pkill heartc
+	pkill heartc_raw
+	pkill heartd
+	pkill heartd_raw
+	sleep 5
+	echo "Starting EZ-HA daemons"
+	if [ -f $EZ_MONITOR ] ; then
+		cat $EZ_MONITOR |
+		while read HOST TYPE ARG1 ARG2 ARG3 ARG4 DUMMY
+		do
+			if [ $HOST = `uname -n` ]
+			then
+				case "$TYPE" in
+				net)
+					$EZ_BIN/heartd $ARG1 $ARG2 $ARG3
+					;;
+				disk)
+					$EZ_BIN/heartd_raw $ARG1 $ARG2
+					;;
+				*)
+					echo "Oooops. What is $TYPE? Ignoring."
+					;;
+				esac
+			else
+				case "$TYPE" in
+				net)
+					$EZ_BIN/heartc $ARG1 $ARG2 $ARG3 $ARG4
+					;;
+				disk)
+					$EZ_BIN/heartc_raw $ARG1 $ARG2 $ARG3
+					;;
+				*)
+					echo "Oooops. What is $TYPE? Ignoring."
+					;;
+				esac
+			
+			fi
+		done
+		sleep 2
+		$EZ_BIN/nmond >> $EZ_LOG/nmond.log 2>&1 
+	fi
+	;;
+
+	*)
+		echo "Usage: $0 {start|stop|kill|restart}"
+		exit 1
+esac
+
+exit 0
+

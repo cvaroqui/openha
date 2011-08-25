@@ -1,0 +1,34 @@
+- verify in rm_services: if the service is not present, the cmd functions blocks : bof ...
+- put a timeout in the cmd function: if the shell don't give up not fast enough, tell it, and give the hand back to the main prog
+- replace the StatusBar widget by a Gtk_Text
+- in the contols of rm_services, create a test on the service state (it might by stopped)
+- same thing when deleting a heartbeat, it must not beat
+- in add heart net, verify that the @ are < 254 ... (done for GUI)
+- service length : <=16 ... Enough ?
+- pas d'alertes si les services different entre deux noeuds (STATE d'un service inconnu non mis a jour)
+- mettre dans le fichier STATE.PARTNER l'heure de maj de l'etat. 
+- replace the strcmp() by g_strcasecmp().
+- BUG: au premier lancement de HEARTC, si le heartd ne repond, mettre UNKNOWN dans les etats de l'autre noeud.
+- we might no able to launch a "service -A" if the heartc/heartd/nmond are not running. Sure ?
+- it's possible to start two heartd_raw -> put a lock
+
+- it'a possible to launch "service -A xx unfreeze" when the service is "start-failed" -> not ok
+- change the "openlog(..);syslog(...);" by log();
+- use getopt for service.c
+- create a single heart prog: 
+	- use getopt
+	- with 4 fonctions heart (d,c,d_raw,c_raw)
+	- wich are parsing $EZ_MONITOR 
+- make only one configuration file, wich takes $EZ_SERVICES, $EZ_NODES, $EZ_MONITOR.
+- finish gui:
+	- put a message after add_hearbeat
+	- launch services action
+	- make the help ...
+- write man pages
+- Under solaris, the startup script (ezha):
+	- put /usr/bin/sh, not /bin/sh
+	- check that /usr/bin/nawk is available
+- Use autoconf/automake ... to build Makefiles.
+- write a README
+- replace the log function by an ha_log function
+- remove all openlog/syslog by ha_log
