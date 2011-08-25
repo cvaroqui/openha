@@ -44,14 +44,14 @@ printf("Node %s found.\n",name);
 }
 gboolean check_type(gchar *type){
 
-	if ( (g_strcasecmp(type,"net")==0) || (g_strcasecmp(type,"disk")==0)){
+	if ( (g_strcasecmp(type,"net")==0) || (g_strcasecmp(type,"disk")==0) || (g_strcasecmp(type,"dio")==0)){
 #ifdef DEBUG
 printf("Type %s ok.\n",type);
 #endif
 		return TRUE;
 	}
 	else {
-		fprintf(stderr,"Type %s not valid (must be disk or net).\n",type);
+		fprintf(stderr,"Type %s not valid (must be disk, dio or net).\n",type);
 		return FALSE;
 	}
 }
@@ -106,15 +106,15 @@ printf("OK, port value.\n");
 			}
 		}
 	}
-	if (g_strcasecmp(type,"disk")==0){
+	if (g_strcasecmp(type,"disk")==0 || g_strcasecmp(type,"dio")==0){
 		if ((interface==NULL) || (address==NULL) || (port!=NULL)){
 			fprintf(stderr,"Need interface and address.\n");
 			return FALSE;
 		}
 		if ((File = fopen(interface,"rw")) != NULL) {
 #ifdef DEBUG
-printf("raw device %s checked ...\n",interface);
-printf("OK, raw device @ value.\n");
+printf("device %s checked ...\n",interface);
+printf("OK, device @ value.\n");
 #endif
 			fclose(File);
 			sscanf(address,"%d",&addr);
@@ -122,21 +122,21 @@ printf("OK, raw device @ value.\n");
 			
 		}
 		else {
-			fprintf(stderr,"Unable to check raw device %s.\n",interface);
+			fprintf(stderr,"Unable to check device %s.\n",interface);
 			return FALSE;
 		}
 	}
 	return FALSE;
 }
 
-gboolean check_raw_addr(gint value){
+gboolean check_disk_addr(gint value){
 	if ((value < 0) || (value > 1024)){
-		fprintf(stderr,"BAD raw address number. Must be between 0 and 1023.\n");
+		fprintf(stderr,"BAD block offset. Must be between 0 and 1023.\n");
 		return FALSE;
 	}
 	else {
 #ifdef DEBUG
-printf("OK, port number.\n");
+printf("OK, block offset.\n");
 #endif
 		return TRUE;
 	}

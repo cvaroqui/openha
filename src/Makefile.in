@@ -93,7 +93,7 @@ socket_LIBS = @socket_LIBS@
 AM_CFLAGS =  	$(glib_CFLAGS) 	$(gtk_CFLAGS) 	 -Wall 	 -O2 	 -g
 
 
-bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw nmond gui hb
+bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw heartc_dio heartd_dio nmond gui hb
 
 service_SOURCES = service.c sockhelp.c cluster.h sockhelp.h
 service_LDFLAGS = $(glib_LIBS)
@@ -107,6 +107,10 @@ heartc_raw_SOURCES = heartc_raw.c sockhelp.c
 heartc_raw_LDFLAGS = $(glib_LIBS)
 heartc_raw_LDADD = 
 
+heartc_dio_SOURCES = heartc_dio.c sockhelp.c
+heartc_dio_LDFLAGS = $(glib_LIBS)
+heartc_dio_LDADD = 
+
 heartd_SOURCES = heartd.c sockhelp.c
 heartd_LDFLAGS = $(glib_LIBS)
 heartd_LDADD = 
@@ -114,6 +118,10 @@ heartd_LDADD =
 heartd_raw_SOURCES = heartd_raw.c sockhelp.c
 heartd_raw_LDFLAGS = $(glib_LIBS)
 heartd_raw_LDADD = 
+
+heartd_dio_SOURCES = heartc_dio.c sockhelp.c
+heartd_dio_LDFLAGS = $(glib_LIBS)
+heartd_dio_LDADD = 
 
 nmond_SOURCES = nmond.c sockhelp.c
 nmond_LDFLAGS = $(glib_LIBS)
@@ -131,6 +139,7 @@ CONFIG_HEADER = ../config.h
 CONFIG_CLEAN_FILES = 
 bin_PROGRAMS =  service$(EXEEXT) heartc$(EXEEXT) heartd$(EXEEXT) \
 heartc_raw$(EXEEXT) heartd_raw$(EXEEXT) nmond$(EXEEXT) gui$(EXEEXT) \
+heartc_dio$(EXEEXT) heartd_dio$(EXEEXT) nmond$(EXEEXT) gui$(EXEEXT) \
 hb$(EXEEXT)
 PROGRAMS =  $(bin_PROGRAMS)
 
@@ -147,8 +156,12 @@ heartd_OBJECTS =  heartd.$(OBJEXT) sockhelp.$(OBJEXT)
 heartd_DEPENDENCIES = 
 heartc_raw_OBJECTS =  heartc_raw.$(OBJEXT) sockhelp.$(OBJEXT)
 heartc_raw_DEPENDENCIES = 
+heartc_dio_OBJECTS =  heartc_dio.$(OBJEXT) sockhelp.$(OBJEXT)
+heartc_dio_DEPENDENCIES = 
 heartd_raw_OBJECTS =  heartd_raw.$(OBJEXT) sockhelp.$(OBJEXT)
 heartd_raw_DEPENDENCIES = 
+heartd_dio_OBJECTS =  heartd_dio.$(OBJEXT) sockhelp.$(OBJEXT)
+heartd_dio_DEPENDENCIES = 
 nmond_OBJECTS =  nmond.$(OBJEXT) sockhelp.$(OBJEXT)
 nmond_DEPENDENCIES = 
 gui_OBJECTS =  support.$(OBJEXT) main.$(OBJEXT) callbacks.$(OBJEXT) \
@@ -168,8 +181,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-SOURCES = $(service_SOURCES) $(heartc_SOURCES) $(heartd_SOURCES) $(heartc_raw_SOURCES) $(heartd_raw_SOURCES) $(nmond_SOURCES) $(gui_SOURCES) $(hb_SOURCES)
-OBJECTS = $(service_OBJECTS) $(heartc_OBJECTS) $(heartd_OBJECTS) $(heartc_raw_OBJECTS) $(heartd_raw_OBJECTS) $(nmond_OBJECTS) $(gui_OBJECTS) $(hb_OBJECTS)
+SOURCES = $(service_SOURCES) $(heartc_SOURCES) $(heartd_SOURCES) $(heartc_raw_SOURCES) $(heartd_raw_SOURCES) $(heartc_dio_SOURCES) $(heartd_dio_SOURCES) $(nmond_SOURCES) $(gui_SOURCES) $(hb_SOURCES)
+OBJECTS = $(service_OBJECTS) $(heartc_OBJECTS) $(heartd_OBJECTS) $(heartc_raw_OBJECTS) $(heartd_raw_OBJECTS) $(heartc_dio_OBJECTS) $(heartd_dio_OBJECTS) $(nmond_OBJECTS) $(gui_OBJECTS) $(hb_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
@@ -271,6 +284,14 @@ heartd_raw$(EXEEXT): $(heartd_raw_OBJECTS) $(heartd_raw_DEPENDENCIES)
 	@rm -f heartd_raw$(EXEEXT)
 	$(LINK) $(heartd_raw_LDFLAGS) $(heartd_raw_OBJECTS) $(heartd_raw_LDADD) $(LIBS)
 
+heartc_dio$(EXEEXT): $(heartc_dio_OBJECTS) $(heartc_dio_DEPENDENCIES)
+	@rm -f heartc_dio$(EXEEXT)
+	$(LINK) $(heartc_dio_LDFLAGS) $(heartc_dio_OBJECTS) $(heartc_dio_LDADD) $(LIBS)
+
+heartd_dio$(EXEEXT): $(heartd_dio_OBJECTS) $(heartd_dio_DEPENDENCIES)
+	@rm -f heartd_dio$(EXEEXT)
+	$(LINK) $(heartd_dio_LDFLAGS) $(heartd_dio_OBJECTS) $(heartd_dio_LDADD) $(LIBS)
+
 nmond$(EXEEXT): $(nmond_OBJECTS) $(nmond_DEPENDENCIES)
 	@rm -f nmond$(EXEEXT)
 	$(LINK) $(nmond_LDFLAGS) $(nmond_OBJECTS) $(nmond_LDADD) $(LIBS)
@@ -333,8 +354,10 @@ config.o: config.c
 hb.o: hb.c ../config.h cluster.h checks.h
 heartc.o: heartc.c cluster.h ../config.h sockhelp.h
 heartc_raw.o: heartc_raw.c cluster.h ../config.h sockhelp.h
+heartc_dio.o: heartc_dio.c cluster.h ../config.h sockhelp.h
 heartd.o: heartd.c cluster.h ../config.h sockhelp.h
 heartd_raw.o: heartd_raw.c cluster.h ../config.h sockhelp.h
+heartd_dio.o: heartd_dio.c cluster.h ../config.h sockhelp.h
 interface.o: interface.c ../config.h callbacks.h interface.h support.h
 main.o: main.c ../config.h interface.h support.h
 nmond.o: nmond.c cluster.h ../config.h

@@ -368,7 +368,7 @@ gint get_seg(gint i, struct shmtab_struct *S){
 	gint shmid,itmp;
 	key_t key;
 	gchar nodename[MAX_NODENAME_SIZE], **NEW_KEY;
-	gchar *m;
+	gchar *m, *n;
 
 	strcpy(nodename,g_list_nth_data(list_heart,(i*LIST_NB_ITEM))); 
 	strcpy(SHM_KEY,getenv("EZ_LOG")); 
@@ -382,13 +382,16 @@ gint get_seg(gint i, struct shmtab_struct *S){
 		strcpy(SHM_KEY,m);
 		g_free(m);
 	}
-	//raw
+	// raw or dio
 	else{ 
-		NEW_KEY=g_strsplit(g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+2), "/", 3);
-		m=g_strconcat(SHM_KEY,NEW_KEY[1],".",NEW_KEY[2],".",NEW_KEY[3],".",
-										g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+3),".key",NULL);
-		strcpy(SHM_KEY,m);
+		NEW_KEY=g_strsplit(g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+2), "/", 10);
+                n=g_strjoinv(".", NEW_KEY),
+		m=g_strconcat(SHM_KEY, n, ".",
+                              g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+3),
+                              ".key", NULL);
+		strcpy(SHM_KEY, m);
 		g_free(m);
+		g_free(n);
 		g_strfreev(NEW_KEY);
 	}
 	

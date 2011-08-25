@@ -1,5 +1,5 @@
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(openha, 0.3.6)
+AM_INIT_AUTOMAKE(openha, 0.3.6.osvc1)
 AM_CONFIG_HEADER(config.h)
 AC_DISABLE_STATIC
 

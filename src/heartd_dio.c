@@ -1,5 +1,6 @@
 /*
 * Copyright (C) 1999,2000,2001,2002,2003,2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 2011 Christophe Varoqui <christophe.varoqui@opensvc.com>
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -15,6 +16,8 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#define _GNU_SOURCE
+
 #include <sys/types.h>   /* include files for IP Sockets */
 #include <sys/socket.h>
 #include <sys/file.h>
@@ -40,7 +43,7 @@ GList *list_state=NULL;
 struct sendstruct to_send;
 void clean_tab();
 gint get_node_status(gchar*);
-gint write_raw(FILE *, struct sendstruct,gchar *, gint );
+gint write_dio(gint fd, struct sendstruct,gchar *, gint );
 void sighup();
 gchar *progname;
 
@@ -50,40 +53,40 @@ char *argv[]; {
 
 gint status, i, fd,address;
 struct utsname tmp_name;
-gchar *message, *FILE_KEY, *raw_device;
+gchar *message, *FILE_KEY, *device;
 gchar	*my_pid;
-FILE *File;
+gint fd2;
 gchar **NEW_KEY;
 gchar *n;
 
 	message=g_malloc0(160);
-	raw_device=g_malloc0(128);
+	device=g_malloc0(128);
 	my_pid=g_malloc0(6);
 
 	if (argc != 3) {
-		fprintf(stderr,"Usage: heartd_raw [raw device] address \n");
+		fprintf(stderr,"Usage: heartd_dio [device] offset \n");
 		exit(-1);
 	}
-	daemonize("heartd_raw");
-	Setenv("PROGNAME","heartd_raw",1);
+	daemonize("heartd_dio");
+	Setenv("PROGNAME","heartd_dio",1);
 
 	address=atoi(argv[2]);
-        NEW_KEY=g_strsplit(argv[1], "/", 10);
+	NEW_KEY=g_strsplit(argv[1], "/", 10);
         n=g_strjoinv(".", NEW_KEY),
 
-        FILE_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".", argv[2],".key",NULL);
+	FILE_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".", argv[2],".key",NULL);
         g_strfreev(NEW_KEY);
         g_free(n);
 
 	if ((fd=open(FILE_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		printf("key: %s\n",FILE_KEY);
 		strcpy(message,"Error: unable to open key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "heartd_dio", message);
 		exit(-1);
 	}	
 	if (lockf(fd,F_TLOCK,0) != 0){
 		strcpy(message,"Error: unable to lock key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "heartd_dio", message);
 		exit(-1);
 	}
 
@@ -92,10 +95,10 @@ gchar *n;
 	uname(&tmp_name);
 	strncpy(to_send.nodename,tmp_name.nodename,MAX_NODENAME_SIZE);
 	//signal(SIGALRM,sighup);
-	File = fopen(argv[1], "r+");
-	if (File == NULL){
-		strcpy(message,"Error: unable to open raw device");
-		halog(LOG_ERR, "heartd_raw", message);
+	fd2 = open(argv[1], O_DIRECT|O_RDWR);
+	if (fd2 < 0){
+		strcpy(message,"Error: unable to open device");
+		halog(LOG_ERR, "heartd_dio", message);
 		exit(-1);
 	}
 	while(1) {
@@ -103,10 +106,10 @@ gchar *n;
 		i=0;		
 		to_send.elapsed = Elapsed();     
 		status=get_node_status(to_send.nodename);
-		i = write_raw(File, to_send, raw_device, address);
+		i = write_dio(fd2, to_send, device, address);
 		if (i < 0) {
-			strcpy(message,"write_raw() failed");
-			halog(LOG_ERR, "heartd_raw",message);
+			strcpy(message,"write_dio() failed");
+			halog(LOG_ERR, "heartd_dio",message);
 			exit(-1);
 		}
 		alarm(1);
@@ -114,14 +117,13 @@ gchar *n;
    }
  } /* end main() */  
 
-gint write_raw(FILE *f, struct sendstruct to_write, gchar *device, gint where){
-	gchar *to_read;
-
-	to_read=g_malloc(BLKSIZE);
-	fseek(f, 0L, SEEK_SET);
-	fseek(f,(where*512),SEEK_SET);
-	fwrite(&to_write,512,1,f);
-	g_free(to_read);
+gint write_dio(gint fd, struct sendstruct to_write, gchar *device, gint where){
+	gchar *buff;
+	buff=g_malloc0(BLKSIZE);
+        memcpy(&buff, &to_write, sizeof(struct sendstruct));
+	lseek(fd, (where*512), SEEK_SET);
+	write(fd, &buff, 512);
+	g_free(buff);
 	return 0;
 }
 

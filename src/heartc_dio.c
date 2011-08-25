@@ -15,6 +15,8 @@
 * along with this program; if not, write to the Free Software
 * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+#define _GNU_SOURCE
+
 #include <fcntl.h>   
 #include <unistd.h>   
 #include <glib.h>   
@@ -38,7 +40,7 @@
 
 void sighup();
 void sigterm();
-gint read_raw(FILE* , gint);
+gint read_dio(gint , gint);
 gchar *S,*shm;	
 gint address, flag = 0, shmid;
 struct sendstruct to_recV;
@@ -55,14 +57,13 @@ gchar *argv[]; {
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down=TRUE;
-	gchar *my_pid, *message, *FILE_KEY, *raw_device;
+	gchar *my_pid, *message, *FILE_KEY, *device;
 	gint address;
-	FILE *File;
 	long old_elapsed=0;
 	gchar **NEW_KEY;
 	gchar *n;
 
-	raw_device=g_malloc0(128);
+	device=g_malloc0(128);
 	my_pid=g_malloc0(6);
 
 	message=g_malloc0(80);
@@ -70,19 +71,19 @@ gchar *argv[]; {
 	signal(SIGTERM,sigterm);
 
 	if (argc != 4) {
-		fprintf(stderr,"Usage: heartc_raw [raw device] address timeout \n");
+		fprintf(stderr,"Usage: heartc_dio [device] offset timeout \n");
 		exit(-1);
 	}
-	daemonize("heartc_raw");
-	Setenv("PROGNAME","heartc_raw",1);
+	daemonize("heartc_dio");
+	Setenv("PROGNAME","heartc_dio",1);
 
-	strcpy(raw_device,argv[1]);
+	strcpy(device,argv[1]);
 	address=atoi(argv[2]);
 	strncpy(ADDR,argv[1],64);
 	
 	if ( (timeout = atoi(argv[3])) < 2){
 		strcpy(message,"timeout must be > 1 second\n ");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);	
 	}
 
@@ -90,7 +91,7 @@ gchar *argv[]; {
 
 	if (getenv("EZ_LOG") == NULL) {
 		strcpy(message,"environment variable EZ_LOG not defined ...\n ");
-		halog(LOG_ERR, "heartc_raw: ", message);
+		halog(LOG_ERR, "heartc_dio: ", message);
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS,0,-15);
@@ -101,23 +102,23 @@ gchar *argv[]; {
         g_strfreev(NEW_KEY);
         g_free(n);
 
-        FILE_KEY=SHM_KEY;
-
+	FILE_KEY=SHM_KEY;
+	
 	if ((fd=open(SHM_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		strcpy(message,"Error: unable to open SHMFILE");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}	
 
 	if (lockf(fd,F_TLOCK,0) != 0){
 		strcpy(message,"Error: unable to lock SHMFILE");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}
 	key=ftok(SHM_KEY,0);
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
 		strcpy(message,"shmget failed");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
@@ -128,18 +129,18 @@ gchar *argv[]; {
 	if ((fd=open(FILE_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		printf("key: %s\n",FILE_KEY);
 		strcpy(message,"Error: unable to open key file");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}	
 	if (lockf(fd,F_TLOCK,0) != 0){
 		strcpy(message,"Error: unable to lock key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}
-	File = fopen(argv[1], "r");
-	if (File == NULL){
-		strcpy(message,"Error: unable to open raw device");
-		halog(LOG_ERR, "heartd_raw", message);
+	fd = open(argv[1], O_DIRECT|O_RDONLY);
+	if (fd < 0){
+		strcpy(message,"Error: unable to open dio device");
+		halog(LOG_ERR, "heartc_dio", message);
 		exit(-1);
 	}
 	to_recV.up = FALSE;
@@ -156,9 +157,8 @@ gchar *argv[]; {
 			flag=0;
 			was_down = TRUE;
 		}
-		fseek(File, 0L, SEEK_SET);
 		i=0;
-		read_raw(File,address);
+		read_dio(fd,address);
 		//printf("to recv: %d elapsed: %d\n",to_recV.elapsed,old_elapsed);
 		if ((to_recV.elapsed == old_elapsed) && (old_elapsed != 0)){
 			if (was_down==FALSE)
@@ -174,7 +174,7 @@ gchar *argv[]; {
 			if (was_down == TRUE){
 				g_free(message);
 				message=g_strconcat("peer on ",ADDR," up !",NULL);
-				halog(LOG_WARNING,"heartc_raw",message);
+				halog(LOG_WARNING,"heartc_dio",message);
 				g_free(message);
 				was_down = FALSE;
 			}	
@@ -201,15 +201,18 @@ void sighup(){
 	to_recV.elapsed=Elapsed();
  	memcpy(shm, &to_recV, sizeof(to_recV));
 	message=g_strconcat("peer on ",ADDR," down !",NULL);
-	halog(LOG_WARNING,"heartc_raw",message);
+	halog(LOG_WARNING,"heartc_dio",message);
 	g_free(message);
 	flag=1;
 }
 
-gint read_raw(FILE* f, gint where){
-	fseek(f, (512*where), SEEK_SET);
-	fread(&to_recV,sizeof(to_recV),1,f);
-	fflush(f);
+gint read_dio(gint fd, gint where){
+        gchar *buff;
+        buff=g_malloc0(512);
+	lseek(fd, (512*where), SEEK_SET);
+	read(fd, &buff,512);
+	memcpy(&to_recV,&buff,512);
+        g_free(buff);
 	return 0;
 }
 

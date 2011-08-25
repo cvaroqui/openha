@@ -35,10 +35,10 @@ void usage(){
 	fprintf(stderr,"         -a [-n node -t type -i interface -d address -p port -T timeout]  add heartbeat link\n");
 	fprintf(stderr,"      where: \n");
 	fprintf(stderr,"            node      = hostname of the host involved\n");
-	fprintf(stderr,"            type      = net or disk\n");
-	fprintf(stderr,"            interface = network device or raw device name\n");
-	fprintf(stderr,"            address   = multicast address or raw address\n");
-	fprintf(stderr,"            port      = udp port or nothing for raw device\n");
+	fprintf(stderr,"            type      = net, dio (Linux only) or disk\n");
+	fprintf(stderr,"            interface = network device or device fullpath\n");
+	fprintf(stderr,"            address   = multicast address or block offset on device\n");
+	fprintf(stderr,"            port      = udp port or nothing for a device\n");
 	fprintf(stderr,"            timeout   = timeout before declaring the node down\n");
 	exit(-1);
 }
@@ -70,7 +70,7 @@ gchar *node[16],*type[16],*interface[16],*addr[16],*port[16],*timeout[16];
 				strcpy(port[i], lu[4]); 
 				strcpy(timeout[i], lu[5]); 
 			}	
-			if (strcmp("disk",lu[1])==0){
+			if ((strcmp("disk",lu[1])==0) || (strcmp("dio",lu[1])==0)){
 				strcpy(node[i],lu[0]);
 				strcpy(type[i],lu[1]);
 				strcpy(interface[i], lu[2]);
@@ -139,7 +139,7 @@ gboolean hb_add(gchar *Node,gchar *Type,gchar *Interface,
 				strcpy(port[i], lu[4]); 
 				strcpy(timeout[i], lu[5]); 
 			}	
-			if (strcmp("disk",lu[1])==0){
+			if ((strcmp("disk",lu[1])==0) || (strcmp("dio",lu[1])==0)){
 				strcpy(node[i],lu[0]);
 				strcpy(type[i],lu[1]);
 				strcpy(interface[i], lu[2]);
@@ -237,7 +237,7 @@ gboolean hb_remove(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 							fprintf(TMP,"%s\t%s\t%s\t%s\t%s\t%s\n",node,type,interface,addr,port,timeout);
 						}
 					}
-				if (strcmp("disk",type)==0){
+			        if ((strcmp("disk",type)==0) || (strcmp("dio",type)==0)){
 					if( (strcmp(Node,node)==0) &&
 						(strcmp(Type,type)==0) &&
 						(strcmp(Interface,interface)==0) &&

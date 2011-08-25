@@ -10,7 +10,7 @@ AM_CFLAGS =\
 	 -O2\
 	 -g
 
-bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw nmond gui hb
+bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw heartc_dio heartd_dio nmond gui hb
 
 service_SOURCES = service.c sockhelp.c cluster.h sockhelp.h
 service_LDFLAGS = $(glib_LIBS)
@@ -24,6 +24,10 @@ heartc_raw_SOURCES = heartc_raw.c sockhelp.c
 heartc_raw_LDFLAGS = $(glib_LIBS)
 heartc_raw_LDADD = 
 
+heartc_dio_SOURCES = heartc_dio.c sockhelp.c
+heartc_dio_LDFLAGS = $(glib_LIBS)
+heartc_dio_LDADD = 
+
 heartd_SOURCES = heartd.c sockhelp.c
 heartd_LDFLAGS = $(glib_LIBS)
 heartd_LDADD = 
@@ -31,6 +35,10 @@ heartd_LDADD =
 heartd_raw_SOURCES = heartd_raw.c sockhelp.c
 heartd_raw_LDFLAGS = $(glib_LIBS)
 heartd_raw_LDADD = 
+
+heartd_dio_SOURCES = heartd_dio.c sockhelp.c
+heartd_dio_LDFLAGS = $(glib_LIBS)
+heartd_dio_LDADD = 
 
 nmond_SOURCES = nmond.c sockhelp.c
 nmond_LDFLAGS = $(glib_LIBS)
