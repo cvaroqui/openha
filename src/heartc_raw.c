@@ -172,10 +172,10 @@ gchar *argv[]; {
 			to_recV.elapsed=Elapsed();
 	 		to_recV.up = TRUE;
 			if (was_down == TRUE){
-				g_free(message);
-				message=g_strconcat("peer on ",ADDR," up !",NULL);
-				halog(LOG_WARNING,"heartc_raw",message);
-				g_free(message);
+				gchar *m;
+				m = g_strconcat("peer on ", ADDR, " up !", NULL);
+				halog(LOG_WARNING, "heartc_raw", m);
+				g_free(m);
 				was_down = FALSE;
 			}	
 			for(j=0;j<MAX_SERVICES;j++) {
