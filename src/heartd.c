@@ -101,13 +101,13 @@ gchar *shm,*SHM_KEY;
 		
 	if ((fd=open(SHM_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		message=g_strconcat("Error: unable to open SHMFILE \n",NULL);
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "heartd", message);
 		exit(-1);
 	}	
 
 	if (lockf(fd,F_TLOCK,0) != 0){
 		message=g_strconcat("Error: unable to lock SHMFILE\n",NULL);
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "heartd", message);
 		exit(-1);
 	}
 
@@ -182,7 +182,6 @@ gchar *shm,*SHM_KEY;
 		if (i < 0) {
 			strcpy(message,"sento() failed");
 			halog(LOG_ERR, "heartd",message);
-			exit(-1);
 		}
 
 		alarm(1);
