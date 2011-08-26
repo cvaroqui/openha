@@ -100,12 +100,14 @@ openhasrvdir = ${prefix}/services
 openhadoc_DATA =  	README 	COPYING 	AUTHORS 	ChangeLog 	INSTALL 	NEWS 	TODO
 
 
-openha_DATA = env.sh ezha
+openha_PROGRAM = ezha
+
+openha_DATA = env.sh
 openhaproc_DATA = 
 openhaconf_DATA = 
 openhasrv_DATA = 
 
-EXTRA_DIST = $(openhadoc_DATA) $(openha_DATA) 	     $(openhaproc_DATA) 	     $(openhaconf_DATA) 	     $(openhasrv_DATA)
+EXTRA_DIST = $(openha_PROGRAM) $(openhadoc_DATA) $(openha_DATA) 	     $(openhaproc_DATA) 	     $(openhaconf_DATA) 	     $(openhasrv_DATA)
 
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -113,6 +115,7 @@ CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =  openha.spec
 DATA =  $(openha_DATA) $(openhaconf_DATA) $(openhadoc_DATA) \
 $(openhaproc_DATA) $(openhasrv_DATA)
+PROGRAM = $(openha_PROGRAM)
 
 DIST_COMMON =  README ./stamp-h.in AUTHORS COPYING ChangeLog INSTALL \
 Makefile.am Makefile.in NEWS TODO aclocal.m4 config.guess config.h.in \
@@ -170,6 +173,25 @@ distclean-hdr:
 maintainer-clean-hdr:
 openha.spec: $(top_builddir)/config.status openha.spec.in
 	cd $(top_builddir) && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+install-openhaPROGRAM: $(openha_PROGRAM)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(openhadir)
+	@list='$(openha_PROGRAM)'; for p in $$list; do \
+	  if test -f $(srcdir)/$$p; then \
+	    echo " $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(openhadir)/$$p"; \
+	    $(INSTALL_PROGRAM) $(srcdir)/$$p $(DESTDIR)$(openhadir)/$$p; \
+	  else if test -f $$p; then \
+	    echo " $(INSTALL_PROGRAM) $$p $(DESTDIR)$(openhadir)/$$p"; \
+	    $(INSTALL_PROGRAM) $$p $(DESTDIR)$(openhadir)/$$p; \
+	  fi; fi; \
+	done
+
+uninstall-openhaPROGRAM:
+	@$(NORMAL_UNINSTALL)
+	list='$(openha_PROGRAM)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(openhadir)/$$p; \
+	done
 
 install-openhaDATA: $(openha_DATA)
 	@$(NORMAL_INSTALL)
@@ -425,7 +447,7 @@ installcheck: installcheck-recursive
 all-recursive-am: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
-install-exec-am:
+install-exec-am: install-openhaPROGRAM
 install-exec: install-exec-recursive
 
 install-data-am: install-openhaDATA install-openhaconfDATA \
@@ -436,11 +458,11 @@ install-data: install-data-recursive
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 install: install-recursive
-uninstall-am: uninstall-openhaDATA uninstall-openhaconfDATA \
+uninstall-am: uninstall-openhaPROGRAM uninstall-openhaDATA uninstall-openhaconfDATA \
 		uninstall-openhadocDATA uninstall-openhaprocDATA \
 		uninstall-openhasrvDATA
 uninstall: uninstall-recursive
-all-am: Makefile $(DATA) config.h
+all-am: Makefile $(PROGRAM) $(DATA) config.h
 all-redirect: all-recursive-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
@@ -483,6 +505,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f config.status
 
 .PHONY: mostlyclean-hdr distclean-hdr clean-hdr maintainer-clean-hdr \
+uninstall-openhaPROGRAM install-openhaPROGRAM \
 uninstall-openhaDATA install-openhaDATA uninstall-openhaconfDATA \
 install-openhaconfDATA uninstall-openhadocDATA install-openhadocDATA \
 uninstall-openhaprocDATA install-openhaprocDATA uninstall-openhasrvDATA \
@@ -498,8 +521,6 @@ install-exec-am install-exec install-data-am install-data install-am \
 install uninstall-am uninstall all-redirect all-am all installdirs-am \
 installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
-
-#bin_SCRIPTS =  ezha
 
 # Copy all the spec files. Of cource, only one is actually used.
 dist-hook:
