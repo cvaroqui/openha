@@ -37,6 +37,7 @@
 #define BUFSIZE   sizeof(struct sendstruct)*MAX_SERVICES
 #define TTL_VALUE 32
 #define UNKNOWN '8'
+#define BLKSIZE 512
 
 void sighup();
 void sigterm();
@@ -207,12 +208,13 @@ void sighup(){
 }
 
 gint read_dio(gint fd, gint where){
-        gchar *buff;
-        buff=g_malloc0(512);
-	lseek(fd, (512*where), SEEK_SET);
-	read(fd, &buff,512);
-	memcpy(&to_recV,&buff,512);
-        g_free(buff);
+	void *buff;
+	posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	memset(buff, 0, BLKSIZE);
+	lseek(fd, (BLKSIZE*where), SEEK_SET);
+	read(fd, buff, BLKSIZE);
+	memcpy(&to_recV, buff, BLKSIZE);
+        free(buff);
 	return 0;
 }
 

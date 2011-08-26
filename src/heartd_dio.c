@@ -118,12 +118,12 @@ gchar *n;
  } /* end main() */  
 
 gint write_dio(gint fd, struct sendstruct to_write, gchar *device, gint where){
-	gchar *buff;
-	buff=g_malloc0(BLKSIZE);
-        memcpy(&buff, &to_write, sizeof(struct sendstruct));
-	lseek(fd, (where*512), SEEK_SET);
-	write(fd, &buff, 512);
-	g_free(buff);
+	void *buff;
+	posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	memcpy(buff, &to_write, sizeof(struct sendstruct));
+	lseek(fd, (where*BLKSIZE), SEEK_SET);
+	write(fd, buff, BLKSIZE);
+	free(buff);
 	return 0;
 }
 
