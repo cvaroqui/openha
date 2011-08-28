@@ -1,7 +1,6 @@
 AC_INIT(configure.in)
 AM_INIT_AUTOMAKE(openha, 0.3.6.osvc1)
 AM_CONFIG_HEADER(config.h)
-AC_DISABLE_STATIC
 
 AC_ISC_POSIX
 CFLAGS=""
@@ -10,37 +9,22 @@ AC_PROG_CC
 AM_PROG_CC_STDC
 AC_PATH_PROGS(PKGCONFIG, pkg-config)
 AC_HEADER_STDC
-AM_PROG_LIBTOOL
 AC_PREFIX_DEFAULT(/usr/local/cluster)
-AM_PROG_LIBTOOL
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
-
-AC_PATH_PROGS(GLIBCONFIG, glib-config)
-AC_PATH_PROGS(GTKCONFIG, gtk-config)
 
 dnl Checks for libraries.
 
 AC_MSG_CHECKING(glib library flags)
-glib_LIBS=`$GLIBCONFIG --libs`
+glib_LIBS=`$PKGCONFIG glib-2.0 --libs`
 AC_MSG_RESULT($glib_LIBS)
 AC_SUBST(glib_LIBS)
 
-AC_MSG_CHECKING(gtk library flags)
-gtk_LIBS=`$GTKCONFIG --libs`
-AC_MSG_RESULT($gtk_LIBS)
-AC_SUBST(gtk_LIBS)
-
 dnl Checks for header files.
 AC_MSG_CHECKING(glib includes flags)
-glib_CFLAGS=`$GLIBCONFIG --cflags`
+glib_CFLAGS=`$PKGCONFIG glib-2.0 --cflags`
 AC_MSG_RESULT($glib_CFLAGS)
 AC_SUBST(glib_CFLAGS)
-
-AC_MSG_CHECKING(gtk includes flags)
-gtk_CFLAGS=`$GTKCONFIG --cflags`
-AC_MSG_RESULT($gtk_CFLAGS)
-AC_SUBST(gtk_CFLAGS)
 
 AC_MSG_CHECKING(sockio includes flags)
 AC_CHECK_HEADERS(sys/sockio.h)

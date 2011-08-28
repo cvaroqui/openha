@@ -20,7 +20,6 @@
 #  include <config.h>
 #endif
 
-#include <gtk/gtk.h>
 #include <stdlib.h>
 
 #include <cluster.h>
@@ -459,33 +458,3 @@ printf("node: %s type: %s interface: %s addr: %s port: %s timeout: %s\n",nvalue,
 	}
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
