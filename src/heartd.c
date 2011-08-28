@@ -125,7 +125,7 @@ gchar *shm,*SHM_KEY;
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message=g_strconcat("shmat failed");
+		message=g_strconcat("shmat failed\n", NULL);
 		halog(LOG_ERR, "heartd", message);
 		//perror("shmat");
 		exit(-1);

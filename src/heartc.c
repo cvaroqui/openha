@@ -53,7 +53,8 @@ gchar *argv[]; {
 
 	struct sockaddr_in stLocal, stTo, stFrom;
 	struct ip_mreq stMreq;
-	gint fd, s, timeout, addr_size, i, j, last, port = -1;
+	gint fd, s, timeout, i, j, last, port = -1;
+        socklen_t addr_size;
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down=TRUE;
@@ -118,7 +119,7 @@ gchar *argv[]; {
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message=g_strconcat("shmat failed");
+		message=g_strconcat("shmat failed\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		//perror("shmat");
 		exit(-1);
@@ -126,7 +127,7 @@ gchar *argv[]; {
 
 	/* get a datagram socket */
 	if ( (s = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
-		message=g_strconcat("getting socket");
+		message=g_strconcat("getting socket\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		exit(-1);
 	}
@@ -134,7 +135,7 @@ gchar *argv[]; {
 	/* avoid EADDRINUSE error on bind() */ 
 	iTmp = 1;
 	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (void *)&iTmp, sizeof(iTmp)) < 0){
-		message=g_strconcat("Error setsockopt(SO_REUSEADDR)",NULL);
+		message=g_strconcat("Error setsockopt(SO_REUSEADDR)\n",NULL);
 		halog(LOG_ERR, "heartc", message);
 		exit(-1);
 	}      
@@ -155,7 +156,7 @@ gchar *argv[]; {
 
 	/* assign interface */
 	if (set_mcast_if(s, argv[1]) < 0) {
-		message=g_strconcat("Error setting outbound mcast interface: ",argv[1],NULL);
+		message=g_strconcat("Error setting outbound mcast interface: ",argv[1], "\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		exit(-1);
 	}
@@ -166,7 +167,7 @@ gchar *argv[]; {
 	stLocal.sin_port =     port;
 	if (bind(s, (struct sockaddr*) &stLocal, sizeof(stLocal)) != 0){
 		perror("bind");
-		message=g_strconcat("bind failed",NULL);
+		message=g_strconcat("bind failed\n",NULL);
 		halog(LOG_ERR, "heartc", message);
 		//perror("bind");
 		exit(1);
@@ -193,7 +194,7 @@ gchar *argv[]; {
 		i = recvfrom(s, (void *)&to_recV, BUFSIZE, 0,
 		    (struct sockaddr*)&stFrom, &addr_size);
 	 	if ((i < 0) && (flag == 0)) {
-			message=g_strconcat("recvfrom failed",NULL);
+			message=g_strconcat("recvfrom failed\n",NULL);
 			halog(LOG_ERR, "heartc", message);
 	   	exit(-1);
 	 	}
@@ -214,7 +215,7 @@ gchar *argv[]; {
 	 		memcpy(to_recV.addr,ADDR,15);
 	 		memcpy(shm, &to_recV, sizeof(to_recV));
 			if (was_down == TRUE){
-				message=g_strconcat("peer on @ ",ADDR," up !",NULL);
+				message=g_strconcat("peer on @ ",ADDR," up !\n",NULL);
 				halog(LOG_WARNING,"heartc",message);
 				g_free(message);
 				was_down = FALSE;
