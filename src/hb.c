@@ -46,14 +46,15 @@ gboolean hb_exists(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 FILE *File;
 GList *list_hb=NULL;
 gint i=0,j=0;
-gchar *lu[6];
+gchar *lu[6]={0, 0, 0, 0, 0, 0};
 gchar *node[16],*type[16],*interface[16],*addr[16],*port[16],*timeout[16];
+int n;
 	
 	if ((File = fopen(EZ_MONITOR,"r")) != NULL) {
 		list_hb = get_liste(File,6);
 	}
 	if (lockf(fileno(File),F_TLOCK,0) == 0) {
-		while(fscanf(File,"%s %s %s %s %s",lu[0],lu[1],lu[2],lu[3],lu[4]) != -1){
+		while(fscanf(File,"%s %s %s %s %s",lu[0],lu[1],lu[2],lu[3],lu[4]) == 5){
 			node[i]=g_malloc0(MAX_NODENAME_SIZE);
 			type[i]=g_malloc0(5);
 			interface[i]=g_malloc0(16);
@@ -61,7 +62,11 @@ gchar *node[16],*type[16],*interface[16],*addr[16],*port[16],*timeout[16];
 			port[i]=g_malloc0(5);
 			timeout[i]=g_malloc0(5);
 			if (strcmp("net",lu[1])==0){
-				fscanf(File,"%s",lu[5]);
+				n = fscanf(File, "%s", lu[5]);
+				if (n != 1) {
+					fprintf(stderr, "Error: $EZ_MONITOR corruption.\n");
+					return FALSE;
+				}
 				strcpy(node[i],lu[0]);
 				strcpy(type[i],lu[1]);
 				strcpy(interface[i], lu[2]);
@@ -110,6 +115,7 @@ gboolean hb_add(gchar *Node,gchar *Type,gchar *Interface,
 	gint i=0,j=0;
 	gchar *lu[6];
 	gchar *node[16],*type[16],*interface[16],*addr[16],*port[16],*timeout[16];
+	int n;
 	
 	if ((File = fopen(EZ_MONITOR,"a+")) != NULL) {
 		list_hb = get_liste(File,6);
@@ -122,7 +128,7 @@ gboolean hb_add(gchar *Node,gchar *Type,gchar *Interface,
 		lu[j]=g_malloc0(64);
 	j=0;
 	if (lockf(fileno(File),F_TLOCK,0) == 0) {
-		while(fscanf(File,"%s %s %s %s %s",lu[0],lu[1],lu[2],lu[3],lu[4]) != -1){
+		while(fscanf(File,"%s %s %s %s %s",lu[0],lu[1],lu[2],lu[3],lu[4]) == 5){
 			node[i]=g_malloc0(MAX_NODENAME_SIZE);
 			type[i]=g_malloc0(5);
 			interface[i]=g_malloc0(16);
@@ -130,7 +136,11 @@ gboolean hb_add(gchar *Node,gchar *Type,gchar *Interface,
 			port[i]=g_malloc0(5);
 			timeout[i]=g_malloc0(5);
 			if (strcmp("net",lu[1])==0){
-				fscanf(File,"%s",lu[5]);
+				n = fscanf(File,"%s",lu[5]);
+				if (n != 1) {
+					printf("hb_add: $EZ_MONITOR corruption.");
+					return FALSE;
+				}
 				strcpy(node[i],lu[0]);
 				strcpy(type[i],lu[1]);
 				strcpy(interface[i], lu[2]);
@@ -198,6 +208,7 @@ gboolean hb_remove(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 	gchar node[16],type[16],interface[16],addr[16],port[16],timeout[16]	;
 	gchar *tmp;
 	gboolean found=FALSE;
+	int n;
 
 	tmp = g_malloc0(300);
 	tmp = g_strconcat(getenv("EZ"),"/.monitor.tmp",NULL);
@@ -214,16 +225,20 @@ gboolean hb_remove(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 		return FALSE;
 	}
 	if (!hb_exists(Node,Type,Interface,Addr,Port,Timeout)){
-			fprintf(stderr,"Error: unable to remove HeartBeat link.\n");
-			return FALSE;
+		fprintf(stderr,"Error: unable to remove HeartBeat link.\n");
+		return FALSE;
 	}
 
 	if ((File = freopen(EZ_MONITOR,"r+",File)) != NULL) {
 		if (lockf(fileno(File),F_TLOCK,0) == 0) {
 		//printf("array: %s %s %s %s %s %s\n",array[0],array[1],array[2],array[3],array[4],array[5]);
-			while(fscanf(File,"%s %s %s %s %s",node,type,interface,addr,port) != -1){
+			while(fscanf(File,"%s %s %s %s %s",node,type,interface,addr,port) == 5){
 				if (strcmp("net",type)==0){
-					fscanf(File,"%s",timeout);
+					n = fscanf(File,"%s",timeout);
+					if (n != 1) {
+						printf("hb_add: $EZ_MONITOR corruption.");
+						return FALSE;
+					}
 					if( (strcmp(Node,node)==0) &&
 						(strcmp(Type,type)==0) &&
 						(strcmp(Interface,interface)==0) &&
@@ -233,7 +248,7 @@ gboolean hb_remove(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 							// don't rewrite the line
 						}
 						else {
-							fprintf(TMP,"%s\t%s\t%s\t%s\t%s\t%s\n",node,type,interface,addr,port,timeout);
+							fprintf(TMP, "%s\t%s\t%s\t%s\t%s\t%s\n", node, type, interface, addr, port, timeout);
 						}
 					}
 			        if ((strcmp("disk",type)==0) || (strcmp("dio",type)==0)){
