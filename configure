@@ -5349,16 +5349,22 @@ LIBTOOL="$LIBTOOL --silent"
 
 
 
+if `pkg-config --exists glib-2.0` ; then
+	_glib=glib-2.0
+else
+	_glib=glib-1.2
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking glib library flags" >&5
 $as_echo_n "checking glib library flags... " >&6; }
-glib_LIBS=`$PKGCONFIG glib-2.0 --libs`
+glib_LIBS=`$PKGCONFIG ${_glib} --libs`
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $glib_LIBS" >&5
 $as_echo "$glib_LIBS" >&6; }
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking glib includes flags" >&5
 $as_echo_n "checking glib includes flags... " >&6; }
-glib_CFLAGS=`$PKGCONFIG glib-2.0 --cflags`
+glib_CFLAGS=`$PKGCONFIG ${_glib} --cflags`
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $glib_CFLAGS" >&5
 $as_echo "$glib_CFLAGS" >&6; }
 

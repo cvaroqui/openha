@@ -15,14 +15,20 @@ AC_PROG_INSTALL
 
 dnl Checks for libraries.
 
+if `pkg-config --exists glib-2.0` ; then
+	_glib=glib-2.0
+else
+	_glib=glib-1.2
+fi
+
 AC_MSG_CHECKING(glib library flags)
-glib_LIBS=`$PKGCONFIG glib-2.0 --libs`
+glib_LIBS=`$PKGCONFIG ${_glib} --libs`
 AC_MSG_RESULT($glib_LIBS)
 AC_SUBST(glib_LIBS)
 
 dnl Checks for header files.
 AC_MSG_CHECKING(glib includes flags)
-glib_CFLAGS=`$PKGCONFIG glib-2.0 --cflags`
+glib_CFLAGS=`$PKGCONFIG ${_glib} --cflags`
 AC_MSG_RESULT($glib_CFLAGS)
 AC_SUBST(glib_CFLAGS)
 
