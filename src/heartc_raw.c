@@ -61,6 +61,7 @@ gchar *argv[]; {
 	long old_elapsed=0;
 	gchar **NEW_KEY;
 	gchar *n;
+	int r;
 
 	raw_device=g_malloc0(128);
 	my_pid=g_malloc0(6);
@@ -158,7 +159,10 @@ gchar *argv[]; {
 		}
 		fseek(File, 0L, SEEK_SET);
 		i=0;
-		read_raw(File,address);
+		r = read_raw(File,address);
+		if (r != 0) {
+			continue;
+		}
 		//printf("to recv: %d elapsed: %d\n",to_recV.elapsed,old_elapsed);
 		if ((to_recV.elapsed == old_elapsed) && (old_elapsed != 0)){
 			if (was_down==FALSE)
@@ -207,9 +211,16 @@ void sighup(){
 }
 
 gint read_raw(FILE* f, gint where){
+	int n;
+	char message[160];
 	fseek(f, (512*where), SEEK_SET);
-	fread(&to_recV,sizeof(to_recV),1,f);
+	n = fread(&to_recV,sizeof(to_recV),1,f);
 	fflush(f);
+	if (n != 1) {
+		strcpy(message,"read_raw() error reading 1 element.\n");
+		halog(LOG_ERR, "heartc_raw", message);
+		return 1;
+	}
 	return 0;
 }
 

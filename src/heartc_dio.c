@@ -63,6 +63,7 @@ gchar *argv[]; {
 	long old_elapsed=0;
 	gchar **NEW_KEY;
 	gchar *n;
+	int r;
 
 	device=g_malloc0(128);
 	my_pid=g_malloc0(6);
@@ -159,7 +160,12 @@ gchar *argv[]; {
 			was_down = TRUE;
 		}
 		i=0;
-		read_dio(fd,address);
+		r = read_dio(fd,address);
+		if (r != 0) {
+			strcpy(message,"Error: unable to read dio device");
+			halog(LOG_ERR, "heartc_dio", message);
+			continue;
+		}
 		//printf("to recv: %d elapsed: %d\n",to_recV.elapsed,old_elapsed);
 		if ((to_recV.elapsed == old_elapsed) && (old_elapsed != 0)){
 			if (was_down==FALSE)
@@ -209,11 +215,23 @@ void sighup(){
 
 gint read_dio(gint fd, gint where){
 	void *buff;
-	posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	int r;
+	char message[160];
+	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	if (r != 0) {
+		strcpy(message, "heartc_dio() posix_memalign error.\n");
+		halog(LOG_WARNING, "heartc_dio", message);
+		return 1;
+	}
 	memset(buff, 0, BLKSIZE);
 	lseek(fd, (BLKSIZE*where), SEEK_SET);
-	read(fd, buff, BLKSIZE);
-	memcpy(&to_recV, buff, BLKSIZE);
+	r = read(fd, buff, BLKSIZE);
+	if (r != BLKSIZE) {
+		strcpy(message, "heartc_dio() read error.\n");
+		halog(LOG_WARNING, "heartc_dio", message);
+		return 1;
+	}
+	memcpy(&to_recV, buff, sizeof(struct sendstruct));
         free(buff);
 	return 0;
 }

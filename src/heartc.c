@@ -33,7 +33,6 @@
 #include <cluster.h>
 #include <sockhelp.h>
 
-#define BUFSIZE   sizeof(struct sendstruct)*MAX_SERVICES
 #define TTL_VALUE 32
 #define UNKNOWN '8'
 
@@ -191,7 +190,7 @@ gchar *argv[]; {
 		{
 			alarm(timeout); 
 		}
-		i = recvfrom(s, (void *)&to_recV, BUFSIZE, 0,
+		i = recvfrom(s, (void *)&to_recV, sizeof(struct sendstruct), 0,
 		    (struct sockaddr*)&stFrom, &addr_size);
 	 	if ((i < 0) && (flag == 0)) {
 			message=g_strconcat("recvfrom failed\n",NULL);

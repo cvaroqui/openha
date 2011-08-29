@@ -295,18 +295,3 @@ void write_wakeup() {
 	kill(pid,SIGHUP);
 }
 
-gint creat_msg(gchar name1[128], gchar name2[128]) {
-	gint File,key,msg;
-	gchar name_file[256];
-	strcat(name_file,"/tmp/.");
-	strcat(name_file,name1);
-	strcat(name_file,".");
-	strcat(name_file,name2);
-	File=open(name_file,O_RDONLY|O_CREAT);
-	key=ftok(name_file,1);
-	msg=msgget(key,IPC_CREAT);
-	printf("creat: %d\n",msg);
-	close(File);
-	unlink(name_file);
-	return msg;
-}

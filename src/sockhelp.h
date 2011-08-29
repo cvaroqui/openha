@@ -42,7 +42,6 @@ gint sock_gets(/* int sockfd, char *str, size_t count */);
 gint sock_puts(/* int sockfd, const char *str */);
 void ignore_pipe(/*void*/);
 void write_wakeup();
-gint creat_msg();
 
 #define BUFFER	64
 #endif

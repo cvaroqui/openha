@@ -107,7 +107,7 @@ gchar *n;
 		to_send.elapsed = Elapsed();     
 		status=get_node_status(to_send.nodename);
 		i = write_dio(fd2, to_send, device, address);
-		if (i < 0) {
+		if (i != 0) {
 			strcpy(message,"write_dio() failed");
 			halog(LOG_ERR, "heartd_dio",message);
 			exit(-1);
@@ -119,10 +119,22 @@ gchar *n;
 
 gint write_dio(gint fd, struct sendstruct to_write, gchar *device, gint where){
 	void *buff;
-	posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	int r;
+	char message[160];
+	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	if (r != 0) {
+		strcpy(message, "write_dio() posix_memalign failed");
+		halog(LOG_ERR, "heartd_dio", message);
+		return 1;
+	}
 	memcpy(buff, &to_write, sizeof(struct sendstruct));
 	lseek(fd, (where*BLKSIZE), SEEK_SET);
-	write(fd, buff, BLKSIZE);
+	r = write(fd, buff, BLKSIZE);
+	if (r != BLKSIZE) {
+		strcpy(message, "write_dio() write failed");
+		halog(LOG_ERR, "heartd_dio", message);
+		return 1;
+	}
 	free(buff);
 	return 0;
 }
