@@ -792,7 +792,7 @@ gint create_file(gchar *name, gchar *node){
   if (stat(O, &buf) == 0){
 		strcat(O,"STATE.");
 		strcat(O,node);
-		if ((F=fopen(O,"a")) == NULL){
+		if ((F=fopen(O,"w")) == NULL){
 			perror("Unable to create file:");
 			return -1;}
 		fwrite(to_copy,2,1,F);
