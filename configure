@@ -5523,11 +5523,10 @@ packageprocdir=proc
 packagesrvdir=services
 packageconfdir=conf
 
-#packagepixmapsdir=${packagedatadir}/pixmaps
 packagehelpdir=${packagedatadir}/help
 packagemenudir=${packagedatadir}
 
-ac_config_files="$ac_config_files Makefile src/Makefile pixmaps/Makefile openha.spec"
+ac_config_files="$ac_config_files Makefile src/Makefile openha.spec"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -6258,7 +6257,6 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "pixmaps/Makefile") CONFIG_FILES="$CONFIG_FILES pixmaps/Makefile" ;;
     "openha.spec") CONFIG_FILES="$CONFIG_FILES openha.spec" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;

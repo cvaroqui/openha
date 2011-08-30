@@ -48,7 +48,6 @@ gchar *EZ_SERVICES;
 gchar *EZ_MONITOR;
 gchar *EZ_LOG;
 gchar *EZ_NODES;
-gchar *PIX_PATH;
 extern gchar *progname;
 
 gchar *VAL[MAX_STATE]={
@@ -1185,7 +1184,6 @@ gboolean init_var(){
 	EZ_SERVICES=g_malloc0(256);
 	EZ_LOG=g_malloc0(256);
 	EZ_NODES=g_malloc0(256);
-	PIX_PATH=g_malloc0(256);
 
 	if ((EZ_BIN=getenv("EZ_BIN")) == NULL){
 		printf("Error: variable EZ_BIN not defined\n");
@@ -1211,8 +1209,6 @@ gboolean init_var(){
 			printf("Error: variable EZ not defined\n");
 			return FALSE;
 	}
-	strcpy(PIX_PATH,EZ);
-	strcat(PIX_PATH,"/pixmaps");
 	return TRUE;
 }
 

@@ -72,14 +72,12 @@ packagesrvdir=services
 packageconfdir=conf
 
 dnl Set PACKAGE DIRS in config.h.
-#packagepixmapsdir=${packagedatadir}/pixmaps
 packagehelpdir=${packagedatadir}/help
 packagemenudir=${packagedatadir}
 
 AC_OUTPUT([
 Makefile
 src/Makefile
-pixmaps/Makefile
 openha.spec
 ])
 

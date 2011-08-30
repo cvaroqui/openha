@@ -103,14 +103,12 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(hb_SOURCES) $(heartc_SOURCES) \
-	$(heartc_dio_SOURCES) $(heartc_raw_SOURCES) $(heartd_SOURCES) \
-	$(heartd_dio_SOURCES) $(heartd_raw_SOURCES) $(nmond_SOURCES) \
-	$(service_SOURCES)
-DIST_SOURCES = $(hb_SOURCES) $(heartc_SOURCES) \
-	$(heartc_dio_SOURCES) $(heartc_raw_SOURCES) $(heartd_SOURCES) \
-	$(heartd_dio_SOURCES) $(heartd_raw_SOURCES) $(nmond_SOURCES) \
-	$(service_SOURCES)
+SOURCES = $(hb_SOURCES) $(heartc_SOURCES) $(heartc_dio_SOURCES) \
+	$(heartc_raw_SOURCES) $(heartd_SOURCES) $(heartd_dio_SOURCES) \
+	$(heartd_raw_SOURCES) $(nmond_SOURCES) $(service_SOURCES)
+DIST_SOURCES = $(hb_SOURCES) $(heartc_SOURCES) $(heartc_dio_SOURCES) \
+	$(heartc_raw_SOURCES) $(heartd_SOURCES) $(heartd_dio_SOURCES) \
+	$(heartd_raw_SOURCES) $(nmond_SOURCES) $(service_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -208,7 +206,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = \
 	$(glib_CFLAGS) \
+	$(gtk_CFLAGS) \
 	 -Wall\
+	 -O2\
 	 -g
 
 service_SOURCES = service.c sockhelp.c cluster.h sockhelp.h
@@ -343,8 +343,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/callbacks.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartc_dio.Po@am__quote@
@@ -352,12 +350,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartd_dio.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartd_raw.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nmond.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/service.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockhelp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/support.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
