@@ -105,14 +105,17 @@ glong Elapsed (void){
 
 struct service {
 	gchar name[MAX_SERVICES_SIZE];
-	guint state;};
+	guint state;
+};
+
 struct srvstruct {
-	gchar service_name[16];
+	gchar service_name[MAX_SERVICES_SIZE];
 	gchar script[SCRIPT_SIZE];
 	gchar primary[MAX_NODENAME_SIZE];
 	gchar secondary[MAX_NODENAME_SIZE];
 	gchar check_script[SCRIPT_SIZE];
-	gboolean status;};
+	gboolean status;
+};
 
 struct sendstruct {
 	gchar nodename[MAX_NODENAME_SIZE];
@@ -125,20 +128,21 @@ struct sendstruct {
 	gboolean service_lock[MAX_SERVICES];
 	guint32 hostid;
 	guint32 elapsed;
-	pid_t pid;};
+	pid_t pid;
+};
 
 struct nodestruct {
 	gchar nodename[MAX_NODENAME_SIZE];
 	gboolean up;
-	struct timeval tv;};
+	struct timeval tv;
+};
 	
 struct shmtab_struct {
 	gchar nodename[MAX_NODENAME_SIZE];
 	key_t shmid;
 };
 
-struct flock* file_lock(short type, short whence)
-{
+struct flock* file_lock(short type, short whence) {
   static struct flock ret ;
   ret.l_type = type ;
   ret.l_start = 0 ;

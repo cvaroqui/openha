@@ -183,14 +183,14 @@ gint get_node_status(gchar *nodename){
 	return list_size;
 }
 
-void clean_tab(){
+void clean_tab() {
 	int i;
 	for(i=0;i<MAX_SERVICES;i++){
-		bzero(to_send.service_name[i],MAX_SERVICES);
-		bzero(to_send.service_state,MAX_SERVICES);
+		bzero(to_send.service_name[i], MAX_SERVICES_SIZE);
 	}
+	bzero(to_send.service_state, MAX_SERVICES);
 }
 
-void sighup(){
+void sighup() {
 }
 
