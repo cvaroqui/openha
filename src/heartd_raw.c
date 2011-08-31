@@ -107,7 +107,6 @@ gchar *n;
 		if (i < 0) {
 			strcpy(message,"write_raw() failed");
 			halog(LOG_ERR, "heartd_raw",message);
-			exit(-1);
 		}
 		alarm(1);
 		pause();

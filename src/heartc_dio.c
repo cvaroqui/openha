@@ -36,7 +36,6 @@
 
 #define BUFSIZE   sizeof(struct sendstruct)*MAX_SERVICES
 #define TTL_VALUE 32
-#define UNKNOWN '8'
 #define BLKSIZE 512
 
 void sighup();
@@ -164,6 +163,7 @@ gchar *argv[]; {
 		if (r != 0) {
 			strcpy(message,"Error: unable to read dio device");
 			halog(LOG_ERR, "heartc_dio", message);
+			sleep(timeout);
 			continue;
 		}
 		//printf("to recv: %d elapsed: %d\n",to_recV.elapsed,old_elapsed);

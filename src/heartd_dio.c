@@ -110,7 +110,6 @@ gchar *n;
 		if (i != 0) {
 			strcpy(message,"write_dio() failed");
 			halog(LOG_ERR, "heartd_dio",message);
-			exit(-1);
 		}
 		alarm(1);
 		pause();
@@ -146,14 +145,12 @@ gint get_node_status(gchar *nodename){
 	gchar *FILE_NAME, STATE, *service;
 
 	if (getenv("EZ_SERVICES") == NULL) {
-		  printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-			return 0;
-      //exit(-1);
-    }
+		printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
+		return 0;
+  	}
 	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES") ,"r")) == NULL) {
 		//No service(s) defined (unable to open $EZ_SERVICES file)
 		return 0;
-		//exit(-1);
 	}
 	list_services=get_services_list();
 	fclose(EZ_SERVICES);
@@ -167,12 +164,13 @@ gint get_node_status(gchar *nodename){
 		if (is_primary(nodename,service)||is_secondary(nodename,service)){
 			FILE_NAME = g_strconcat(getenv("EZ"),"/services/",service,"/STATE.",nodename,NULL);
 			if ((FILE_STATE=fopen((char*)FILE_NAME,"r")) == NULL) {
-					perror("No service(s) defined (unable to open SERVICE STATE file)");
-					exit(-1);
+				perror("No service(s) defined (unable to open SERVICE STATE file)");
+				STATE = '8';
+			} else {
+				STATE = fgetc(FILE_STATE);
+				fclose(FILE_STATE);
 			}
 			g_free(FILE_NAME);
-			STATE = fgetc(FILE_STATE);
-			fclose(FILE_STATE);
 			strcpy(to_send.service_name[j],service);
 			to_send.service_state[j]=STATE;
 			to_send.up=TRUE;

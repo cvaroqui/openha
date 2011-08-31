@@ -195,7 +195,7 @@ gchar *argv[]; {
 	 	if ((i < 0) && (flag == 0)) {
 			message=g_strconcat("recvfrom failed\n",NULL);
 			halog(LOG_ERR, "heartc", message);
-	   	exit(-1);
+	   		continue;
 	 	}
 		if (i>0){
 			for(j=0;j<MAX_SERVICES;j++) {
@@ -204,8 +204,8 @@ gchar *argv[]; {
 					j = MAX_SERVICES;}
 				else{
 					write_status(to_recV.service_name[j],
-										 to_recV.service_state[j],
-										 to_recV.nodename);
+						     to_recV.service_state[j],
+						     to_recV.nodename);
 				}
 			}
 	 		to_recV.elapsed = Elapsed();

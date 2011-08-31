@@ -161,6 +161,7 @@ gchar *argv[]; {
 		i=0;
 		r = read_raw(File,address);
 		if (r != 0) {
+			sleep(timeout);
 			continue;
 		}
 		//printf("to recv: %d elapsed: %d\n",to_recV.elapsed,old_elapsed);
