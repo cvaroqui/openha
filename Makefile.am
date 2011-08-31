@@ -22,16 +22,16 @@ openhadoc_DATA = \
 	NEWS\
 	TODO
 
-openha_DATA =  env.sh ezha
+openha_SCRIPTS = ezha
+openha_DATA = env.sh
 openhaproc_DATA =  
 openhaconf_DATA =  
 openhasrv_DATA =  
 
-EXTRA_DIST = $(openhadoc_DATA) $(openha_DATA)\
+EXTRA_DIST = $(openhadoc_DATA) $(openha_SCRIPTS) $(openha_DATA)\
 	     $(openhaproc_DATA) \
 	     $(openhaconf_DATA) \
 	     $(openhasrv_DATA)
-#bin_SCRIPTS =  ezha
 
 # Copy all the spec files. Of cource, only one is actually used.
 dist-hook:
