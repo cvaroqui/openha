@@ -55,7 +55,7 @@ gchar *argv[]; {
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down=TRUE;
-	gchar *my_pid, *message, *FILE_KEY, *raw_device;
+	gchar *message, *FILE_KEY, *raw_device;
 	gint address;
 	FILE *File;
 	long old_elapsed=0;
@@ -64,8 +64,6 @@ gchar *argv[]; {
 	int r;
 
 	raw_device=g_malloc0(128);
-	my_pid=g_malloc0(6);
-
 	message=g_malloc0(80);
 	SHM_KEY=malloc(256);
 	signal(SIGTERM,sigterm);

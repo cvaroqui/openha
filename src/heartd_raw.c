@@ -43,6 +43,7 @@ gint get_node_status(gchar*);
 gint write_raw(FILE *, struct sendstruct,gchar *, gint );
 void sighup();
 gchar *progname;
+gint shmid;
 
 int main(argc, argv)
 int argc;
@@ -50,15 +51,14 @@ char *argv[]; {
 
 gint status, i, fd,address;
 struct utsname tmp_name;
-gchar *message, *FILE_KEY, *raw_device;
-gchar	*my_pid;
+gchar *message, *shm, *FILE_KEY, *raw_device;
 FILE *File;
 gchar **NEW_KEY;
 gchar *n;
+key_t key;
 
 	message=g_malloc0(160);
 	raw_device=g_malloc0(128);
-	my_pid=g_malloc0(6);
 
 	if (argc != 3) {
 		fprintf(stderr,"Usage: heartd_raw [raw device] address \n");
@@ -68,12 +68,12 @@ gchar *n;
 	Setenv("PROGNAME","heartd_raw",1);
 
 	address=atoi(argv[2]);
-        NEW_KEY=g_strsplit(argv[1], "/", 10);
-        n=g_strjoinv(".", NEW_KEY),
+	NEW_KEY=g_strsplit(argv[1], "/", 10);
+	n=g_strjoinv(".", NEW_KEY),
 
-        FILE_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".", argv[2],".key",NULL);
-        g_strfreev(NEW_KEY);
-        g_free(n);
+	FILE_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".", argv[2],".key",NULL);
+	g_strfreev(NEW_KEY);
+	g_free(n);
 
 	if ((fd=open(FILE_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		printf("key: %s\n",FILE_KEY);
@@ -86,9 +86,21 @@ gchar *n;
 		halog(LOG_ERR, "heartd_raw", message);
 		exit(-1);
 	}
+	key=ftok(FILE_KEY,0);
+	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
+		message=g_strconcat("shmget failed\n",NULL);
+		halog(LOG_ERR, "heartd_dio", message);
+		exit(-1);
+	}
+	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
+		message=g_strconcat("shmat failed\n", NULL);
+		halog(LOG_ERR, "heartd_dio", message);
+		exit(-1);
+	}
 
 	setpriority(PRIO_PROCESS,0,-15);
 	to_send.hostid = gethostid();     
+	to_send.pid = getpid();     
 	uname(&tmp_name);
 	strncpy(to_send.nodename,tmp_name.nodename,MAX_NODENAME_SIZE);
 	//signal(SIGALRM,sighup);
@@ -108,10 +120,11 @@ gchar *n;
 			strcpy(message,"write_raw() failed");
 			halog(LOG_ERR, "heartd_raw",message);
 		}
+		memcpy(shm, &to_send, sizeof(to_send));
 		alarm(1);
 		pause();
-   }
- } /* end main() */  
+	}
+} /* end main() */  
 
 gint write_raw(FILE *f, struct sendstruct to_write, gchar *device, gint where){
 	gchar *to_read;

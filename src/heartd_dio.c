@@ -46,6 +46,7 @@ gint get_node_status(gchar*);
 gint write_dio(gint fd, struct sendstruct,gchar *, gint );
 void sighup();
 gchar *progname;
+gint shmid;
 
 int main(argc, argv)
 int argc;
@@ -53,15 +54,14 @@ char *argv[]; {
 
 gint status, i, fd,address;
 struct utsname tmp_name;
-gchar *message, *FILE_KEY, *device;
-gchar	*my_pid;
+gchar *message, *shm, *FILE_KEY, *device;
 gint fd2;
 gchar **NEW_KEY;
 gchar *n;
+key_t key;
 
 	message=g_malloc0(160);
 	device=g_malloc0(128);
-	my_pid=g_malloc0(6);
 
 	if (argc != 3) {
 		fprintf(stderr,"Usage: heartd_dio [device] offset \n");
@@ -72,11 +72,11 @@ gchar *n;
 
 	address=atoi(argv[2]);
 	NEW_KEY=g_strsplit(argv[1], "/", 10);
-        n=g_strjoinv(".", NEW_KEY),
+	n=g_strjoinv(".", NEW_KEY),
 
 	FILE_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".", argv[2],".key",NULL);
-        g_strfreev(NEW_KEY);
-        g_free(n);
+	g_strfreev(NEW_KEY);
+	g_free(n);
 
 	if ((fd=open(FILE_KEY,O_RDWR|O_CREAT,00644)) == -1){
 		printf("key: %s\n",FILE_KEY);
@@ -89,9 +89,22 @@ gchar *n;
 		halog(LOG_ERR, "heartd_dio", message);
 		exit(-1);
 	}
+	key=ftok(FILE_KEY,0);
+	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
+		message=g_strconcat("shmget failed\n",NULL);
+		halog(LOG_ERR, "heartd_dio", message);
+		exit(-1);
+	}
+	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
+		message=g_strconcat("shmat failed\n", NULL);
+		halog(LOG_ERR, "heartd_dio", message);
+		exit(-1);
+	}
+
 
 	setpriority(PRIO_PROCESS,0,-15);
 	to_send.hostid = gethostid();     
+	to_send.pid = getpid();     
 	uname(&tmp_name);
 	strncpy(to_send.nodename,tmp_name.nodename,MAX_NODENAME_SIZE);
 	//signal(SIGALRM,sighup);
@@ -111,6 +124,7 @@ gchar *n;
 			strcpy(message,"write_dio() failed");
 			halog(LOG_ERR, "heartd_dio",message);
 		}
+		memcpy(shm, &to_send, sizeof(to_send));
 		alarm(1);
 		pause();
    }

@@ -288,7 +288,7 @@ gboolean hb_remove(gchar *Node,gchar *Type,gchar *Interface,gchar* Addr,gchar *P
 }
 
 gboolean hb_status(){
-	gchar *FILE_KEY=NULL,*node,*date,*interface,*HB_KEY;
+	gchar *FILE_KEY=NULL,*node,*date,*interface,*HB_KEY = NULL;
 	gchar *status,*shm,*hb_shm;
 	gint  i, shmid,hb_shmid,fd;
 	GList *list_heart;
@@ -327,25 +327,44 @@ gboolean hb_status(){
 		status=g_malloc0(8);
 		date=g_malloc0(32);
 		node=strncpy(node,g_list_nth_data(list_heart,(i*5)),80);
-		interface=g_strconcat(g_list_nth_data(list_heart,(i*5)+2),":",
-								g_list_nth_data(list_heart,(i*5)+3),":",
-								g_list_nth_data(list_heart,(i*5)+4),NULL);
-		HB_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/",g_list_nth_data(list_heart,(i*5)+3),"-",
-													 g_list_nth_data(list_heart,(i*5)+4),"-",
-													 g_list_nth_data(list_heart,(i*5)+2),".key",NULL);
+	        if (strcmp(g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+1),"net") == 0){
+			interface=g_strconcat(g_list_nth_data(list_heart,(i*5)+2),":",
+									g_list_nth_data(list_heart,(i*5)+3),":",
+									g_list_nth_data(list_heart,(i*5)+4),NULL);
+			HB_KEY=g_strconcat(getenv("EZ_LOG"),"/proc/",g_list_nth_data(list_heart,(i*5)+3),"-",
+											g_list_nth_data(list_heart,(i*5)+4),"-",
+											g_list_nth_data(list_heart,(i*5)+2),".key",NULL);
+		} else {
+			gchar **NEW_KEY;
+			gchar *m, *n;
+			HB_KEY=g_malloc0(256);
+
+			interface=g_strconcat(g_list_nth_data(list_heart,(i*5)+2),":",
+						g_list_nth_data(list_heart,(i*5)+3),NULL);
+			NEW_KEY=g_strsplit(g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+2), "/", 10);
+			n=g_strjoinv(".", NEW_KEY),
+			m=g_strconcat(getenv("EZ_LOG"),"/proc/", n, ".",
+					g_list_nth_data(list_heart,(i*LIST_NB_ITEM)+3),
+					".key", NULL);
+			strcpy(HB_KEY, m);
+			g_free(m);
+			g_free(n);
+			g_strfreev(NEW_KEY);
+		}
+
 		if ((fd=open(HB_KEY,O_RDWR|O_CREAT,00644)) == -1){
 			fprintf(stderr,"Error: unable to open SHMFILE %s.\n",HB_KEY);
-			g_free(interface);g_free(node);g_free(status);g_free(date);
+			g_free(interface);g_free(node);g_free(status);g_free(date);g_free(HB_KEY);
 			return FALSE;
 		}	
 		hb_key=ftok(HB_KEY,0);
 		if ((hb_shmid = shmget(hb_key, SHMSZ, IPC_CREAT | 0444)) < 0) {
-			g_free(interface);g_free(node);g_free(status);g_free(date);
+			g_free(interface);g_free(node);g_free(status);g_free(date);g_free(HB_KEY);
 			fprintf(stderr,"shmget failed\n");
 			return FALSE;
 		}
 		if ((hb_shm = shmat(hb_shmid, NULL, 0)) == (char *) -1) {
-			g_free(interface);g_free(node);g_free(status);g_free(date);
+			g_free(interface);g_free(node);g_free(status);g_free(date);g_free(HB_KEY);
 			fprintf(stderr,"shmat failed\n");
 			return FALSE;
 		}
@@ -361,9 +380,9 @@ gboolean hb_status(){
 			strcpy(status,"DOWN");
 			printf("interface %s status %s \n",interface,status);
 		}
-		g_free(interface);g_free(node);g_free(status);g_free(date);
+		g_free(interface);g_free(node);g_free(status);g_free(date);g_free(HB_KEY);
 	}	
-return TRUE;
+	return TRUE;
 }
 
 gint main(argc, argv)
