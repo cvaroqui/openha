@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# OpenHA preremove script
+
+BASEDIR=${BASEDIR:-/}
+
+if [ "X${BASEDIR}" = "X" ] ; then
+  echo "Error => BASEDIR environment variable have to be defined. Aborting."
+  exit 1
+fi
+
+# removing leading / if present
+TRAILING=`echo "$BASEDIR" | sed 's/^.*\(.\)$/\1/'`
+if [ "${TRAILING}" = "/" ] ; then
+  MYBASEDIR=`echo "$BASEDIR" | sed 's/.$//'`
+else
+  MYBASEDIR=$BASEDIR
+fi
+
+LD_LIBRARY_PATH=${MYBASEDIR}/usr/local/lib; export LD_LIBRARY_PATH
+EZ=${MYBASEDIR}/usr/local/cluster
+
+export EZ
+. $EZ/env.sh
+[ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
+
+[ -h ${MYBASEDIR}/etc/rc3.d/S99cluster ] && rm -f ${MYBASEDIR}/etc/rc3.d/S99cluster
+[ -h ${MYBASEDIR}/etc/rc0.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rc0.d/K01cluster
+[ -h ${MYBASEDIR}/etc/rcS.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rcS.d/K01cluster
+
+exit 0

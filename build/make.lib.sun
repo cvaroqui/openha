@@ -1,0 +1,46 @@
+# package is built by copying fully working binary to temporary folder
+# OPENHA_VERSION / OPENHA_RELEASE / OPENHA_ARCH must be defined
+#
+
+SOURCE_ROOT=/usr/local/cluster
+
+if [ "X${OPENHA_VERSION}" = "X" ] ; then
+  echo "Error => OPENHA_VERSION environment variable have to be defined (0.3.6|0.3.7|...). Aborting."
+  exit 1
+fi
+
+if [ "X${OPENHA_RELEASE}" = "X" ] ; then
+  echo "Error => OPENHA_RELEASE environment variable have to be defined (osvc2|osvc3|...). Aborting."
+  exit 1
+fi
+
+if [ "X${OPENHA_ARCH}" = "X" ] ; then
+  echo "Error => OPENHA_ARCH environment variable have to be defined (i386|sparc). Aborting."
+  exit 1
+fi
+
+CHROOT_BN=opensvc-$OPENHA_VERSION-$OPENHA_RELEASE.$OPENHA_ARCH
+CHROOT=/var/tmp/BUILDROOT/$CHROOT_BN
+
+if [ "$(/usr/xpg4/bin/id -u)" == "0" ] ; then
+	SUDO=""
+else
+	SUDO="sudo"
+fi
+
+function prepare_chroot {
+	#
+	[ "${CHROOT%%noarch}" != "$CHROOT" ] && $SUDO rm -rf $CHROOT
+	mkdir -p $CHROOT/bin || return 1
+	mkdir -p $CHROOT/doc || return 1
+	mkdir -p $CHROOT/conf || return 1
+	mkdir -p $CHROOT/log/proc || return 1
+	mkdir -p $CHROOT/services || return 1
+
+	cd $SOURCE_ROOT || return 1
+	tar cf - env.sh ezha bin doc | (cd $CHROOT ; tar xf - ) || return 1
+	echo "version = \"$OPENHA_VERSION-$OPENHA_RELEASE\"" > $CHROOT/.openha.version || return 1
+        $SUDO chown -R 0:0 $CHROOT || return 1
+	return 0
+}
+
