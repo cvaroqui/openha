@@ -32,15 +32,15 @@
 #include <arpa/inet.h>
 #include <glib.h>
 
-gint atoport(/* char *service, char *proto */);
-struct in_addr *atoaddr(/* char *address */);
-gint get_connection(/* int socket_type, u_short port, int *listener */);
-gint make_connection(/* char *service, int type, char *netaddress */);
-gint sock_read(/* int sockfd, char *buf, size_t count */);
-gint sock_write(/* int sockfd, const char *buf, size_t count */);
-gint sock_gets(/* int sockfd, char *str, size_t count */);
-gint sock_puts(/* int sockfd, const char *str */);
-void ignore_pipe(/*void*/);
+gint atoport( /* char *service, char *proto */ );
+struct in_addr *atoaddr( /* char *address */ );
+gint get_connection( /* int socket_type, u_short port, int *listener */ );
+gint make_connection( /* char *service, int type, char *netaddress */ );
+gint sock_read( /* int sockfd, char *buf, size_t count */ );
+gint sock_write( /* int sockfd, const char *buf, size_t count */ );
+gint sock_gets( /* int sockfd, char *str, size_t count */ );
+gint sock_puts( /* int sockfd, const char *str */ );
+void ignore_pipe( /*void */ );
 void write_wakeup();
 
 #define BUFFER	64

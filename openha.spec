@@ -1,6 +1,6 @@
 Summary:    EASY high-availability software.
 Name:       openha
-Version:    0.3.6.osvc1
+Version:    0.3.6.osvc2
 Release:    0
 Epoch:      3
 License:    GPL
