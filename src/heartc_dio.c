@@ -55,7 +55,7 @@ gint argc;
 gchar *argv[];
 {
 
-	gint fd, timeout, i, j, last;
+	gint fd, timeout, j;
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
@@ -160,7 +160,6 @@ gchar *argv[];
 			flag = 0;
 			was_down = TRUE;
 		}
-		i = 0;
 		r = read_dio(fd, address);
 		if (r != 0) {
 			strcpy(message, "Error: unable to read dio device");
@@ -189,7 +188,6 @@ gchar *argv[];
 			}
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
-					last = j;
 					j = MAX_SERVICES;
 				} else {
 					write_status(to_recV.service_name[j],

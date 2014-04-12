@@ -54,7 +54,7 @@ gchar *argv[];
 
 	struct sockaddr_in stLocal, stTo, stFrom;
 	struct ip_mreq stMreq;
-	gint fd, s, timeout, i, j, last, port = -1;
+	gint fd, s, timeout, i, j, port = -1;
 	socklen_t addr_size;
 	key_t key;
 	gchar *SHM_KEY;
@@ -212,7 +212,6 @@ gchar *argv[];
 		if (i > 0) {
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
-					last = j;
 					j = MAX_SERVICES;
 				} else {
 					write_status(to_recV.service_name[j],

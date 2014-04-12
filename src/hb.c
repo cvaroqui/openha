@@ -58,7 +58,6 @@ hb_exists(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	  gchar * Port, gchar * Timeout)
 {
 	FILE *File;
-	GList *list_hb = NULL;
 	gint i = 0, j = 0;
 	gchar *lu[6] = { 0, 0, 0, 0, 0, 0 };
 	gchar *node[16], *type[16], *interface[16], *addr[16], *port[16],
@@ -66,7 +65,8 @@ hb_exists(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	int n;
 
 	if ((File = fopen(EZ_MONITOR, "r")) != NULL) {
-		list_hb = get_liste(File, 6);
+		printf("hb_exists: unable to open $EZ_MONITOR.");
+		return FALSE;
 	}
 	if (lockf(fileno(File), F_TLOCK, 0) == 0) {
 		while (fscanf
@@ -132,16 +132,13 @@ hb_add(gchar * Node, gchar * Type, gchar * Interface,
        gchar * Addr, gchar * Port, gchar * Timeout)
 {
 	FILE *File;
-	GList *list_hb = NULL;
 	gint i = 0, j = 0;
 	gchar *lu[6];
 	gchar *node[16], *type[16], *interface[16], *addr[16], *port[16],
 	    *timeout[16];
 	int n;
 
-	if ((File = fopen(EZ_MONITOR, "a+")) != NULL) {
-		list_hb = get_liste(File, 6);
-	} else {
+	if ((File = fopen(EZ_MONITOR, "a+")) == NULL) {
 		printf("hb_add: unable to open $EZ_MONITOR.");
 		return FALSE;
 	}
@@ -232,7 +229,6 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	  gchar * Port, gchar * Timeout)
 {
 	FILE *File, *TMP;
-	GList *list_hb = NULL;
 	gchar node[16], type[16], interface[16], addr[16], port[16],
 	    timeout[16];
 	gchar *tmp;
@@ -246,9 +242,7 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 		return FALSE;
 	}
 
-	if ((File = fopen(EZ_MONITOR, "r")) != NULL) {
-		list_hb = get_liste(File, 6);
-	} else {
+	if ((File = fopen(EZ_MONITOR, "r")) == NULL) {
 		printf("hb_rm: unable to open $EZ_MONITOR for reading");
 		return FALSE;
 	}
@@ -470,14 +464,14 @@ gchar *argv[];
 {
 	guint c, sflag, rflag, aflag, nflag, tflag, iflag, dflag, pflag, Tflag =
 	    0;
-	gchar *avalue, *nvalue, *tvalue, *ivalue, *dvalue, *pvalue =
+	gchar *nvalue, *tvalue, *ivalue, *dvalue, *pvalue =
 	    NULL, *Tvalue;
 
 	Setenv("PROGNAME", "hb", 1);
 	init_var();
 	sflag = rflag = aflag = nflag = tflag = iflag = dflag = pflag = Tflag =
 	    0;
-	avalue = nvalue = tvalue = ivalue = dvalue = pvalue = Tvalue = NULL;
+	nvalue = tvalue = ivalue = dvalue = pvalue = Tvalue = NULL;
 	opterr = 0;
 
 	while ((c = getopt(argc, argv, "sran:t:i:d:p:T:")) != -1)

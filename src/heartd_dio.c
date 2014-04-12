@@ -54,7 +54,7 @@ int argc;
 char *argv[];
 {
 
-	gint status, i, fd, address;
+	gint i, fd, address;
 	struct utsname tmp_name;
 	gchar *message, *shm, *FILE_KEY, *device;
 	gint fd2;
@@ -120,7 +120,7 @@ char *argv[];
 		signal(SIGALRM, sighup);
 		i = 0;
 		to_send.elapsed = Elapsed();
-		status = get_node_status(to_send.nodename);
+		get_node_status(to_send.nodename);
 		i = write_dio(fd2, to_send, device, address);
 		if (i != 0) {
 			strcpy(message, "write_dio() failed");
@@ -130,7 +130,7 @@ char *argv[];
 		alarm(1);
 		pause();
 	}
-}				/* end main() */
+}
 
 gint
 write_dio(gint fd, struct sendstruct to_write, gchar * device, gint where)

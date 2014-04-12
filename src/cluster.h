@@ -313,7 +313,7 @@ GList *
 get_liste(FILE * File, guint elem)
 {
 	GList *L = NULL;
-	gint i = 0, j = 0, k = 0, l = 0, LAST, OK = 0, to_insert = 0;
+	gint i = 0, j = 0, k = 0, l = 0, LAST, to_insert = 0;
 	gchar item[MAX_ITEM];
 	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
 	gchar TAB[MAX_ITEM][MAX_ITEM];
@@ -334,10 +334,6 @@ get_liste(FILE * File, guint elem)
 				item[k] = tmp_tab[i][j];
 				k++;
 				j++;
-				if ((tmp_tab[i][j] == '\0')
-				    && (i == (LAST - 1))) {
-					OK = 1;
-				}
 			}
 			item[k] = '\0';
 			while ((tmp_tab[i][j] == ' ')
@@ -575,10 +571,6 @@ gint
 launch(gchar * command, gchar * arg[])
 {
 	gint i = 0;
-	gchar *argsIn[3];
-	argsIn[0] = arg[0];
-	argsIn[1] = arg[1];
-	argsIn[2] = (char *) 0;
 	i = Cmd(command, arg);
 	//printf("command: %s %s i: %d \n",argsIn[0],argsIn[1],i);
 	if ((i > 255) || (i < 0))

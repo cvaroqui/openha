@@ -51,9 +51,9 @@ char *argv[];
 {
 
 	struct sockaddr_in stLocal, stTo;
-	gint s, status;
+	gint s;
 	struct ip_mreq stMreq;
-	gint addr_size, iTmp, i, port = -1, fd;
+	gint addr_size, i, port = -1, fd;
 	unsigned char ttl = 6;
 	struct utsname tmp_name;
 	gchar *message, *FILE_KEY;
@@ -100,7 +100,6 @@ char *argv[];
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 
 	/* avoid EADDRINUSE error on bind() */
-	iTmp = TRUE;
 	SHM_KEY =
 	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",
 			argv[1], ".key", NULL);
@@ -177,7 +176,7 @@ char *argv[];
 	while (1) {
 		signal(SIGALRM, sighup);
 		i = 0;
-		status = get_node_status(to_send.nodename);
+		get_node_status(to_send.nodename);
 		to_send.elapsed = Elapsed();
 		to_send.up = TRUE;
 		to_send.pid = pid;

@@ -53,7 +53,7 @@ gint argc;
 gchar *argv[];
 {
 
-	gint fd, timeout, i, j, last;
+	gint fd, timeout, j;
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
@@ -160,7 +160,6 @@ gchar *argv[];
 			was_down = TRUE;
 		}
 		fseek(File, 0L, SEEK_SET);
-		i = 0;
 		r = read_raw(File, address);
 		if (r != 0) {
 			sleep(timeout);
@@ -187,7 +186,6 @@ gchar *argv[];
 			}
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
-					last = j;
 					j = MAX_SERVICES;
 				} else {
 					write_status(to_recV.service_name[j],

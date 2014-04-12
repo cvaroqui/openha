@@ -51,7 +51,7 @@ int argc;
 char *argv[];
 {
 
-	gint status, i, fd, address;
+	gint i, fd, address;
 	struct utsname tmp_name;
 	gchar *message, *shm, *FILE_KEY, *raw_device;
 	FILE *File;
@@ -117,7 +117,7 @@ char *argv[];
 		signal(SIGALRM, sighup);
 		i = 0;
 		to_send.elapsed = Elapsed();
-		status = get_node_status(to_send.nodename);
+		get_node_status(to_send.nodename);
 		i = write_raw(File, to_send, raw_device, address);
 		if (i < 0) {
 			strcpy(message, "write_raw() failed");

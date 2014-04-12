@@ -52,7 +52,7 @@ int argc;
 char *argv[];
 {
 
-	gint list_size, state, ostate, pstate, sstate;
+	gint state, ostate, pstate, sstate;
 	gchar *service, *primary, *secondary, *action;
 	gpointer pointer;
 	gchar *name;
@@ -79,7 +79,6 @@ char *argv[];
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
 		HT_SERV = NULL;
 	} else {
-		list_size = g_list_length(list_services) / LIST_NB_ITEM;
 		HT_SERV = get_hash(list_services);
 	}
 
