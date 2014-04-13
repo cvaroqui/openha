@@ -1,5 +1,7 @@
 /*
-* Copyright (C) 1999,2000,2001,2002,2003,2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 1999-2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 2014 Christophe Varoqui <christophe.varoqui@opensvc.com>
+* Copyright (C) 2014 Arnaud Veron <arnaud.veron@opensvc.com>
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -61,6 +63,9 @@ char *argv[];
 	pid_t pid;
 	key_t key;
 	gchar *shm, *SHM_KEY;
+	gchar debugmsg[512];
+
+	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
 
 	message = g_malloc0(160);
 
@@ -175,6 +180,9 @@ char *argv[];
 
 	while (1) {
 		signal(SIGALRM, sighup);
+		signal(SIGUSR1,signal_usr1_callback_handler);
+		signal(SIGUSR2,signal_usr2_callback_handler);
+
 		i = 0;
 		get_node_status(to_send.nodename);
 		to_send.elapsed = Elapsed();
@@ -189,6 +197,19 @@ char *argv[];
 		if (i < 0) {
 			strcpy(message, "sento() failed");
 			halog(LOG_ERR, "heartd", message);
+		} else {
+			snprintf(debugmsg,sizeof(debugmsg),
+				 "sendto() OK : %d bytes From %s:%d",
+				 sizeof(to_send),
+				 inet_ntoa(stLocal.sin_addr),
+				 ntohs(stLocal.sin_port));
+			debuglog(IDENT, "main", debugmsg);
+			snprintf(debugmsg,
+				 sizeof(debugmsg),
+				 "sendto() OK : Dest %s:%d",
+				 inet_ntoa(stTo.sin_addr),
+				 ntohs(stTo.sin_port));
+			debuglog(IDENT, "main", debugmsg);
 		}
 
 		alarm(1);

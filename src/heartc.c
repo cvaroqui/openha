@@ -1,5 +1,7 @@
 /*
-* Copyright (C) 1999,2000,2001,2002,2003,2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 1999-2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 2014 Christophe Varoqui <christophe.varoqui@opensvc.com>
+* Copyright (C) 2014 Arnaud Veron <arnaud.veron@opensvc.com>
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -38,6 +40,7 @@
 
 void sighup();
 void sigterm();
+
 gchar *S, *shm;
 gint flag = 0, shmid;
 gchar ADDR[15];
@@ -52,7 +55,8 @@ gint argc;
 gchar *argv[];
 {
 
-	struct sockaddr_in stLocal, stTo, stFrom;
+	struct sockaddr_in stLocal, stFrom;
+	//struct sockaddr_in stTo;
 	struct ip_mreq stMreq;
 	gint fd, s, timeout, i, j, port = -1;
 	socklen_t addr_size;
@@ -60,11 +64,13 @@ gchar *argv[];
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
 	gchar *message;
+	gchar debugmsg[512];
 	gint iTmp;
 
 	message = g_malloc0(80);
-//      SHM_KEY=malloc(256);
 	signal(SIGTERM, sigterm);
+	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
+
 	daemonize("heartc");
 	Setenv("PROGNAME", "heartc", 1);
 
@@ -159,10 +165,10 @@ gchar *argv[];
 		perror("add_member");
 	}
 	/* assign our destination address */
-	stTo.sin_family = AF_INET;
-	stTo.sin_addr.s_addr = inet_addr(argv[2]);
-	stTo.sin_port = htons(port);
-	stTo.sin_port = port;
+	//stTo.sin_family = AF_INET;
+	//stTo.sin_addr.s_addr = inet_addr(argv[2]);
+	//stTo.sin_port = htons(port);
+	//stTo.sin_port = port;
 	addr_size = sizeof (struct sockaddr_in);
 
 	/* assign interface */
@@ -194,7 +200,10 @@ gchar *argv[];
 	memcpy(shm, &to_recV, sizeof (to_recV));
 
 	while (TRUE) {
-		signal(SIGALRM, sighup);
+		signal(SIGUSR1,signal_usr1_callback_handler);
+		signal(SIGUSR2,signal_usr2_callback_handler);
+		signal(SIGALRM,sighup);
+
 		if (flag == 1) {
 			alarm(0);
 			flag = 0;
@@ -210,10 +219,24 @@ gchar *argv[];
 			continue;
 		}
 		if (i > 0) {
+			snprintf(debugmsg,sizeof(debugmsg),
+				 "recvfrom() OK : %lu bytes From %s:%d",
+				 sizeof(struct sendstruct),
+				 inet_ntoa(stFrom.sin_addr),
+				 ntohs(stFrom.sin_port));
+			debuglog(IDENT, "main", debugmsg);
+
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
 					j = MAX_SERVICES;
 				} else {
+					snprintf(debugmsg,sizeof(debugmsg),
+						 "svc #%d name=[%s] state=[%c] node=[%s] ela=[%u]",
+						 j,
+						 to_recV.service_name[j],
+						 to_recV.service_state[j],
+						 to_recV.nodename,to_recV.elapsed);
+					debuglog(IDENT, "main", debugmsg);
 					write_status(to_recV.service_name[j],
 						     to_recV.service_state[j],
 						     to_recV.nodename);

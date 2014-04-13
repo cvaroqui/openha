@@ -1,5 +1,7 @@
 /*
-* Copyright (C) 1999,2000,2001,2002,2003,2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 1999-2004 Samuel Godbillot <sam028@users.sourceforge.net>
+* Copyright (C) 2014 Christophe Varoqui <christophe.varoqui@opensvc.com>
+* Copyright (C) 2014 Arnaud Veron <arnaud.veron@opensvc.com>
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -122,6 +124,11 @@ char *argv[];
 	while (TRUE) {
 		signal(SIGALRM, sighup);
 		signal(SIGTERM, sigterm);
+		signal(SIGUSR1, signal_usr1_callback_handler);
+		signal(SIGUSR2, signal_usr2_callback_handler);
+
+		debuglog("nmond", "main", "looping");
+
 		list_services = get_services_list();
 		for (i = 0; i < (g_list_length(list_services) / LIST_NB_ITEM);
 		     i++) {
