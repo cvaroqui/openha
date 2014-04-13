@@ -57,6 +57,9 @@ gchar *VAL[MAX_STATE] = {
 };
 
 const gint LIST_NB_ITEM = 5;
+gint DEBUGGING=0;
+gchar IDENT[128];
+
 GList *get_services_list(void);
 gint get_status(GList *, gchar *, gchar *);
 gint launch(gchar *, gchar **);
@@ -81,11 +84,37 @@ gint service_mod(gchar *);
 gint rm_file(gchar *);
 gint set_mcast_if(gint, gchar *);
 void halog(gint, gchar *, gchar *);
+void debuglog(gchar *, gchar *, gchar *);
+void signal_usr1_callback_handler();
+void signal_usr2_callback_handler();
+
+void debuglog(gchar *prg_src, gchar *prg_func, gchar *message) {
+	if (DEBUGGING != 1) {
+		return;
+        }
+
+	gchar *LOGFILE;
+	FILE *fd;
+	time_t clock = time(NULL);
+	char buf[1024];
+
+	LOGFILE=g_strconcat(getenv("EZ_LOG"),"/cluster.log",NULL);
+	if ((fd = fopen(LOGFILE, "a+")) ==NULL){
+		printf("Error opening logging file <%s>\n",LOGFILE);
+		exit(-1);
+	}
+	strftime(buf, sizeof(buf), "%c", localtime(&clock));
+	fprintf(fd,"[%s][%s][%s] %s\n",buf,prg_src,prg_func,message);
+
+	fclose(fd);
+}
+
 void
 halog(gint type, gchar * prg_src, gchar * message)
 {
 	gchar *msg;
 
+	debuglog(prg_src, "halog", message);
 	msg = g_strconcat("EZ-HA: ", prg_src, "\n", NULL);
 	openlog(msg, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(type, "%s", message);
@@ -93,6 +122,16 @@ halog(gint type, gchar * prg_src, gchar * message)
 	printf("%s", message);
 #endif
 	g_free(msg);
+}
+
+void signal_usr1_callback_handler()
+{
+	DEBUGGING=1;
+}
+
+void signal_usr2_callback_handler()
+{
+	DEBUGGING=0;
 }
 
 glong
