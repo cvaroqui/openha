@@ -56,9 +56,10 @@ gchar *VAL[MAX_STATE] = {
 	"FORCE-STOP"
 };
 
-const gint LIST_NB_ITEM = 5;
+const gint LIST_NB_ITEM = 5;  /* nb colonne dans fichier services */
 gint DEBUGGING=0;
 gchar IDENT[128];
+gchar debugmsg[512];
 
 GList *get_services_list(void);
 gint get_status(GList *, gchar *, gchar *);
@@ -357,8 +358,18 @@ get_liste(FILE * File, guint elem)
 	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
 	gchar TAB[MAX_ITEM][MAX_ITEM];
 
+    for(i=0; i<MAX_ITEM; i++)
+        for(j=0; j<MAX_ITEM; j++)
+            tmp_tab[i][j] = '\0';	
+
+    i = 0; j = 0;
 	// Count the number of lines
-	while (fgets(tmp_tab[i], 255, File) != NULL) {
+	while (fgets(tmp_tab[i], MAX_ITEM-1, File) != NULL) {
+		size_t ln = strlen(tmp_tab[i]) - 1;
+        if (tmp_tab[i][ln] == '\n')
+            tmp_tab[i][ln] = '\0';
+		snprintf(debugmsg,sizeof(debugmsg),"loading service : [%s]",tmp_tab[i]);
+		debuglog(IDENT,"get_liste",debugmsg);
 		i++;
 	}
 	LAST = i;
