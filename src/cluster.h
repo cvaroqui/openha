@@ -352,10 +352,10 @@ GList *
 get_liste(FILE * File, guint elem)
 {
 	GList *L = NULL;
-	gint i = 0, j = 0, k = 0, l = 0, LAST, to_insert = 0;
+	gint i = 0, j = 0, k = 0, l = 0, LAST;
+	gchar *s = NULL;
 	gchar item[MAX_ITEM];
 	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
-	gchar TAB[MAX_ITEM][MAX_ITEM];
 
 	// Count the number of lines
 	while (fgets(tmp_tab[i], 255, File) != NULL) {
@@ -380,9 +380,8 @@ get_liste(FILE * File, guint elem)
 				j++;
 			}
 			k = 0;
-			strcpy(TAB[to_insert], item);
-			L = g_list_append(L, TAB[to_insert]);
-			to_insert++;
+			s = g_strdup(item);
+			L = g_list_append(L, s);
 			item[0] = '\0';
 		}
 	}
