@@ -67,6 +67,7 @@ char *argv[];
 		exit_usage(argv[0]);
 	}
 
+
 	init_var();
 	name = malloc(MAX_NODENAME_SIZE);
 	get_my_name(name);
@@ -74,6 +75,8 @@ char *argv[];
 	Setenv("PROGNAME", "service", 1);
 	progname = getenv("PROGNAME");
 	Setenv("VERBOSE", "1", 1);
+	
+
 
 	if (list_services == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
@@ -202,7 +205,7 @@ exit_usage(gchar * arg)
 		"Usage: %s [-s] [-i Service] [-A Service Action] [-r Service] [-a service script primary secondary check_up_script]\n",
 		arg);
 	fprintf(stderr,
-		"Action in start|stop|freeze-stop|freeze-start|unfreeze\n");
+		"Action in start|stop|freeze-stop|freeze-start|unfreeze|force-stop|force-start\n");
 	fprintf(stderr, "  try to change state of service on this node\n");
 	fprintf(stderr, "    start: start service\n");
 	fprintf(stderr,
@@ -214,5 +217,7 @@ exit_usage(gchar * arg)
 	fprintf(stderr, "    freeze-start: not implemented...\n");
 	fprintf(stderr,
 		"    unfreeze: change from [start|stop]-freeze to started|stopped...\n");
+	fprintf(stderr,
+		"    force-start|force-stop: force state change to [start|stop]\n");
 	exit(-1);
 }
