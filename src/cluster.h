@@ -63,6 +63,7 @@ gchar debugmsg[512];
 
 time_t GlobalListTimeStamp;
 GList *GlobalList = NULL;
+gchar nodename[MAX_NODENAME_SIZE];
 
 GList *get_services_list(void);
 gint get_status(GList *, gchar *, gchar *);
@@ -236,12 +237,12 @@ file_lock(short type, short whence)
 }
 
 void
-get_my_name(gpointer name)
+get_nodename()
 {
-	debuglog(IDENT, "get_my_name", "Function start");
+	debuglog(IDENT, "get_nodename", "Function start");
 	struct utsname tmp_name;
 	uname(&tmp_name);
-	strncpy(name, tmp_name.nodename, MAX_NODENAME_SIZE);
+	strncpy(nodename, tmp_name.nodename, MAX_NODENAME_SIZE);
 }
 
 gboolean
@@ -250,10 +251,8 @@ is_primary(gchar * node, gchar * service)
 	debuglog(IDENT, "is_primary", "Function start");
 	GList *List_services = NULL;
 	gint i = 0, j, list_size;
-	gchar *name, *service_to_cmp, *node_to_cmp;
+	gchar *service_to_cmp, *node_to_cmp;
 
-	name = g_malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	List_services = get_services_list();
 	list_size = g_list_length(List_services);
 	j = list_size / LIST_NB_ITEM;
@@ -264,13 +263,11 @@ is_primary(gchar * node, gchar * service)
 		    g_list_nth_data(List_services, (i * LIST_NB_ITEM));
 		if ((strncmp(service_to_cmp, service, MAX_SERVICES_SIZE) == 0)
 		    && (strncmp(node_to_cmp, node, MAX_NODENAME_SIZE) == 0)) {
-			g_free(name);
 			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
 			return TRUE;
 		}
 	}
-	g_free(name);
 	g_list_foreach(List_services, delete_data, NULL);
 	g_list_free(List_services);
 	return FALSE;
@@ -282,10 +279,8 @@ is_secondary(gchar * node, gchar * service)
 	debuglog(IDENT, "is_secondary", "Function start");
 	GList *List_services = NULL;
 	gint i = 0, j, list_size;
-	gchar *name, *service_to_cmp, *node_to_cmp;
+	gchar *service_to_cmp, *node_to_cmp;
 
-	name = g_malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	List_services = get_services_list();
 	list_size = g_list_length(List_services);
 	j = list_size / LIST_NB_ITEM;
@@ -296,13 +291,11 @@ is_secondary(gchar * node, gchar * service)
 		    g_list_nth_data(List_services, (i * LIST_NB_ITEM));
 		if ((strcmp(service_to_cmp, service) == 0)
 		    && (strcmp(node_to_cmp, node) == 0)) {
-			g_free(name);
 			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
 			return TRUE;
 		}
 	}
-	g_free(name);
 	g_list_foreach(List_services, delete_data, NULL);
 	g_list_free(List_services);
 	return FALSE;
@@ -313,11 +306,9 @@ get_our_secondary(gchar * node, gchar * service, GList * liste)
 {
 	debuglog(IDENT, "get_our_secondary", "Function start");
 	gint i = 0, j, list_size;
-	gchar *name, *service_to_cmp, *node_to_cmp;
+	gchar *service_to_cmp, *node_to_cmp;
 	gint LIST_NB_ITEM = 5;
 
-	name = g_malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	list_size = g_list_length(liste);
 	j = list_size / LIST_NB_ITEM;
 	for (i = 0; i < j; i++) {
@@ -694,11 +685,9 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	gboolean PRIMARY, SECONDARY;
 	GList *List_services = NULL;
 	gint old_state, pstate, sstate;
-	gchar *primary, *secondary, *name;
+	gchar *primary, *secondary;
 	gchar *m;
 
-	name = g_malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	if (((state == 0) || (state == 8)) &&
 	    ((ostate == 0) || (ostate == 6) || (ostate == 8))) {
 
@@ -714,7 +703,6 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 				NULL);
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
-		g_free(name);
 		return -1;
 	}
 
@@ -727,7 +715,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	arg0[1] = "start";
 	arg0[2] = (gchar *) 0;
 	// Put state service in START_READY
-	write_status(service, '7', name);
+	write_status(service, '7', nodename);
 	sleep(5);
 	// Si l'autre a decider de START en meme temps:
 	List_services = get_services_list();
@@ -736,8 +724,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	secondary = ((struct srvstruct *) (pointer))->secondary;
 	pstate = get_status(List_services, primary, service);
 	sstate = get_status(List_services, secondary, service);
-	PRIMARY = is_primary(name, service);
-	SECONDARY = is_secondary(name, service);
+	PRIMARY = is_primary(nodename, service);
+	SECONDARY = is_secondary(nodename, service);
 	if (PRIMARY) {
 		state = pstate;
 		ostate = sstate;
@@ -751,25 +739,24 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
 		if (SECONDARY) {
-			write_status(service, '0', name);
+			write_status(service, '0', nodename);
 			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
-			g_free(name);
+			g_free(nodename);
 			return 0;
 		}
 	}
 	// OK, we are really ready to start. Put state service in STARTING
-	write_status(service, '3', name);
+	write_status(service, '3', nodename);
 	if (launch(arg0[0], arg0) != 0) {
 		m = g_strconcat("Error: failed to start ", service,
 				". Check script failed. State is now start-failed.\n",
 				NULL);
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
-		write_status(service, '4', name);
+		write_status(service, '4', nodename);
 		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
-		g_free(name);
 		return -1;
 	} else {
 		m = g_strconcat("Check script for service ", service, " OK.\n",
@@ -782,20 +769,18 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 				NULL);
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
-		write_status(service, '2', name);
+		write_status(service, '2', nodename);
 		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
-		g_free(name);
 		return 0;
 	} else {
 		m = g_strconcat("Error: failed to start ", service,
 				". State is now start-failed.\n", NULL);
 		halog(LOG_WARNING, progname, m);
 		g_free(m);
-		write_status(service, '4', name);
+		write_status(service, '4', nodename);
 		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
-		g_free(name);
 		return -1;
 	}
 }
@@ -1233,10 +1218,7 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	debuglog(IDENT, "change_status_stop", "Function start");
 	gpointer pointer;
 	gchar *arg[3];
-	gchar *name, *m = NULL;
-
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
+	gchar *m = NULL;
 
 	if ((state == 2) || (state == 8)) {
 		m = g_strconcat("Ready to stop, partner node is ", VAL[ostate],
@@ -1276,14 +1258,14 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	arg[0] = ((struct srvstruct *) (pointer))->script;
 	arg[1] = "stop";
 	arg[2] = (gchar *) 0;
-	write_status(service, '1', name);
+	write_status(service, '1', nodename);
 	if (launch(arg[0], arg) == 0) {
 		m = g_strconcat("Service ", service, " successfully stopped\n",
 				NULL);
 #ifdef VERBOSE
 		printf("Service %s successfully stopped\n", service);
 #endif
-		write_status(service, '0', name);
+		write_status(service, '0', nodename);
 		g_free(m);
 		return 0;
 	} else {
@@ -1291,7 +1273,7 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 #ifdef VERBOSE
 		printf("Error: failed to stop %s.\n", service);
 #endif
-		write_status(service, '5', name);
+		write_status(service, '5', nodename);
 		return -1;
 	}
 }
@@ -1301,10 +1283,8 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 			 GHashTable * HT)
 {
 	debuglog(IDENT, "change_status_force_stop", "Function start");
-	gchar *name, *message = NULL;
+	gchar *message = NULL;
 
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	progname = getenv("PROGNAME");
 
 #ifdef VERBOSE
@@ -1317,7 +1297,7 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 	halog(LOG_INFO, progname, message);
 	g_free(message);
 
-	write_status(service, '0', name);
+	write_status(service, '0', nodename);
 #ifdef VERBOSE
 	printf("Service %s successfully stopped\n", service);
 #endif
@@ -1333,10 +1313,7 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
 	debuglog(IDENT, "change_status_force_start", "Function start");
-	gchar *name, *message = NULL;
-
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
+	gchar *message = NULL;
 
 #ifdef VERBOSE
 	printf("Ready to force start, partner node is %s , we are %s\n",
@@ -1354,7 +1331,7 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 	    g_strconcat("Service ", service, " forced to started\n", NULL);
 	halog(LOG_INFO, progname, message);
 
-	write_status(service, '2', name);
+	write_status(service, '2', nodename);
 	return 0;
 }
 
@@ -1363,10 +1340,8 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
 	debuglog(IDENT, "change_status_freeze_stop", "Function start");
-	gchar *name, *message = NULL;
+	gchar *message = NULL;
 
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 	if ((state == 0) || (state == 2) || (state == 4) || (state == 5)) {
 		message =
 		    g_strconcat("Ready to FREEZE, we are ", VAL[state], ".\n",
@@ -1378,7 +1353,7 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 		printf("Ready to FREEZE, we are %s\n", VAL[state]);
 #endif
 		if ((state == 0) || (state == 4) || (state == 5)) {
-			write_status(service, '6', name);
+			write_status(service, '6', nodename);
 			message =
 			    g_strconcat("Service ", service, " FROZEN-STOP.\n",
 					NULL);
@@ -1391,7 +1366,7 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 		}
 		if (state == 2) {
 			if (change_status_stop(state, ostate, service, HT) == 0) {
-				write_status(service, '6', name);
+				write_status(service, '6', nodename);
 #ifdef VERBOSE
 				printf("Service %s FROZEN-STOP\n", service);
 #endif
@@ -1435,22 +1410,18 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 			   GHashTable * HT)
 {
 	debuglog(IDENT, "change_status_freeze_start", "Function start");
-	gchar *name;
-
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
 
 	if ((state == 0) || (state == 2)) {
 		printf("Ready to FREEZE, we are %s\n", VAL[state]);
 		if (state == 2) {
-			write_status(service, '7', name);
+			write_status(service, '7', nodename);
 			printf("Service %s FROZEN\n", service);
 			return 0;
 		}
 		if (state == 0) {
 			if (change_status_start(state, ostate, service, HT) ==
 			    0) {
-				write_status(service, '7', name);
+				write_status(service, '7', nodename);
 				printf("Service %s FROZEN-START\n", service);
 				return 0;
 			} else {
@@ -1471,9 +1442,8 @@ gint
 change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 {
 	debuglog(IDENT, "change_status_unfreeze", "Function start");
-	gchar *name, *message = NULL;
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
+	gchar *message = NULL;
+
 	if ((state == 6) || (state == 7)) {
 #ifdef VERBOSE
 		printf("Ready to UNFREEZE, we are %s\n", VAL[state]);
@@ -1484,9 +1454,9 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 		halog(LOG_INFO, progname, message);
 		g_free(message);
 		if (state == 6)
-			write_status(service, '0', name);
+			write_status(service, '0', nodename);
 		if (state == 7)
-			write_status(service, '2', name);
+			write_status(service, '2', nodename);
 #ifdef VERBOSE
 		printf("Service %s UNFROZEN\n", service);
 #endif

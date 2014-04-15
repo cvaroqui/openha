@@ -109,7 +109,7 @@ char *argv[];
 	for (i = 0; i < list_size; i++) {
 		// if it's NOT matching our nodename
 		if (strcmp
-		    (name,
+		    (nodename,
 		     g_list_nth_data(list_heart, (i * LIST_NB_ITEM))) != 0) {
 			get_seg(i, &tab_shm[nb_seg]);
 			nb_seg++;
@@ -230,10 +230,10 @@ char *argv[];
 				 "Processing service [%s] - Pri[%d@%s] - Sec[%d@%s]",
 				 service, pstate, primary, sstate, secondary);
 			debuglog(IDENT, "main", debugmsg);
-			if (is_primary(name, service)) {
+			if (is_primary(nodename, service)) {
 				snprintf(debugmsg, sizeof (debugmsg),
 					 "is_primary is true for service [%s] on node [%s]",
-					 service, name);
+					 service, nodename);
 				debuglog(IDENT, "main", debugmsg);
 				if (((sstate == 0)
 				     || (sstate == 6)
@@ -255,10 +255,10 @@ char *argv[];
 							    service, HT_SERV);
 				}
 			}
-			if (is_secondary(name, service)) {
+			if (is_secondary(nodename, service)) {
 				snprintf(debugmsg, sizeof (debugmsg),
 					 "is_secondary is true for service [%s] on node [%s]",
-					 service, name);
+					 service, nodename);
 				debuglog(IDENT, "main", debugmsg);
 				if (((pstate == 0)
 				     || (pstate == 6)
@@ -386,8 +386,7 @@ init()
 	gint fd;
 
 	message = g_malloc0(80);
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
+	get_nodename();
 
 	if (getenv("EZ_LOG") == NULL) {
 		strcpy(message,

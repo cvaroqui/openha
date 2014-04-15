@@ -55,7 +55,6 @@ char *argv[];
 	gint state, ostate, pstate, sstate;
 	gchar *service, *primary, *secondary, *action;
 	gpointer pointer;
-	gchar *name;
 
 	//FILE *EZ_SERVICES;
 	gint i, list_size, svccount;
@@ -75,8 +74,7 @@ char *argv[];
 	}
 
 	init_var();
-	name = malloc(MAX_NODENAME_SIZE);
-	get_my_name(name);
+	get_nodename();
 	list_services = get_services_list();
 	list_size = g_list_length(list_services);
 	svccount = list_size / LIST_NB_ITEM;
@@ -100,7 +98,7 @@ char *argv[];
 	//INFO
 	if ((strcmp(argv[1], "-i") == 0) && (argc == 3)) {
 		service = argv[2];
-		service_info(list_services, HT_SERV, name, service);
+		service_info(list_services, HT_SERV, nodename, service);
 		return 0;
 	}
 	//SERVICE ADD RM
@@ -144,21 +142,17 @@ char *argv[];
 		}
 		g_strup(action);
 		if ((i = find_action(ACTION, action)) != -1) {
-			PRIMARY = is_primary(name, service);
-			SECONDARY = is_secondary(name, service);
+			PRIMARY = is_primary(nodename, service);
+			SECONDARY = is_secondary(nodename, service);
 			if (PRIMARY) {
 				state = pstate;
 				ostate = sstate;
+			} else if (SECONDARY) {
+				state = sstate;
+				ostate = pstate;
 			} else {
-				if (SECONDARY) {
-					state = sstate;
-					ostate = pstate;
-				} else {
-					printf
-					    ("We are not Primary or secondary for service %s !\n",
-					     service);
-					return -1;
-				}
+				printf("We are not Primary or secondary for service %s !\n", service);
+				return -1;
 			}
 
 			switch (i) {
