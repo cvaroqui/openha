@@ -110,6 +110,23 @@ void debuglog(gchar *prg_src, gchar *prg_func, gchar *message) {
 }
 
 void
+debug_list(GList * liste)
+{
+	gint i = 0;
+
+	for (i = 0; i <= (g_list_length(liste) / LIST_NB_ITEM)-1; i++) {
+		snprintf(debugmsg,sizeof(debugmsg),"i=%d SVC[%s] SCRIPT[%s] PRI[%s] SEC[%s] CHK[%s]",
+			i,
+			(char*)g_list_nth_data(liste, i * LIST_NB_ITEM),
+			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 1),
+			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 2),
+			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 3),
+			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 4));
+		debuglog(IDENT,"debug_list",debugmsg);
+	}
+}
+
+void
 halog(gint type, gchar * prg_src, gchar * message)
 {
 	gchar *msg;
