@@ -447,7 +447,7 @@ GList *
 get_services_list()
 {
 	FILE *EZ_SERVICES;
-	GList *L;
+	GList *L = NULL;
 
 	if (getenv("EZ_SERVICES") == NULL) {
 		//printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
