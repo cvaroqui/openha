@@ -265,6 +265,7 @@ get_node_status(gchar * nodename)
 		}
 		g_free(service);
 	}
+	g_list_foreach(list_services, delete_data, NULL);
 	g_list_free(list_services);
 	list_services = list_state = NULL;
 	return list_size;

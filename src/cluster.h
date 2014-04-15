@@ -88,6 +88,13 @@ void debuglog(gchar *, gchar *, gchar *);
 void signal_usr1_callback_handler();
 void signal_usr2_callback_handler();
 
+
+void
+delete_data(gpointer data ,gpointer user_data) {
+    g_free(data);
+    data = NULL;
+}
+
 void debuglog(gchar *prg_src, gchar *prg_func, gchar *message) {
 	if (DEBUGGING != 1) {
 		return;
@@ -242,11 +249,13 @@ is_primary(gchar * node, gchar * service)
 		if ((strncmp(service_to_cmp, service, MAX_SERVICES_SIZE) == 0)
 		    && (strncmp(node_to_cmp, node, MAX_NODENAME_SIZE) == 0)) {
 			g_free(name);
+			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
 			return TRUE;
 		}
 	}
 	g_free(name);
+	g_list_foreach(List_services, delete_data, NULL);
 	g_list_free(List_services);
 	return FALSE;
 }
@@ -271,11 +280,13 @@ is_secondary(gchar * node, gchar * service)
 		if ((strcmp(service_to_cmp, service) == 0)
 		    && (strcmp(node_to_cmp, node) == 0)) {
 			g_free(name);
+			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
 			return TRUE;
 		}
 	}
 	g_free(name);
+	g_list_foreach(List_services, delete_data, NULL);
 	g_list_free(List_services);
 	return FALSE;
 }
@@ -364,6 +375,7 @@ write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 }
 
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
+
 
 GList *
 get_liste(FILE * File, guint elem)
@@ -593,6 +605,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		g_free(m);
 		if (SECONDARY) {
 			write_status(service, '0', name);
+			g_list_foreach(List_services, delete_data, NULL);
 			g_list_free(List_services);
 			g_free(name);
 			return 0;
@@ -607,6 +620,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
 		write_status(service, '4', name);
+		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
 		g_free(name);
 		return -1;
@@ -622,6 +636,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
 		write_status(service, '2', name);
+		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
 		g_free(name);
 		return 0;
@@ -631,6 +646,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_WARNING, progname, m);
 		g_free(m);
 		write_status(service, '4', name);
+		g_list_foreach(List_services, delete_data, NULL);
 		g_list_free(List_services);
 		g_free(name);
 		return -1;

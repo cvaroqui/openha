@@ -255,6 +255,7 @@ char *argv[];
 				//      printf("Nothing to do for service %s\n",service);
 			}
 		}
+		g_list_foreach(list_services, delete_data, NULL);
 		g_list_free(list_services);
 		list_services = NULL;
 		g_hash_table_foreach_remove(HT_SERV, rm_func_serv, HT_SERV);
