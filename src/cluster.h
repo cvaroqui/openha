@@ -67,7 +67,6 @@ gint launch(gchar *, gchar **);
 
 void print_func(gpointer, gpointer, gpointer);
 gboolean rm_func_serv(gpointer, gpointer, gpointer);
-GList *get_services_list();
 void service_info(GList *, GHashTable *, gchar *, gchar *);
 void service_status(GList *, GHashTable *);
 gint change_status_stop(gint, gint, gchar *, GHashTable *);
