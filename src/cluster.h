@@ -56,10 +56,13 @@ gchar *VAL[MAX_STATE] = {
 	"FORCE-STOP"
 };
 
-const gint LIST_NB_ITEM = 5;  /* nb colonne dans fichier services */
+const gint LIST_NB_ITEM = 5;  /* nb colonne dans fichier services / nb item dans liste */
 gint DEBUGGING=0;
 gchar IDENT[128];
 gchar debugmsg[512];
+
+time_t GlobalListTimeStamp;
+GList *GlobalList = NULL;
 
 GList *get_services_list(void);
 gint get_status(GList *, gchar *, gchar *);
@@ -387,6 +390,78 @@ write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
 
+GList *
+list_copy_deep(GList *src)
+{
+	GList *dst;
+
+	dst = NULL;
+
+	for (; src != NULL; src = g_list_next(src)) {
+		dst = g_list_append(dst, g_strdup(src->data));
+	}
+
+	return dst;
+}
+
+GList *
+get_liste_generic(FILE * File, guint elem)
+{
+        /* appel direct depuis nmond.c func init() */
+        debuglog(IDENT,"get_liste_generic","Function start");
+        GList *L = NULL;
+        gint i = 0, j = 0, k = 0, l = 0, LAST;
+        gchar *s = NULL;
+        gchar item[MAX_ITEM];
+        gchar tmp_tab[MAX_ITEM][MAX_ITEM];
+
+    for(i=0; i<MAX_ITEM; i++)
+        for(j=0; j<MAX_ITEM; j++)
+            tmp_tab[i][j] = '\0';
+
+    i = 0; j = 0;
+        // Count the number of lines
+        while (fgets(tmp_tab[i], MAX_ITEM-1, File) != NULL) {
+                size_t ln = strlen(tmp_tab[i]) - 1;
+        if (tmp_tab[i][ln] == '\n')
+            tmp_tab[i][ln] = '\0';
+                /*
+                snprintf(debugmsg,sizeof(debugmsg),"loading line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
+                debuglog(IDENT,"get_liste_generic",debugmsg);
+                */
+                i++;
+        }
+        LAST = i;
+        // For each line
+        for (i = 0; i < LAST; i++) {
+                j = 0;
+                // for each element
+                for (l = 0; l < elem; l++) {
+                        while ((tmp_tab[i][j] != ' ') && (tmp_tab[i][j] != '\t')
+                               && (tmp_tab[i][j] != '\n')
+                               && (tmp_tab[i][j] != '\0')) {
+                                item[k] = tmp_tab[i][j];
+                                k++;
+                                j++;
+                        }
+                        item[k] = '\0';
+                        while ((tmp_tab[i][j] == ' ')
+                               || (tmp_tab[i][j] == '\t')) {
+                                j++;
+                        }
+            /*
+                        snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
+                        debuglog(IDENT,"get_liste_generic",debugmsg);
+            */
+                        k = 0;
+                        s = g_strdup(item);
+                        L = g_list_append(L, s);
+                        item[0] = '\0';
+                }
+        }
+        fseek(File, 0L, SEEK_SET);
+        return L;
+}
 
 GList *
 get_liste(FILE * File, guint elem)
@@ -408,7 +483,7 @@ get_liste(FILE * File, guint elem)
 		size_t ln = strlen(tmp_tab[i]) - 1;
         if (tmp_tab[i][ln] == '\n')
             tmp_tab[i][ln] = '\0';
-		/* 
+		/*
 		snprintf(debugmsg,sizeof(debugmsg),"loading service line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
 		debuglog(IDENT,"get_liste",debugmsg);
 		*/
@@ -432,7 +507,7 @@ get_liste(FILE * File, guint elem)
 			       || (tmp_tab[i][j] == '\t')) {
 				j++;
 			}
-            /* 
+            /*
                         snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
                         debuglog(IDENT,"get_liste",debugmsg);
             */
@@ -443,6 +518,11 @@ get_liste(FILE * File, guint elem)
 		}
 	}
 	fseek(File, 0L, SEEK_SET);
+	g_list_foreach(GlobalList, delete_data, NULL);
+	g_list_free(GlobalList);
+	GlobalList = NULL;
+	GlobalList = list_copy_deep(L);
+	time(&GlobalListTimeStamp);
 	return L;
 }
 
@@ -472,28 +552,61 @@ get_hash(GList * liste)
 	return HT;
 }
 
+gboolean
+need_refresh(gchar * path2file, time_t refstamp)
+{
+	debuglog(IDENT,"need_refresh","Function start");
+
+    struct stat *buf;
+    time_t filestamp;
+    double diff_t;
+
+    buf = malloc(sizeof(struct stat));
+
+    stat(path2file, buf);
+    filestamp = buf->st_mtime;
+
+    diff_t = difftime(filestamp, refstamp);
+    free(buf);
+
+    if (diff_t > 0) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
+
 GList *
 get_services_list()
 {
 	debuglog(IDENT,"get_services_list","Function start");
 
-	FILE *EZ_SERVICES;
+	FILE *EZFD_SERVICES;
 	GList *L = NULL;
 
-	if (getenv("EZ_SERVICES") == NULL) {
-		//printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		return NULL;
-	}
-	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
-		//printf("No service(s) defined (unable to open $EZ_SERVICES file)\n");
-		return NULL;
-	}
-	L = get_liste(EZ_SERVICES, LIST_NB_ITEM);
-     /*   snprintf(debugmsg,sizeof(debugmsg),"Service List Content");
+    if ((EZ_SERVICES = getenv("EZ_SERVICES")) == NULL) {
+		    //printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
+		    return NULL;
+	    }
+
+    if( GlobalList == NULL || need_refresh(EZ_SERVICES,GlobalListTimeStamp) ) {
+	    
+	    if ((EZFD_SERVICES = fopen(EZ_SERVICES, "r")) == NULL) {
+		    //printf("No service(s) defined (unable to open $EZ_SERVICES file)\n");
+		    return NULL;
+	    }
+	    L = get_liste(EZFD_SERVICES, LIST_NB_ITEM);
+        /* snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
+        debuglog(IDENT,"get_services_list",debugmsg); 
+        */       
+	    fclose(EZFD_SERVICES);
+    } else {
+    	L = list_copy_deep(GlobalList);
+        /* snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
         debuglog(IDENT,"get_services_list",debugmsg);
-        debug_list(L);
-        */
-	fclose(EZ_SERVICES);
+         */
+    }
+	/* debug_list(L); */
 	return (L);
 }
 

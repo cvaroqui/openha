@@ -80,6 +80,10 @@ char *argv[];
 	gint pid;
 	gchar *m;
 
+	if ((getenv("OPENHADEBUG")) != NULL) {
+        DEBUGGING=1;
+    }
+
 	sprintf(IDENT, "%s", argv[0]);
 	Setenv("PROGNAME", "nmond", 1);
 	progname = getenv("PROGNAME");
@@ -409,7 +413,7 @@ init()
 	strcpy(STATE[1], "UP  ");
 	buf = malloc(sizeof (struct shmid_ds));
 	SHM_KEY = g_malloc0(256);
-	list_heart = get_liste(File, LIST_NB_ITEM);
+	list_heart = get_liste_generic(File, LIST_NB_ITEM);
 	list_size = g_list_length(list_heart) / LIST_NB_ITEM;
 	fclose(File);
 	//printf("nombre de heartbeat a surveiller:%d\n",list_size);
