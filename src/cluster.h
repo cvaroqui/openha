@@ -384,7 +384,7 @@ get_liste(FILE * File, guint elem)
 		size_t ln = strlen(tmp_tab[i]) - 1;
         if (tmp_tab[i][ln] == '\n')
             tmp_tab[i][ln] = '\0';
-		snprintf(debugmsg,sizeof(debugmsg),"loading service : [%s]",tmp_tab[i]);
+		snprintf(debugmsg,sizeof(debugmsg),"loading service line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
 		debuglog(IDENT,"get_liste",debugmsg);
 		i++;
 	}
@@ -406,6 +406,8 @@ get_liste(FILE * File, guint elem)
 			       || (tmp_tab[i][j] == '\t')) {
 				j++;
 			}
+                        snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
+                        debuglog(IDENT,"get_liste",debugmsg);
 			k = 0;
 			s = g_strdup(item);
 			L = g_list_append(L, s);
@@ -456,6 +458,9 @@ get_services_list()
 		return NULL;
 	}
 	L = get_liste(EZ_SERVICES, LIST_NB_ITEM);
+        snprintf(debugmsg,sizeof(debugmsg),"Service List Content");
+        debuglog(IDENT,"get_services_list",debugmsg);
+        debug_list(L);
 	fclose(EZ_SERVICES);
 	return (L);
 }
