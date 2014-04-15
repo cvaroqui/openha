@@ -180,8 +180,8 @@ char *argv[];
 
 	while (1) {
 		signal(SIGALRM, sighup);
-		signal(SIGUSR1,signal_usr1_callback_handler);
-		signal(SIGUSR2,signal_usr2_callback_handler);
+		signal(SIGUSR1, signal_usr1_callback_handler);
+		signal(SIGUSR2, signal_usr2_callback_handler);
 
 		i = 0;
 		get_node_status(to_send.nodename);
@@ -198,14 +198,14 @@ char *argv[];
 			strcpy(message, "sento() failed");
 			halog(LOG_ERR, "heartd", message);
 		} else {
-			snprintf(debugmsg,sizeof(debugmsg),
+			snprintf(debugmsg, sizeof (debugmsg),
 				 "sendto() OK : %d bytes From %s:%d",
-				 sizeof(to_send),
+				 sizeof (to_send),
 				 inet_ntoa(stLocal.sin_addr),
 				 ntohs(stLocal.sin_port));
 			debuglog(IDENT, "main", debugmsg);
 			snprintf(debugmsg,
-				 sizeof(debugmsg),
+				 sizeof (debugmsg),
 				 "sendto() OK : Dest %s:%d",
 				 inet_ntoa(stTo.sin_addr),
 				 ntohs(stTo.sin_port));

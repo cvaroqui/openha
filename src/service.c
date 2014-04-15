@@ -67,12 +67,12 @@ char *argv[];
 		exit_usage(argv[0]);
 	}
 
-    /* filling in IDENT for debugging purposes */
-    sprintf(IDENT,"%s_%s",argv[0],argv[1]);
-	
+	/* filling in IDENT for debugging purposes */
+	sprintf(IDENT, "%s_%s", argv[0], argv[1]);
+
 	if ((getenv("OPENHADEBUG")) != NULL) {
-        DEBUGGING=1;
-    }
+		DEBUGGING = 1;
+	}
 
 	init_var();
 	name = malloc(MAX_NODENAME_SIZE);
@@ -80,12 +80,10 @@ char *argv[];
 	list_services = get_services_list();
 	list_size = g_list_length(list_services);
 	svccount = list_size / LIST_NB_ITEM;
-	
+
 	Setenv("PROGNAME", "service", 1);
 	progname = getenv("PROGNAME");
 	Setenv("VERBOSE", "1", 1);
-	
-
 
 	if (list_services == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
@@ -108,17 +106,20 @@ char *argv[];
 	//SERVICE ADD RM
 	if ((strcmp(argv[1], "-a") == 0) && (argc == 7)) {
 		if (svccount < MAX_SERVICES) {
-		    printf("Creating service %s :\n", argv[2]);
-		    if (service_add
-		        (argv[2], argv[3], argv[4], argv[5], argv[6], HT_SERV) == 0)
-			    printf("Done.\n");
-		    else
-			    printf("Failed.\n");
-		    return 0;
-	    } else {
-	    	printf("Error : Your already have created max services count (%d)\n", svccount);
-	    	exit(-1);
-	    }
+			printf("Creating service %s :\n", argv[2]);
+			if (service_add
+			    (argv[2], argv[3], argv[4], argv[5], argv[6],
+			     HT_SERV) == 0)
+				printf("Done.\n");
+			else
+				printf("Failed.\n");
+			return 0;
+		} else {
+			printf
+			    ("Error : Your already have created max services count (%d)\n",
+			     svccount);
+			exit(-1);
+		}
 	}
 
 	if ((strcmp(argv[1], "-r") == 0) && (argc == 3)) {

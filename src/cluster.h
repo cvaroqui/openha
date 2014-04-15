@@ -56,8 +56,8 @@ gchar *VAL[MAX_STATE] = {
 	"FORCE-STOP"
 };
 
-const gint LIST_NB_ITEM = 5;  /* nb colonne dans fichier services / nb item dans liste */
-gint DEBUGGING=0;
+const gint LIST_NB_ITEM = 5;	/* nb colonne dans fichier services / nb item dans liste */
+gint DEBUGGING = 0;
 gchar IDENT[128];
 gchar debugmsg[512];
 
@@ -91,30 +91,32 @@ void debuglog(gchar *, gchar *, gchar *);
 void signal_usr1_callback_handler();
 void signal_usr2_callback_handler();
 
-
 void
-delete_data(gpointer data ,gpointer user_data) {
-    g_free(data);
-    data = NULL;
+delete_data(gpointer data, gpointer user_data)
+{
+	g_free(data);
+	data = NULL;
 }
 
-void debuglog(gchar *prg_src, gchar *prg_func, gchar *message) {
+void
+debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
+{
 	if (DEBUGGING != 1) {
 		return;
-        }
+	}
 
 	gchar *LOGFILE;
 	FILE *fd;
 	time_t clock = time(NULL);
 	char buf[1024];
 
-	LOGFILE=g_strconcat(getenv("EZ_LOG"),"/cluster.log",NULL);
-	if ((fd = fopen(LOGFILE, "a+")) ==NULL){
-		printf("Error opening logging file <%s>\n",LOGFILE);
+	LOGFILE = g_strconcat(getenv("EZ_LOG"), "/cluster.log", NULL);
+	if ((fd = fopen(LOGFILE, "a+")) == NULL) {
+		printf("Error opening logging file <%s>\n", LOGFILE);
 		exit(-1);
 	}
-	strftime(buf, sizeof(buf), "%c", localtime(&clock));
-	fprintf(fd,"[%s][%s][%s] %s\n",buf,prg_src,prg_func,message);
+	strftime(buf, sizeof (buf), "%c", localtime(&clock));
+	fprintf(fd, "[%s][%s][%s] %s\n", buf, prg_src, prg_func, message);
 
 	fclose(fd);
 }
@@ -122,25 +124,29 @@ void debuglog(gchar *prg_src, gchar *prg_func, gchar *message) {
 void
 debug_list(GList * liste)
 {
-	debuglog(IDENT,"debug_list","Function start");
+	debuglog(IDENT, "debug_list", "Function start");
 	gint i = 0;
 
-	for (i = 0; i <= (g_list_length(liste) / LIST_NB_ITEM)-1; i++) {
-		snprintf(debugmsg,sizeof(debugmsg),"i=%d SVC[%s] SCRIPT[%s] PRI[%s] SEC[%s] CHK[%s]",
-			i,
-			(char*)g_list_nth_data(liste, i * LIST_NB_ITEM),
-			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 1),
-			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 2),
-			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 3),
-			(char*)g_list_nth_data(liste, (i * LIST_NB_ITEM) + 4));
-		debuglog(IDENT,"debug_list",debugmsg);
+	for (i = 0; i <= (g_list_length(liste) / LIST_NB_ITEM) - 1; i++) {
+		snprintf(debugmsg, sizeof (debugmsg),
+			 "i=%d SVC[%s] SCRIPT[%s] PRI[%s] SEC[%s] CHK[%s]", i,
+			 (char *) g_list_nth_data(liste, i * LIST_NB_ITEM),
+			 (char *) g_list_nth_data(liste,
+						  (i * LIST_NB_ITEM) + 1),
+			 (char *) g_list_nth_data(liste,
+						  (i * LIST_NB_ITEM) + 2),
+			 (char *) g_list_nth_data(liste,
+						  (i * LIST_NB_ITEM) + 3),
+			 (char *) g_list_nth_data(liste,
+						  (i * LIST_NB_ITEM) + 4));
+		debuglog(IDENT, "debug_list", debugmsg);
 	}
 }
 
 void
 halog(gint type, gchar * prg_src, gchar * message)
 {
-	debuglog(IDENT,"halog","Function start");
+	debuglog(IDENT, "halog", "Function start");
 	gchar *msg;
 
 	debuglog(prg_src, "halog", message);
@@ -153,20 +159,22 @@ halog(gint type, gchar * prg_src, gchar * message)
 	g_free(msg);
 }
 
-void signal_usr1_callback_handler()
+void
+signal_usr1_callback_handler()
 {
-	DEBUGGING=1;
+	DEBUGGING = 1;
 }
 
-void signal_usr2_callback_handler()
+void
+signal_usr2_callback_handler()
 {
-	DEBUGGING=0;
+	DEBUGGING = 0;
 }
 
 glong
 Elapsed(void)
 {
-	debuglog(IDENT,"Elapsed","Function start");
+	debuglog(IDENT, "Elapsed", "Function start");
 	gint ts;
 	struct timeval buf;
 	if ((ts = gettimeofday(&buf, NULL)) == 0)
@@ -230,7 +238,7 @@ file_lock(short type, short whence)
 void
 get_my_name(gpointer name)
 {
-	debuglog(IDENT,"get_my_name","Function start");
+	debuglog(IDENT, "get_my_name", "Function start");
 	struct utsname tmp_name;
 	uname(&tmp_name);
 	strncpy(name, tmp_name.nodename, MAX_NODENAME_SIZE);
@@ -239,7 +247,7 @@ get_my_name(gpointer name)
 gboolean
 is_primary(gchar * node, gchar * service)
 {
-	debuglog(IDENT,"is_primary","Function start");
+	debuglog(IDENT, "is_primary", "Function start");
 	GList *List_services = NULL;
 	gint i = 0, j, list_size;
 	gchar *name, *service_to_cmp, *node_to_cmp;
@@ -271,7 +279,7 @@ is_primary(gchar * node, gchar * service)
 gboolean
 is_secondary(gchar * node, gchar * service)
 {
-	debuglog(IDENT,"is_secondary","Function start");
+	debuglog(IDENT, "is_secondary", "Function start");
 	GList *List_services = NULL;
 	gint i = 0, j, list_size;
 	gchar *name, *service_to_cmp, *node_to_cmp;
@@ -303,7 +311,7 @@ is_secondary(gchar * node, gchar * service)
 gchar *
 get_our_secondary(gchar * node, gchar * service, GList * liste)
 {
-	debuglog(IDENT,"get_our_secondary","Function start");
+	debuglog(IDENT, "get_our_secondary", "Function start");
 	gint i = 0, j, list_size;
 	gchar *name, *service_to_cmp, *node_to_cmp;
 	gint LIST_NB_ITEM = 5;
@@ -326,14 +334,14 @@ get_our_secondary(gchar * node, gchar * service, GList * liste)
 gint
 read_lock(gint fd)
 {				/* a shared lock on an entire file */
-    debuglog(IDENT,"read_lock","Function start");
+	debuglog(IDENT, "read_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_RDLCK, SEEK_SET)));
 }
 
 gint
 write_lock(gint fd)
 {				/* an exclusive lock on an entire file */
-    debuglog(IDENT,"write_lock","Function start");
+	debuglog(IDENT, "write_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_SET)));
 }
 
@@ -341,14 +349,14 @@ gint
 append_lock(gint fd)
 {				/* a lock on the _end_ of a file -- other
 				   processes may access existing records */
-	debuglog(IDENT,"append_lock","Function start");
+	debuglog(IDENT, "append_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_END)));
 }
 
 void
 write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 {
-	debuglog(IDENT,"write_status","Function start");
+	debuglog(IDENT, "write_status", "Function start");
 	gchar *FILE_NAME;
 	FILE *FILE_STATE;
 	gchar to_copy[2];
@@ -391,7 +399,7 @@ write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
 
 GList *
-list_copy_deep(GList *src)
+list_copy_deep(GList * src)
 {
 	GList *dst;
 
@@ -407,86 +415,29 @@ list_copy_deep(GList *src)
 GList *
 get_liste_generic(FILE * File, guint elem)
 {
-        /* appel direct depuis nmond.c func init() */
-        debuglog(IDENT,"get_liste_generic","Function start");
-        GList *L = NULL;
-        gint i = 0, j = 0, k = 0, l = 0, LAST;
-        gchar *s = NULL;
-        gchar item[MAX_ITEM];
-        gchar tmp_tab[MAX_ITEM][MAX_ITEM];
-
-    for(i=0; i<MAX_ITEM; i++)
-        for(j=0; j<MAX_ITEM; j++)
-            tmp_tab[i][j] = '\0';
-
-    i = 0; j = 0;
-        // Count the number of lines
-        while (fgets(tmp_tab[i], MAX_ITEM-1, File) != NULL) {
-                size_t ln = strlen(tmp_tab[i]) - 1;
-        if (tmp_tab[i][ln] == '\n')
-            tmp_tab[i][ln] = '\0';
-                /*
-                snprintf(debugmsg,sizeof(debugmsg),"loading line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
-                debuglog(IDENT,"get_liste_generic",debugmsg);
-                */
-                i++;
-        }
-        LAST = i;
-        // For each line
-        for (i = 0; i < LAST; i++) {
-                j = 0;
-                // for each element
-                for (l = 0; l < elem; l++) {
-                        while ((tmp_tab[i][j] != ' ') && (tmp_tab[i][j] != '\t')
-                               && (tmp_tab[i][j] != '\n')
-                               && (tmp_tab[i][j] != '\0')) {
-                                item[k] = tmp_tab[i][j];
-                                k++;
-                                j++;
-                        }
-                        item[k] = '\0';
-                        while ((tmp_tab[i][j] == ' ')
-                               || (tmp_tab[i][j] == '\t')) {
-                                j++;
-                        }
-            /*
-                        snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
-                        debuglog(IDENT,"get_liste_generic",debugmsg);
-            */
-                        k = 0;
-                        s = g_strdup(item);
-                        L = g_list_append(L, s);
-                        item[0] = '\0';
-                }
-        }
-        fseek(File, 0L, SEEK_SET);
-        return L;
-}
-
-GList *
-get_liste(FILE * File, guint elem)
-{
-	debuglog(IDENT,"get_liste","Function start");
+	/* appel direct depuis nmond.c func init() */
+	debuglog(IDENT, "get_liste_generic", "Function start");
 	GList *L = NULL;
 	gint i = 0, j = 0, k = 0, l = 0, LAST;
 	gchar *s = NULL;
 	gchar item[MAX_ITEM];
 	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
 
-    for(i=0; i<MAX_ITEM; i++)
-        for(j=0; j<MAX_ITEM; j++)
-            tmp_tab[i][j] = '\0';	
+	for (i = 0; i < MAX_ITEM; i++)
+		for (j = 0; j < MAX_ITEM; j++)
+			tmp_tab[i][j] = '\0';
 
-    i = 0; j = 0;
+	i = 0;
+	j = 0;
 	// Count the number of lines
-	while (fgets(tmp_tab[i], MAX_ITEM-1, File) != NULL) {
+	while (fgets(tmp_tab[i], MAX_ITEM - 1, File) != NULL) {
 		size_t ln = strlen(tmp_tab[i]) - 1;
-        if (tmp_tab[i][ln] == '\n')
-            tmp_tab[i][ln] = '\0';
+		if (tmp_tab[i][ln] == '\n')
+			tmp_tab[i][ln] = '\0';
 		/*
-		snprintf(debugmsg,sizeof(debugmsg),"loading service line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
-		debuglog(IDENT,"get_liste",debugmsg);
-		*/
+		   snprintf(debugmsg,sizeof(debugmsg),"loading line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
+		   debuglog(IDENT,"get_liste_generic",debugmsg);
+		 */
 		i++;
 	}
 	LAST = i;
@@ -507,10 +458,69 @@ get_liste(FILE * File, guint elem)
 			       || (tmp_tab[i][j] == '\t')) {
 				j++;
 			}
-            /*
-                        snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
-                        debuglog(IDENT,"get_liste",debugmsg);
-            */
+			/*
+			   snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
+			   debuglog(IDENT,"get_liste_generic",debugmsg);
+			 */
+			k = 0;
+			s = g_strdup(item);
+			L = g_list_append(L, s);
+			item[0] = '\0';
+		}
+	}
+	fseek(File, 0L, SEEK_SET);
+	return L;
+}
+
+GList *
+get_liste(FILE * File, guint elem)
+{
+	debuglog(IDENT, "get_liste", "Function start");
+	GList *L = NULL;
+	gint i = 0, j = 0, k = 0, l = 0, LAST;
+	gchar *s = NULL;
+	gchar item[MAX_ITEM];
+	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
+
+	for (i = 0; i < MAX_ITEM; i++)
+		for (j = 0; j < MAX_ITEM; j++)
+			tmp_tab[i][j] = '\0';
+
+	i = 0;
+	j = 0;
+	// Count the number of lines
+	while (fgets(tmp_tab[i], MAX_ITEM - 1, File) != NULL) {
+		size_t ln = strlen(tmp_tab[i]) - 1;
+		if (tmp_tab[i][ln] == '\n')
+			tmp_tab[i][ln] = '\0';
+		/*
+		   snprintf(debugmsg,sizeof(debugmsg),"loading service line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
+		   debuglog(IDENT,"get_liste",debugmsg);
+		 */
+		i++;
+	}
+	LAST = i;
+	// For each line
+	for (i = 0; i < LAST; i++) {
+		j = 0;
+		// for each element
+		for (l = 0; l < elem; l++) {
+			while ((tmp_tab[i][j] != ' ') && (tmp_tab[i][j] != '\t')
+			       && (tmp_tab[i][j] != '\n')
+			       && (tmp_tab[i][j] != '\0')) {
+				item[k] = tmp_tab[i][j];
+				k++;
+				j++;
+			}
+			item[k] = '\0';
+			while ((tmp_tab[i][j] == ' ')
+			       || (tmp_tab[i][j] == '\t')) {
+				j++;
+			}
+			/*
+			   snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
+			   debuglog(IDENT,"get_liste",debugmsg);
+			 */
 			k = 0;
 			s = g_strdup(item);
 			L = g_list_append(L, s);
@@ -529,7 +539,7 @@ get_liste(FILE * File, guint elem)
 GHashTable *
 get_hash(GList * liste)
 {
-	debuglog(IDENT,"get_hash","Function start");
+	debuglog(IDENT, "get_hash", "Function start");
 	GHashTable *HT;
 	gint i = 0;
 	struct srvstruct *service;
@@ -555,57 +565,58 @@ get_hash(GList * liste)
 gboolean
 need_refresh(gchar * path2file, time_t refstamp)
 {
-	debuglog(IDENT,"need_refresh","Function start");
+	debuglog(IDENT, "need_refresh", "Function start");
 
-    struct stat *buf;
-    time_t filestamp;
-    double diff_t;
+	struct stat *buf;
+	time_t filestamp;
+	double diff_t;
 
-    buf = malloc(sizeof(struct stat));
+	buf = malloc(sizeof (struct stat));
 
-    stat(path2file, buf);
-    filestamp = buf->st_mtime;
+	stat(path2file, buf);
+	filestamp = buf->st_mtime;
 
-    diff_t = difftime(filestamp, refstamp);
-    free(buf);
+	diff_t = difftime(filestamp, refstamp);
+	free(buf);
 
-    if (diff_t > 0) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
+	if (diff_t > 0) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
 }
 
 GList *
 get_services_list()
 {
-	debuglog(IDENT,"get_services_list","Function start");
+	debuglog(IDENT, "get_services_list", "Function start");
 
 	FILE *EZFD_SERVICES;
 	GList *L = NULL;
 
-    if ((EZ_SERVICES = getenv("EZ_SERVICES")) == NULL) {
-		    //printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		    return NULL;
-	    }
+	if ((EZ_SERVICES = getenv("EZ_SERVICES")) == NULL) {
+		//printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
+		return NULL;
+	}
 
-    if( GlobalList == NULL || need_refresh(EZ_SERVICES,GlobalListTimeStamp) ) {
-	    
-	    if ((EZFD_SERVICES = fopen(EZ_SERVICES, "r")) == NULL) {
-		    //printf("No service(s) defined (unable to open $EZ_SERVICES file)\n");
-		    return NULL;
-	    }
-	    L = get_liste(EZFD_SERVICES, LIST_NB_ITEM);
-        /* snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
-        debuglog(IDENT,"get_services_list",debugmsg); 
-        */       
-	    fclose(EZFD_SERVICES);
-    } else {
-    	L = list_copy_deep(GlobalList);
-        /* snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
-        debuglog(IDENT,"get_services_list",debugmsg);
-         */
-    }
+	if (GlobalList == NULL
+	    || need_refresh(EZ_SERVICES, GlobalListTimeStamp)) {
+
+		if ((EZFD_SERVICES = fopen(EZ_SERVICES, "r")) == NULL) {
+			//printf("No service(s) defined (unable to open $EZ_SERVICES file)\n");
+			return NULL;
+		}
+		L = get_liste(EZFD_SERVICES, LIST_NB_ITEM);
+		/* snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
+		   debuglog(IDENT,"get_services_list",debugmsg); 
+		 */
+		fclose(EZFD_SERVICES);
+	} else {
+		L = list_copy_deep(GlobalList);
+		/* snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
+		   debuglog(IDENT,"get_services_list",debugmsg);
+		 */
+	}
 	/* debug_list(L); */
 	return (L);
 }
@@ -613,7 +624,7 @@ get_services_list()
 gint
 Cmd(char *prg, gchar * argsin[2])
 {
-	debuglog(IDENT,"Cmd","Function start");
+	debuglog(IDENT, "Cmd", "Function start");
 	gint pid, etat;
 	gchar *message;
 	//gint  del, fs;
@@ -655,7 +666,7 @@ Cmd(char *prg, gchar * argsin[2])
 gint
 is_num(gchar * val)
 {
-	debuglog(IDENT,"is_num","Function start");
+	debuglog(IDENT, "is_num", "Function start");
 	gint i = 0, RET = 0;
 	if (val == NULL)
 		return -1;
@@ -676,7 +687,7 @@ is_num(gchar * val)
 gint
 change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_start","Function start");
+	debuglog(IDENT, "change_status_start", "Function start");
 	gpointer pointer;
 	gchar *arg[3];
 	gchar *arg0[3];
@@ -792,7 +803,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 gint
 launch(gchar * command, gchar * arg[])
 {
-	debuglog(IDENT,"launch","Function start");
+	debuglog(IDENT, "launch", "Function start");
 	gint i = 0;
 	i = Cmd(command, arg);
 	//printf("command: %s %s i: %d \n",argsIn[0],argsIn[1],i);
@@ -805,7 +816,7 @@ launch(gchar * command, gchar * arg[])
 gint
 get_status(GList * liste, gchar * node, gchar * service)
 {
-	debuglog(IDENT,"get_status","Function start");
+	debuglog(IDENT, "get_status", "Function start");
 	gint i, j, k, size;
 	gchar *FILE_NAME, STATE, *m;
 	FILE *FILE_STATE;
@@ -860,7 +871,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 gint
 service_rm(gchar * name, GHashTable * HT)
 {
-	debuglog(IDENT,"service_rm","Function start");
+	debuglog(IDENT, "service_rm", "Function start");
 	gpointer pointer;
 	gchar *env, *env1, *dir, *primary, *secondary;
 
@@ -910,7 +921,7 @@ service_rm(gchar * name, GHashTable * HT)
 gint
 service_mod(gchar * name)
 {
-	debuglog(IDENT,"service_mod","Function start");
+	debuglog(IDENT, "service_mod", "Function start");
 	FILE *EZ_SERVICES, *TMP;
 	gchar lu[5][300];
 	gchar *tmp, *services;
@@ -962,7 +973,7 @@ service_add(gchar * name, gchar * startup_script,
 	    gchar * primary, gchar * secondary,
 	    gchar * check_script, GHashTable * HT)
 {
-	debuglog(IDENT,"service_add","Function start");
+	debuglog(IDENT, "service_add", "Function start");
 	gpointer pointer;
 	FILE *FILE_STATE, *EZ_SERVICES, *SCRIPT;
 	struct hostent *host;
@@ -1069,7 +1080,7 @@ service_add(gchar * name, gchar * startup_script,
 gint
 rm_file(gchar * name)
 {
-	debuglog(IDENT,"rm_file","Function start");
+	debuglog(IDENT, "rm_file", "Function start");
 	if (unlink(name) != 0) {
 		perror("Error:");
 		return -1;
@@ -1080,7 +1091,7 @@ rm_file(gchar * name)
 gint
 create_file(gchar * name, gchar * node)
 {
-	debuglog(IDENT,"create_file","Function start");
+	debuglog(IDENT, "create_file", "Function start");
 	gchar *O, *env;
 	struct stat buf;
 	FILE *F;
@@ -1121,7 +1132,7 @@ create_file(gchar * name, gchar * node)
 gint
 create_dir(gchar * name)
 {
-	debuglog(IDENT,"create_dir","Function start");
+	debuglog(IDENT, "create_dir", "Function start");
 	gchar *File, *env;
 	struct stat buf;
 
@@ -1150,7 +1161,7 @@ create_dir(gchar * name)
 gint
 find_action(gchar ** tab, gchar * action)
 {
-	debuglog(IDENT,"find_action","Function start");
+	debuglog(IDENT, "find_action", "Function start");
 	int i = 0;
 	for (i = 0; i < MAX_ACTION; i++) {
 		if (strcmp(action, tab[i]) == 0)
@@ -1162,7 +1173,7 @@ find_action(gchar ** tab, gchar * action)
 void
 print_func(gpointer key, gpointer value, gpointer HT)
 {
-	debuglog(IDENT,"print_func","Function start");
+	debuglog(IDENT, "print_func", "Function start");
 	gchar check_script[SCRIPT_SIZE];
 
 	strcat(check_script, ((struct srvstruct *) (value))->check_script);
@@ -1172,7 +1183,7 @@ print_func(gpointer key, gpointer value, gpointer HT)
 void
 service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 {
-	debuglog(IDENT,"service_info","Function start");
+	debuglog(IDENT, "service_info", "Function start");
 	gint pstate, sstate;
 	gpointer pointer;
 	gchar *primary, *secondary;
@@ -1196,7 +1207,7 @@ service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 void
 service_status(GList * liste, GHashTable * HT)
 {
-	debuglog(IDENT,"service_status","Function start");
+	debuglog(IDENT, "service_status", "Function start");
 	gint i, list_size, pstate, sstate;
 	gpointer pointer;
 	gchar *service, *primary, *secondary;
@@ -1219,7 +1230,7 @@ service_status(GList * liste, GHashTable * HT)
 gint
 change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_stop","Function start");
+	debuglog(IDENT, "change_status_stop", "Function start");
 	gpointer pointer;
 	gchar *arg[3];
 	gchar *name, *m = NULL;
@@ -1289,7 +1300,7 @@ gint
 change_status_force_stop(gint state, gint ostate, gchar * service,
 			 GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_force_stop","Function start");
+	debuglog(IDENT, "change_status_force_stop", "Function start");
 	gchar *name, *message = NULL;
 
 	name = malloc(MAX_NODENAME_SIZE);
@@ -1321,7 +1332,7 @@ gint
 change_status_force_start(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_force_start","Function start");
+	debuglog(IDENT, "change_status_force_start", "Function start");
 	gchar *name, *message = NULL;
 
 	name = malloc(MAX_NODENAME_SIZE);
@@ -1351,7 +1362,7 @@ gint
 change_status_freeze_stop(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_freeze_stop","Function start");
+	debuglog(IDENT, "change_status_freeze_stop", "Function start");
 	gchar *name, *message = NULL;
 
 	name = malloc(MAX_NODENAME_SIZE);
@@ -1423,7 +1434,7 @@ gint
 change_status_freeze_start(gint state, gint ostate, gchar * service,
 			   GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_freeze_start","Function start");
+	debuglog(IDENT, "change_status_freeze_start", "Function start");
 	gchar *name;
 
 	name = malloc(MAX_NODENAME_SIZE);
@@ -1459,7 +1470,7 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 gint
 change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT,"change_status_unfreeze","Function start");
+	debuglog(IDENT, "change_status_unfreeze", "Function start");
 	gchar *name, *message = NULL;
 	name = malloc(MAX_NODENAME_SIZE);
 	get_my_name(name);
@@ -1503,7 +1514,7 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 gint
 if_getaddr(const char *ifname, struct in_addr * addr)
 {
-	debuglog(IDENT,"if_getaddr","Function start");
+	debuglog(IDENT, "if_getaddr", "Function start");
 	gint fd;
 	struct ifreq if_info;
 
@@ -1545,7 +1556,7 @@ if_getaddr(const char *ifname, struct in_addr * addr)
 gint
 set_mcast_if(gint sockfd, gchar * ifname)
 {
-	debuglog(IDENT,"set_mcast_if","Function start");
+	debuglog(IDENT, "set_mcast_if", "Function start");
 	gint rc, i = 0;
 	struct in_addr mreq;
 
@@ -1569,7 +1580,7 @@ set_mcast_if(gint sockfd, gchar * ifname)
 gboolean
 rm_func_serv(gpointer key, gpointer value, gpointer user_data)
 {
-	debuglog(IDENT,"rm_func_serv","Function start");
+	debuglog(IDENT, "rm_func_serv", "Function start");
 	g_free((struct srvstruct *) value);
 	return TRUE;
 }
@@ -1577,7 +1588,7 @@ rm_func_serv(gpointer key, gpointer value, gpointer user_data)
 gboolean
 init_var()
 {
-	debuglog(IDENT,"init_var","Function start");
+	debuglog(IDENT, "init_var", "Function start");
 	EZ = g_malloc0(256);
 	EZ_BIN = g_malloc0(256);
 	EZ_MONITOR = g_malloc0(256);
@@ -1615,7 +1626,7 @@ init_var()
 void
 daemonize(gchar * message)
 {
-	debuglog(IDENT,"daemonize","Function start");
+	debuglog(IDENT, "daemonize", "Function start");
 	gint pid;
 
 	switch (pid = fork()) {
@@ -1634,7 +1645,7 @@ daemonize(gchar * message)
 void
 Setenv(gchar * name, gchar * value, gint why)
 {
-	debuglog(IDENT,"Setenv","Function start");
+	debuglog(IDENT, "Setenv", "Function start");
 	gchar *env;
 	env = g_strconcat(name, "=", value, NULL);
 	putenv(env);

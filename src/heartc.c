@@ -200,9 +200,9 @@ gchar *argv[];
 	memcpy(shm, &to_recV, sizeof (to_recV));
 
 	while (TRUE) {
-		signal(SIGUSR1,signal_usr1_callback_handler);
-		signal(SIGUSR2,signal_usr2_callback_handler);
-		signal(SIGALRM,sighup);
+		signal(SIGUSR1, signal_usr1_callback_handler);
+		signal(SIGUSR2, signal_usr2_callback_handler);
+		signal(SIGALRM, sighup);
 
 		if (flag == 1) {
 			alarm(0);
@@ -219,9 +219,9 @@ gchar *argv[];
 			continue;
 		}
 		if (i > 0) {
-			snprintf(debugmsg,sizeof(debugmsg),
+			snprintf(debugmsg, sizeof (debugmsg),
 				 "recvfrom() OK : %u bytes From %s:%d",
-				 sizeof(struct sendstruct),
+				 sizeof (struct sendstruct),
 				 inet_ntoa(stFrom.sin_addr),
 				 ntohs(stFrom.sin_port));
 			debuglog(IDENT, "main", debugmsg);
@@ -230,12 +230,13 @@ gchar *argv[];
 				if (strlen(to_recV.service_name[j]) == 0) {
 					j = MAX_SERVICES;
 				} else {
-					snprintf(debugmsg,sizeof(debugmsg),
+					snprintf(debugmsg, sizeof (debugmsg),
 						 "svc #%d name=[%s] state=[%c] node=[%s] ela=[%u]",
 						 j,
 						 to_recV.service_name[j],
 						 to_recV.service_state[j],
-						 to_recV.nodename,to_recV.elapsed);
+						 to_recV.nodename,
+						 to_recV.elapsed);
 					debuglog(IDENT, "main", debugmsg);
 					write_status(to_recV.service_name[j],
 						     to_recV.service_state[j],

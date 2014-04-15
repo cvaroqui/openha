@@ -464,8 +464,7 @@ gchar *argv[];
 {
 	guint c, sflag, rflag, aflag, nflag, tflag, iflag, dflag, pflag, Tflag =
 	    0;
-	gchar *nvalue, *tvalue, *ivalue, *dvalue, *pvalue =
-	    NULL, *Tvalue;
+	gchar *nvalue, *tvalue, *ivalue, *dvalue, *pvalue = NULL, *Tvalue;
 
 	Setenv("PROGNAME", "hb", 1);
 	init_var();
