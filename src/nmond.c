@@ -80,6 +80,7 @@ char *argv[];
 	gint pid;
 	gchar *m;
 
+	sprintf(IDENT, "%s", argv[0]);
 	Setenv("PROGNAME", "nmond", 1);
 	progname = getenv("PROGNAME");
 	//Setenv("VERBOSE","0",1);
@@ -130,6 +131,7 @@ char *argv[];
 		debuglog("nmond", "main", "looping");
 
 		list_services = get_services_list();
+
 		for (i = 0; i < (g_list_length(list_services) / LIST_NB_ITEM);
 		     i++) {
 			ptr_service = g_malloc(sizeof (struct srvstruct));
@@ -154,6 +156,9 @@ char *argv[];
 			g_hash_table_insert(HT_SERV, ptr_service->service_name,
 					    ptr_service);
 		}
+		snprintf(debugmsg,sizeof(debugmsg),"HT_SERV hash table built (key=svcname / value = svcstruct)");
+		debuglog(IDENT, "main", debugmsg);
+
 		// Node Status management
 		// 
 		// On met tous les status a FALSE
@@ -164,9 +169,13 @@ char *argv[];
 				g_hash_table_insert(HT_NODES_OLD,
 						    tab_shm[i].nodename,
 						    &tabinfo_b[i]);
+
+			/* supprime tous les couples cle/valeur car rm_func retourne toujours true */
 			g_hash_table_foreach_remove(HT_NODES, rm_func,
 						    HT_NODES);
 		}
+		snprintf(debugmsg,sizeof(debugmsg),"HT_NODES_OLD built. HT_NODES empty");
+		debuglog(IDENT, "main", debugmsg);
 		j = 0;
 		for (i = 0; i < nb_seg; i++) {
 			// On remplit tab_shm (nodename + shmid)
@@ -187,8 +196,10 @@ char *argv[];
 						    tab_shm[i].nodename,
 						    &tabinfo[i]);
 			}
-			j++;
+			j++;   /* a quoi sert j ? */
 		}
+		snprintf(debugmsg,sizeof(debugmsg),"HT_NODES built.");
+		debuglog(IDENT, "main", debugmsg);
 		g_hash_table_foreach(HT_NODES, check_node_func, NULL);
 		memcpy(shm, tabinfo, sizeof (tabinfo));
 
@@ -209,7 +220,11 @@ char *argv[];
 			secondary = ((struct srvstruct *) (pointer))->secondary;
 			pstate = get_status(list_services, primary, service);
 			sstate = get_status(list_services, secondary, service);
+			snprintf(debugmsg,sizeof(debugmsg),"Processing service [%s] - Pri[%d@%s] - Sec[%d@%s]",service,pstate,primary,sstate,secondary);
+		    debuglog(IDENT, "main", debugmsg);
 			if (is_primary(name, service)) {
+				snprintf(debugmsg,sizeof(debugmsg),"is_primary is true for service [%s] on node [%s]",service,name);
+		        debuglog(IDENT, "main", debugmsg);
 				if (((sstate == 0)
 				     || (sstate == 6)
 				     || (sstate == 8))
@@ -231,6 +246,8 @@ char *argv[];
 				}
 			}
 			if (is_secondary(name, service)) {
+				snprintf(debugmsg,sizeof(debugmsg),"is_secondary is true for service [%s] on node [%s]",service,name);
+		        debuglog(IDENT, "main", debugmsg);
 				if (((pstate == 0)
 				     || (pstate == 6)
 				     || (pstate == 8))
@@ -255,10 +272,16 @@ char *argv[];
 				//      printf("Nothing to do for service %s\n",service);
 			}
 		}
+		snprintf(debugmsg,sizeof(debugmsg),"Freeing list_services");
+		debuglog(IDENT, "main", debugmsg);
 		g_list_foreach(list_services, delete_data, NULL);
 		g_list_free(list_services);
 		list_services = NULL;
+		snprintf(debugmsg,sizeof(debugmsg),"Removing each HT_SERV key/value");
+		debuglog(IDENT, "main", debugmsg);
 		g_hash_table_foreach_remove(HT_SERV, rm_func_serv, HT_SERV);
+		snprintf(debugmsg,sizeof(debugmsg),"Calling alarm(2)");
+		debuglog(IDENT, "main", debugmsg);
 		alarm(2);
 		pause();
 	}
@@ -273,6 +296,7 @@ sighup()
 void
 check_node_func(gpointer key, gpointer value, gpointer HT)
 {
+	debuglog(IDENT,"check_node_func","Function start");
 	gpointer new_pointer, old_pointer;
 	gint i = 0;
 	gchar *service, *m;
@@ -284,8 +308,13 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 	old_pointer = g_hash_table_lookup(HT_NODES_OLD, key);
 	node_to_check =
 	    strncpy(node_to_check, (gchar *) key, MAX_NODENAME_SIZE);
+	snprintf(debugmsg,sizeof(debugmsg),"Will check node [%s]",node_to_check);
+	debuglog(IDENT, "check_node_func", debugmsg);
+
 	//Node is down  
 	if ((((struct nodestruct *) new_pointer)->up) == FALSE) {
+		snprintf(debugmsg,sizeof(debugmsg),"Node [%s] is DOWN. Need update for all services running on node.",node_to_check);
+	    debuglog(IDENT, "check_node_func", debugmsg);
 		if (old_pointer != NULL) {
 			for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
 				service =
@@ -299,6 +328,7 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 					if (get_status
 					    (list_services, node_to_check,
 					     service) != 8) {
+						/* status 8 = UNKNOWN */
 						m = g_strconcat
 						    ("WARNING: setting service ",
 						     service,
@@ -312,6 +342,9 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 				}
 			}
 		}
+	} else {
+		snprintf(debugmsg,sizeof(debugmsg),"Node [%s] is UP. Leaving check_node_func.",node_to_check);
+	    debuglog(IDENT, "check_node_func", debugmsg);
 	}
 	g_free(service);
 	g_free(node_to_check);
@@ -412,6 +445,7 @@ copy_tab_send(struct sendstruct *dest, struct sendstruct *from, guint size)
 void
 clean_tab()
 {
+	debuglog(IDENT,"clean_tab","Function start");
 	gint i = 0;
 	for (i = 0; i < MAX_HEARTBEAT; i++) {
 		tabnode[i].nodename[0] = '\0';
@@ -423,6 +457,7 @@ clean_tab()
 gint
 find_node(gchar * val)
 {
+	debuglog(IDENT,"find_node","Function start");
 	gint index = 0;
 
 	for (index = 0; index < MAX_HEARTBEAT; index++) {
@@ -437,6 +472,7 @@ find_node(gchar * val)
 gint
 get_node(GList * liste, gchar * port, gchar * addr)
 {
+	debuglog(IDENT,"get_node","Function start");
 	gint i = 0;
 
 	for (i = 0; i < g_list_length(liste); i++) {
@@ -456,6 +492,7 @@ get_node(GList * liste, gchar * port, gchar * addr)
 gint
 get_seg(gint i, struct shmtab_struct * S)
 {
+	debuglog(IDENT,"get_seg","Function start");
 	gint shmid, itmp;
 	key_t key;
 	gchar nodename[MAX_NODENAME_SIZE], **NEW_KEY;
@@ -532,6 +569,7 @@ get_seg(gint i, struct shmtab_struct * S)
 gint
 fill_seg(gint i, key_t key, gchar * nodename)
 {
+	debuglog(IDENT,"fill_seg","Function start");
 	gpointer *R;
 	struct sendstruct to_recv;
 
@@ -551,6 +589,7 @@ fill_seg(gint i, key_t key, gchar * nodename)
 void
 sigterm()
 {
+	debuglog(IDENT,"sigterm","Function start");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	halog(LOG_INFO, progname, "SIGTERM received, exiting gracefuly ...\n");
 	exit(0);
