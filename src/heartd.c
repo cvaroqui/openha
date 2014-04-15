@@ -199,7 +199,7 @@ char *argv[];
 			halog(LOG_ERR, "heartd", message);
 		} else {
 			snprintf(debugmsg, sizeof (debugmsg),
-				 "sendto() OK : %d bytes From %s:%d",
+				 "sendto() OK : %lu bytes From %s:%d",
 				 sizeof (to_send),
 				 inet_ntoa(stLocal.sin_addr),
 				 ntohs(stLocal.sin_port));

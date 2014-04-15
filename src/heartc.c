@@ -220,7 +220,7 @@ gchar *argv[];
 		}
 		if (i > 0) {
 			snprintf(debugmsg, sizeof (debugmsg),
-				 "recvfrom() OK : %u bytes From %s:%d",
+				 "recvfrom() OK : %lu bytes From %s:%d",
 				 sizeof (struct sendstruct),
 				 inet_ntoa(stFrom.sin_addr),
 				 ntohs(stFrom.sin_port));
