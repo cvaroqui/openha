@@ -30,7 +30,7 @@
 #include <sys/sockio.h>
 #endif
 
-#define MAX_SERVICES 16
+#define MAX_SERVICES 128
 #define MAX_SERVICES_SIZE 16
 #define MAX_HEARTBEAT 16
 #define MAX_NODENAME_SIZE 128
