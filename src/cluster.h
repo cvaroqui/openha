@@ -64,6 +64,7 @@ gchar debugmsg[512];
 time_t GlobalListTimeStamp;
 GList *GlobalList = NULL;
 GHashTable *GLOBAL_HT_SERV = NULL;
+gboolean GlobalForceRefresh = FALSE;
 
 gchar nodename[MAX_NODENAME_SIZE];
 
@@ -536,6 +537,7 @@ get_liste(FILE * File, guint elem)
 	/* utile pour identifier quel noeud est primaire/secondaire pour quel service */
 	if(GLOBAL_HT_SERV != NULL) g_hash_table_foreach_remove(GLOBAL_HT_SERV, rm_func_serv, GLOBAL_HT_SERV);
 	GLOBAL_HT_SERV = get_hash(GlobalList);
+	GlobalForceRefresh = FALSE;
 	return L;
 }
 
@@ -577,7 +579,7 @@ get_services_list()
 		return NULL;
 	}
 
-	if (GlobalList == NULL
+	if (GlobalForceRefresh || GlobalList == NULL
 	    || need_refresh(EZ_SERVICES, GlobalListTimeStamp)) {
 
 		if ((EZFD_SERVICES = fopen(EZ_SERVICES, "r")) == NULL) {

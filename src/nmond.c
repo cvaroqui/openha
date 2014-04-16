@@ -134,6 +134,7 @@ char *argv[];
 
 		debuglog("nmond", "main", "looping");
 
+		GlobalForceRefresh = TRUE;
 		list_services = get_services_list();
 
 		for (i = 0; i < (g_list_length(list_services) / LIST_NB_ITEM);

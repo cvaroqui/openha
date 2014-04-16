@@ -234,6 +234,7 @@ get_node_status(gchar * nodename)
 		//No service(s) defined (unable to open $EZ_SERVICES file)
 		return 0;
 	}
+	GlobalForceRefresh = TRUE;
 	list_services = get_services_list();
 	fclose(EZ_SERVICES);
 	list_size = g_list_length(list_services) / LIST_NB_ITEM;
