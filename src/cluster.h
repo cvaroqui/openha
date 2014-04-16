@@ -63,6 +63,8 @@ gchar debugmsg[512];
 
 time_t GlobalListTimeStamp;
 GList *GlobalList = NULL;
+GHashTable *GLOBAL_HT_SERV = NULL;
+
 gchar nodename[MAX_NODENAME_SIZE];
 
 GList *get_services_list(void);
@@ -249,56 +251,34 @@ gboolean
 is_primary(gchar * node, gchar * service)
 {
 	debuglog(IDENT, "is_primary", "Function start");
-	GList *List_services = NULL;
-	gint i = 0, j, list_size;
-	gchar *service_to_cmp, *node_to_cmp;
+	gchar *primary;
+    gpointer ptr;
 
-	List_services = get_services_list();
-	list_size = g_list_length(List_services);
-	j = list_size / LIST_NB_ITEM;
-	for (i = 0; i < j; i++) {
-		node_to_cmp =
-		    g_list_nth_data(List_services, (i * LIST_NB_ITEM) + 2);
-		service_to_cmp =
-		    g_list_nth_data(List_services, (i * LIST_NB_ITEM));
-		if ((strncmp(service_to_cmp, service, MAX_SERVICES_SIZE) == 0)
-		    && (strncmp(node_to_cmp, node, MAX_NODENAME_SIZE) == 0)) {
-			g_list_foreach(List_services, delete_data, NULL);
-			g_list_free(List_services);
-			return TRUE;
-		}
-	}
-	g_list_foreach(List_services, delete_data, NULL);
-	g_list_free(List_services);
-	return FALSE;
+    ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
+    primary = ((struct srvstruct *) (ptr))->primary;
+    
+    if (strncmp(primary, node, MAX_NODENAME_SIZE) == 0) {
+    	return TRUE;
+    } else {
+    	return FALSE;
+    }
 }
 
 gboolean
 is_secondary(gchar * node, gchar * service)
 {
 	debuglog(IDENT, "is_secondary", "Function start");
-	GList *List_services = NULL;
-	gint i = 0, j, list_size;
-	gchar *service_to_cmp, *node_to_cmp;
+	gchar *secondary;
+    gpointer ptr;
 
-	List_services = get_services_list();
-	list_size = g_list_length(List_services);
-	j = list_size / LIST_NB_ITEM;
-	for (i = 0; i < j; i++) {
-		node_to_cmp =
-		    g_list_nth_data(List_services, (i * LIST_NB_ITEM) + 3);
-		service_to_cmp =
-		    g_list_nth_data(List_services, (i * LIST_NB_ITEM));
-		if ((strcmp(service_to_cmp, service) == 0)
-		    && (strcmp(node_to_cmp, node) == 0)) {
-			g_list_foreach(List_services, delete_data, NULL);
-			g_list_free(List_services);
-			return TRUE;
-		}
-	}
-	g_list_foreach(List_services, delete_data, NULL);
-	g_list_free(List_services);
-	return FALSE;
+    ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
+    secondary = ((struct srvstruct *) (ptr))->secondary;
+    
+    if (strncmp(secondary, node, MAX_NODENAME_SIZE) == 0) {
+    	return TRUE;
+    } else {
+    	return FALSE;
+    }
 }
 
 gchar *
@@ -401,6 +381,33 @@ list_copy_deep(GList * src)
 	}
 
 	return dst;
+}
+
+
+GHashTable *
+get_hash(GList * liste)
+{
+	debuglog(IDENT, "get_hash", "Function start");
+	GHashTable *HT;
+	gint i = 0;
+	struct srvstruct *service;
+
+	HT = g_hash_table_new(g_str_hash, g_str_equal);
+	for (i = 0; i < (g_list_length(liste) / LIST_NB_ITEM); i++) {
+		service = g_malloc(sizeof (struct srvstruct));
+		strcpy(service->service_name,
+		       g_list_nth_data(liste, i * LIST_NB_ITEM));
+		strcpy(service->script,
+		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 1));
+		strcpy(service->primary,
+		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 2));
+		strcpy(service->secondary,
+		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 3));
+		strcpy(service->check_script,
+		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 4));
+		g_hash_table_insert(HT, service->service_name, service);
+	}
+	return HT;
 }
 
 GList *
@@ -524,34 +531,14 @@ get_liste(FILE * File, guint elem)
 	GlobalList = NULL;
 	GlobalList = list_copy_deep(L);
 	time(&GlobalListTimeStamp);
+	/* on rafraichi aussi la hash table globale */
+	/* attention les états de service ne sont pas tenus à jour */
+	/* utile pour identifier quel noeud est primaire/secondaire pour quel service */
+	if(GLOBAL_HT_SERV != NULL) g_hash_table_foreach_remove(GLOBAL_HT_SERV, rm_func_serv, GLOBAL_HT_SERV);
+	GLOBAL_HT_SERV = get_hash(GlobalList);
 	return L;
 }
 
-GHashTable *
-get_hash(GList * liste)
-{
-	debuglog(IDENT, "get_hash", "Function start");
-	GHashTable *HT;
-	gint i = 0;
-	struct srvstruct *service;
-
-	HT = g_hash_table_new(g_str_hash, g_str_equal);
-	for (i = 0; i < (g_list_length(liste) / LIST_NB_ITEM); i++) {
-		service = g_malloc(sizeof (struct srvstruct));
-		strcpy(service->service_name,
-		       g_list_nth_data(liste, i * LIST_NB_ITEM));
-		strcpy(service->script,
-		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 1));
-		strcpy(service->primary,
-		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 2));
-		strcpy(service->secondary,
-		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 3));
-		strcpy(service->check_script,
-		       g_list_nth_data(liste, (i * LIST_NB_ITEM) + 4));
-		g_hash_table_insert(HT, service->service_name, service);
-	}
-	return HT;
-}
 
 gboolean
 need_refresh(gchar * path2file, time_t refstamp)
@@ -858,13 +845,17 @@ service_rm(gchar * name, GHashTable * HT)
 {
 	debuglog(IDENT, "service_rm", "Function start");
 	gpointer pointer;
-	gchar *env, *env1, *dir, *primary, *secondary;
+	gchar *envdir, *file1, *file2, *dir, *primary, *secondary;
 
-	env = g_malloc0(300);
-	env1 = g_malloc0(300);
 	dir = g_malloc0(256);
+	envdir = g_malloc0(300);
+	file1 = g_malloc0(300);
+	file2 = g_malloc0(300);
 
 	dir = getenv("EZ");
+	strcpy(envdir, dir);
+	strcat(envdir, "/services/");
+	strcat(envdir, name);
 
 	if (HT != NULL)
 		pointer = g_hash_table_lookup(HT, (gchar *) name);
@@ -880,25 +871,35 @@ service_rm(gchar * name, GHashTable * HT)
 		fprintf(stderr, "Variable $EZ not defined.\n");
 		return -1;
 	}
-	strcat(dir, "/services/");
-	strcat(dir, name);
-	strcpy(env, dir);
-	strcat(env, "/STATE.");
-	strcpy(env1, env);
-	strcat(env, primary);
-	strcat(env1, secondary);
-	if (rm_file(env) != 0)
-		fprintf(stderr, "Unable to remove file %s \n", env);
-	if (rm_file(env1) != 0)
-		fprintf(stderr, "Unable to remove file %s \n", env1);
-	if (rmdir(dir) != 0) {
-		perror("Error");
-		return -1;
-	}
+	/*
+    retire le service du fichier de config en premier
+    permet aux autres process de comprendre que le service est supprime
+    evite les controles d etat sur le service en cours de suppression
+	*/
 	if (service_mod(name) != 0) {
 		fprintf(stderr, "Failed\n");
 		exit(-1);
 	}
+	sleep(3);
+	
+	strcpy(file1, envdir);
+	strcpy(file2, envdir);
+
+	strcat(file1, "/STATE.");
+	strcat(file2, "/STATE.");
+
+	strcat(file1, primary);
+	strcat(file2, secondary);
+	
+	if (rm_file(file1) != 0)
+		fprintf(stderr, "Unable to remove file %s \n", file1);
+	if (rm_file(file2) != 0)
+		fprintf(stderr, "Unable to remove file %s \n", file2);
+	if (rmdir(envdir) != 0) {
+		perror("Error");
+		return -1;
+	}
+
 	printf("Remove of service %s done\n", name);
 	return 0;
 }
@@ -949,8 +950,8 @@ service_mod(gchar * name)
 		perror("Rename failed:");
 		return -1;
 	}
-	return 0;
 
+	return 0;
 }
 
 gint
