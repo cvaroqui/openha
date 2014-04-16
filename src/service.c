@@ -52,7 +52,7 @@ int argc;
 char *argv[];
 {
 
-	gint state, ostate, pstate, sstate;
+	gint state, ostate, pstate, sstate, ret;
 	gchar *service, *primary, *secondary, *action;
 	gpointer pointer;
 
@@ -122,9 +122,15 @@ char *argv[];
 
 	if ((strcmp(argv[1], "-r") == 0) && (argc == 3)) {
 		//change_status_deleted("unknown",state, ostate, service,HT_SERV);
-		service_rm(argv[2], HT_SERV);
-		printf("ok\n");
-		return 0;
+		ret = service_rm(argv[2], HT_SERV);
+		if (ret == 0) {
+			printf("ok\n");
+			return 0;
+		} else {
+			printf("Failed to remove service\n");
+			return -1;
+		}
+		
 	}
 	//ACTION
 	if ((strcmp(argv[1], "-A") == 0) && (argc == 4)) {
