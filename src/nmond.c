@@ -227,8 +227,8 @@ char *argv[];
 			pstate = get_status(list_services, primary, service);
 			sstate = get_status(list_services, secondary, service);
 			snprintf(debugmsg, sizeof (debugmsg),
-				 "Processing service [%s] - Pri[%d@%s] - Sec[%d@%s]",
-				 service, pstate, primary, sstate, secondary);
+				 "Processing service [%s] - Pri[%s@%s] - Sec[%s@%s]",
+				 service, VAL[pstate], primary, VAL[sstate], secondary);
 			debuglog(IDENT, "main", debugmsg);
 			if (is_primary(nodename, service)) {
 				snprintf(debugmsg, sizeof (debugmsg),
