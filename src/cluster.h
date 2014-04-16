@@ -1550,7 +1550,6 @@ set_mcast_if(gint sockfd, gchar * ifname)
 gboolean
 rm_func_serv(gpointer key, gpointer value, gpointer user_data)
 {
-	debuglog(IDENT, "rm_func_serv", "Function start");
 	g_free((struct srvstruct *) value);
 	return TRUE;
 }
