@@ -74,11 +74,12 @@ char *argv[];
 	key_t Key;
 	gpointer pointer;
 	gint pstate, sstate;
-	gchar *primary, *secondary, *service;
-	struct shmtab_struct tab_shm[MAX_HEARTBEAT];
+	gchar *primary, *secondary;
+	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
 	struct srvstruct *ptr_service;
 	gint pid;
 	gchar *m;
+	gchar service[MAX_SERVICES_SIZE];
 
 	if ((getenv("OPENHADEBUG")) != NULL) {
 		DEBUGGING = 1;
@@ -88,8 +89,6 @@ char *argv[];
 	Setenv("PROGNAME", "nmond", 1);
 	progname = getenv("PROGNAME");
 	//Setenv("VERBOSE","0",1);
-	service = g_malloc(MAX_SERVICES_SIZE);
-	FILE_KEY = g_malloc0(128);
 
 	switch (pid = fork()) {
 	case 0:
@@ -120,6 +119,7 @@ char *argv[];
 	HT_SERV = g_hash_table_new(g_str_hash, g_str_equal);
 
 	Key = ftok(FILE_KEY, 0);
+	g_free(FILE_KEY);
 	if ((shmid = shmget(Key, sizeof (tabinfo), IPC_CREAT | 0644)) == -1) {
 		perror("shmget failed");
 	}
@@ -394,6 +394,7 @@ init()
 		       "environment variable EZ_LOG not defined ...\n ");
 		halog(LOG_ERR, progname, message);
 		perror("Error: environment variable EZ_LOG not defined ...\n");
+		g_free(message);
 		exit(-1);
 	}
 	FILE_KEY = g_strconcat(getenv("EZ_LOG"), "/proc/nmond.key", NULL);
@@ -401,24 +402,28 @@ init()
 		strcpy(message, "Error: unable to open key file");
 		halog(LOG_ERR, progname, message);
 		perror("Error: unable to open key file");
+		g_free(message);
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
 		strcpy(message, "Error: unable to lock key file");
 		halog(LOG_ERR, progname, message);
 		perror("Error: unable to lock key file");
+		g_free(message);
 		exit(-1);
 	}
 	if ((EZ_MONITOR = getenv("EZ_MONITOR")) == NULL) {
 		halog(LOG_ERR, progname,
 		      "Error: variable EZ_MONITOR not defined\n");
 		perror("Error: variable EZ_MONITOR not defined");
+		g_free(message);
 		exit(-1);
 	}
 	if ((File = fopen(EZ_MONITOR, "r")) == NULL) {
 		halog(LOG_ERR, progname,
 		      "Nothing to monitor: unable to open $EZ_MONITOR\n");
 		perror("Nothing to monitor: unable to open $EZ_MONITOR");
+		g_free(message);
 		exit(-1);
 	}
 //a rajouter: si EZ_MONITOR est vide, on sort 
@@ -430,6 +435,7 @@ init()
 	list_size = g_list_length(list_heart) / LIST_NB_ITEM;
 	fclose(File);
 	//printf("nombre de heartbeat a surveiller:%d\n",list_size);
+	g_free(message);
 }
 
 //for future use

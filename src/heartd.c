@@ -85,8 +85,10 @@ char *argv[];
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		strcpy(message, "Error: unable to open key file");
 		halog(LOG_ERR, "heartd", message);
+		g_free(FILE_KEY);
 		exit(-1);
 	}
+	g_free(FILE_KEY);
 	if (lockf(fd, F_TLOCK, 0) != 0) {
 		strcpy(message, "Error: unable to lock key file");
 		halog(LOG_ERR, "heartd", message);
@@ -112,16 +114,19 @@ char *argv[];
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		message = g_strconcat("Error: unable to open SHMFILE \n", NULL);
 		halog(LOG_ERR, "heartd", message);
+		g_free(SHM_KEY);
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
 		message = g_strconcat("Error: unable to lock SHMFILE\n", NULL);
 		halog(LOG_ERR, "heartd", message);
+		g_free(SHM_KEY);
 		exit(-1);
 	}
 
 	key = ftok(SHM_KEY, 0);
+	g_free(SHM_KEY);
 	if (port == -1) {
 		message =
 		    g_strconcat("Error: invalid port ", argv[3], "\n", NULL);

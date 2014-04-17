@@ -67,7 +67,6 @@ gchar *argv[];
 	gchar debugmsg[512];
 	gint iTmp;
 
-	message = g_malloc0(80);
 	signal(SIGTERM, sigterm);
 	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
 
@@ -89,6 +88,7 @@ gchar *argv[];
 	if ((timeout = atoi(argv[4])) < 2) {
 		message = g_strconcat("timeout must be > 1 second\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 
@@ -99,6 +99,7 @@ gchar *argv[];
 		    g_strconcat("environment variable EZ_LOG not defined ...\n",
 				NULL);
 		halog(LOG_ERR, "heartc: ", message);
+		g_free(message);
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
@@ -109,20 +110,25 @@ gchar *argv[];
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		message = g_strconcat("Error: unable to open SHMFILE \n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
+		g_free(SHM_KEY);
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
 		message = g_strconcat("Error: unable to lock SHMFILE\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 
 	key = ftok(SHM_KEY, 0);
+	g_free(SHM_KEY);
 	if (port == -1) {
 		message =
 		    g_strconcat("Error: invalid port ", argv[3], "\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 
@@ -130,12 +136,14 @@ gchar *argv[];
 		message = g_strconcat("shmget failed\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		//perror("shmget");
+		g_free(message);
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
 		message = g_strconcat("shmat failed\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		//perror("shmat");
+		g_free(message);
 		exit(-1);
 	}
 
@@ -143,6 +151,7 @@ gchar *argv[];
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		message = g_strconcat("getting socket\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 
@@ -152,6 +161,7 @@ gchar *argv[];
 	    (s, SOL_SOCKET, SO_REUSEADDR, (void *) &iTmp, sizeof (iTmp)) < 0) {
 		message = g_strconcat("Error setsockopt(SO_REUSEADDR)\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 
@@ -177,6 +187,7 @@ gchar *argv[];
 		    g_strconcat("Error setting outbound mcast interface: ",
 				argv[1], "\n", NULL);
 		halog(LOG_ERR, "heartc", message);
+		g_free(message);
 		exit(-1);
 	}
 	/* name the socket */
@@ -189,6 +200,7 @@ gchar *argv[];
 		message = g_strconcat("bind failed\n", NULL);
 		halog(LOG_ERR, "heartc", message);
 		//perror("bind");
+		g_free(message);
 		exit(1);
 	}
 
@@ -216,6 +228,7 @@ gchar *argv[];
 		if ((i < 0) && (flag == 0)) {
 			message = g_strconcat("recvfrom failed\n", NULL);
 			halog(LOG_ERR, "heartc", message);
+			g_free(message);
 			continue;
 		}
 		if (i > 0) {

@@ -253,16 +253,14 @@ is_primary(gchar * node, gchar * service)
 {
 	debuglog(IDENT, "is_primary", "Function start");
 	gchar *primary;
-    gpointer ptr;
+	gpointer ptr;
 
-    ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
-    primary = ((struct srvstruct *) (ptr))->primary;
+	ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
+	primary = ((struct srvstruct *) (ptr))->primary;
     
-    if (strncmp(primary, node, MAX_NODENAME_SIZE) == 0) {
-    	return TRUE;
-    } else {
-    	return FALSE;
-    }
+	if (strncmp(primary, node, MAX_NODENAME_SIZE) == 0)
+		return TRUE;
+	return FALSE;
 }
 
 gboolean
@@ -270,16 +268,14 @@ is_secondary(gchar * node, gchar * service)
 {
 	debuglog(IDENT, "is_secondary", "Function start");
 	gchar *secondary;
-    gpointer ptr;
+	gpointer ptr;
 
-    ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
-    secondary = ((struct srvstruct *) (ptr))->secondary;
+	ptr = g_hash_table_lookup(GLOBAL_HT_SERV, service);
+	secondary = ((struct srvstruct *) (ptr))->secondary;
     
-    if (strncmp(secondary, node, MAX_NODENAME_SIZE) == 0) {
-    	return TRUE;
-    } else {
-    	return FALSE;
-    }
+	if (strncmp(secondary, node, MAX_NODENAME_SIZE) == 0)
+		return TRUE;
+	return FALSE;
 }
 
 gchar *
@@ -384,6 +380,14 @@ list_copy_deep(GList * src)
 	return dst;
 }
 
+
+void
+drop_hash(GHashTable *HT)
+{
+	if (HT == NULL)
+		return;
+	g_hash_table_foreach_remove(HT, rm_func_serv, HT);
+}
 
 GHashTable *
 get_hash(GList * liste)
@@ -535,12 +539,11 @@ get_liste(FILE * File, guint elem)
 	/* on rafraichi aussi la hash table globale */
 	/* attention les états de service ne sont pas tenus à jour */
 	/* utile pour identifier quel noeud est primaire/secondaire pour quel service */
-	if(GLOBAL_HT_SERV != NULL) g_hash_table_foreach_remove(GLOBAL_HT_SERV, rm_func_serv, GLOBAL_HT_SERV);
+	drop_hash(GLOBAL_HT_SERV);
 	GLOBAL_HT_SERV = get_hash(GlobalList);
 	GlobalForceRefresh = FALSE;
 	return L;
 }
-
 
 gboolean
 need_refresh(gchar * path2file, time_t refstamp)
@@ -1561,12 +1564,6 @@ gboolean
 init_var()
 {
 	debuglog(IDENT, "init_var", "Function start");
-	EZ = g_malloc0(256);
-	EZ_BIN = g_malloc0(256);
-	EZ_MONITOR = g_malloc0(256);
-	EZ_SERVICES = g_malloc0(256);
-	EZ_LOG = g_malloc0(256);
-	EZ_NODES = g_malloc0(256);
 
 	if ((EZ_BIN = getenv("EZ_BIN")) == NULL) {
 		printf("Error: variable EZ_BIN not defined\n");
@@ -1621,4 +1618,5 @@ Setenv(gchar * name, gchar * value, gint why)
 	gchar *env;
 	env = g_strconcat(name, "=", value, NULL);
 	putenv(env);
+	g_free(env);
 }
