@@ -67,7 +67,7 @@ char *argv[];
 		exit(-1);
 	}
 	daemonize("heartd_raw");
-	Setenv("PROGNAME", "heartd_raw", 1);
+	Setenv("PROGNAME", "heartd_raw");
 
 	address = atoi(argv[2]);
 	NEW_KEY = g_strsplit(argv[1], "/", 10);

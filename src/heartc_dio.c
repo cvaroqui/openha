@@ -77,7 +77,7 @@ gchar *argv[];
 		exit(-1);
 	}
 	daemonize("heartc_dio");
-	Setenv("PROGNAME", "heartc_dio", 1);
+	Setenv("PROGNAME", "heartc_dio");
 
 	strcpy(device, argv[1]);
 	address = atoi(argv[2]);

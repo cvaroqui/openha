@@ -24,7 +24,7 @@ check_node(gchar * name)
 		return TRUE;
 	}
 	for (i = 0; i < (g_list_length(list_nodes)); i++) {
-		if (g_strcasecmp((g_list_nth_data(list_nodes, i)), name) == 0) {
+		if (g_ascii_strcasecmp((g_list_nth_data(list_nodes, i)), name) == 0) {
 #ifdef DEBUG
 			printf("Node %s found in $EZ_NODES\n", name);
 #endif
@@ -49,9 +49,9 @@ gboolean
 check_type(gchar * type)
 {
 
-	if ((g_strcasecmp(type, "net") == 0)
-	    || (g_strcasecmp(type, "disk") == 0)
-	    || (g_strcasecmp(type, "dio") == 0)) {
+	if ((g_ascii_strcasecmp(type, "net") == 0)
+	    || (g_ascii_strcasecmp(type, "disk") == 0)
+	    || (g_ascii_strcasecmp(type, "dio") == 0)) {
 #ifdef DEBUG
 		printf("Type %s ok.\n", type);
 #endif
@@ -73,7 +73,7 @@ check_interface(gchar * type, gchar * interface, gchar * address, gchar * port)
 	gint content[4];
 	gint port_value, addr;
 
-	if (g_strcasecmp(type, "net") == 0) {
+	if (g_ascii_strcasecmp(type, "net") == 0) {
 		if ((interface == NULL) || (address == NULL) || (port == NULL)) {
 			fprintf(stderr, "Need interface address and port.\n");
 			return FALSE;
@@ -115,7 +115,7 @@ check_interface(gchar * type, gchar * interface, gchar * address, gchar * port)
 			}
 		}
 	}
-	if (g_strcasecmp(type, "disk") == 0 || g_strcasecmp(type, "dio") == 0) {
+	if (g_ascii_strcasecmp(type, "disk") == 0 || g_ascii_strcasecmp(type, "dio") == 0) {
 		if ((interface == NULL) || (address == NULL) || (port != NULL)) {
 			fprintf(stderr, "Need interface and address.\n");
 			return FALSE;

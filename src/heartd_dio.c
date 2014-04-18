@@ -70,7 +70,7 @@ char *argv[];
 		exit(-1);
 	}
 	daemonize("heartd_dio");
-	Setenv("PROGNAME", "heartd_dio", 1);
+	Setenv("PROGNAME", "heartd_dio");
 
 	address = atoi(argv[2]);
 	NEW_KEY = g_strsplit(argv[1], "/", 10);

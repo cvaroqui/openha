@@ -117,9 +117,10 @@ debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
 	LOGFILE = g_strconcat(getenv("EZ_LOG"), "/cluster.log", NULL);
 	if ((fd = fopen(LOGFILE, "a+")) == NULL) {
 		printf("Error opening logging file <%s>\n", LOGFILE);
+		g_free(LOGFILE);
 		exit(-1);
 	}
-	strftime(buf, sizeof (buf), "%c", localtime(&clock));
+	strftime(buf, sizeof(buf), "%c", localtime(&clock));
 	fprintf(fd, "[%s][%s][%s] %s\n", buf, prg_src, prg_func, message);
 
 	g_free(LOGFILE);
@@ -1305,6 +1306,8 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 	debuglog(IDENT, "change_status_force_stop", "Function start");
 	gchar *message = NULL;
 
+	progname = getenv("PROGNAME");
+
 #ifdef VERBOSE
 	printf("Ready to force stop, partner node is %s , we are %s\n",
 	       VAL[ostate], VAL[state]);
@@ -1626,7 +1629,7 @@ daemonize(gchar * message)
 }
 
 void
-Setenv(gchar * name, gchar * value, gint why)
+Setenv(gchar * name, gchar * value)
 {
 	debuglog(IDENT, "Setenv", "Function start");
 	gchar *env;

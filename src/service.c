@@ -79,9 +79,9 @@ char *argv[];
 	list_size = g_list_length(list_services);
 	svccount = list_size / LIST_NB_ITEM;
 
-	Setenv("PROGNAME", "service", 1);
+	Setenv("PROGNAME", "service");
 	progname = getenv("PROGNAME");
-	Setenv("VERBOSE", "1", 1);
+	Setenv("VERBOSE", "1");
 
 	if (list_services == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
@@ -146,8 +146,10 @@ char *argv[];
 			printf("Error: service %s not found !\n", service);
 			exit(-1);
 		}
-		g_strup(action);
-		if ((i = find_action(ACTION, action)) != -1) {
+		gchar *action_up;
+		action_up = g_ascii_strup(action, -1);
+
+		if ((i = find_action(ACTION, action_up)) != -1) {
 			PRIMARY = is_primary(nodename, service);
 			SECONDARY = is_secondary(nodename, service);
 			if (PRIMARY) {
@@ -158,8 +160,10 @@ char *argv[];
 				ostate = pstate;
 			} else {
 				printf("We are not Primary or secondary for service %s !\n", service);
+				g_free(action_up);
 				return -1;
 			}
+			g_free(action_up);
 
 			switch (i) {
 				//STOP
@@ -205,7 +209,8 @@ char *argv[];
 				break;
 			}
 		} else {
-			printf("Error: action %s not found !\n", action);
+			printf("Error: action %s not found !\n", action_up);
+			g_free(action_up);
 			exit(-1);
 		}
 	}

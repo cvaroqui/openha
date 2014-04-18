@@ -466,7 +466,7 @@ gchar *argv[];
 	    0;
 	gchar *nvalue, *tvalue, *ivalue, *dvalue, *pvalue = NULL, *Tvalue;
 
-	Setenv("PROGNAME", "hb", 1);
+	Setenv("PROGNAME", "hb");
 	init_var();
 	sflag = rflag = aflag = nflag = tflag = iflag = dflag = pflag = Tflag =
 	    0;

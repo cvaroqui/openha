@@ -75,7 +75,7 @@ char *argv[];
 	}
 	signal(SIGTERM, sigterm);
 	daemonize("heartd");
-	Setenv("PROGNAME", "heartd", 1);
+	Setenv("PROGNAME", "heartd");
 	strncpy(ADDR, argv[2], 15);
 	FILE_KEY =
 	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",

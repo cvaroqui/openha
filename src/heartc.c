@@ -71,7 +71,7 @@ gchar *argv[];
 	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
 
 	daemonize("heartc");
-	Setenv("PROGNAME", "heartc", 1);
+	Setenv("PROGNAME", "heartc");
 
 	if (argc != 5) {
 		fprintf(stderr,

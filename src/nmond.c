@@ -86,9 +86,9 @@ char *argv[];
 	}
 
 	sprintf(IDENT, "%s", argv[0]);
-	Setenv("PROGNAME", "nmond", 1);
+	Setenv("PROGNAME", "nmond");
 	progname = getenv("PROGNAME");
-	//Setenv("VERBOSE","0",1);
+	//Setenv("VERBOSE", "0");
 
 	switch (pid = fork()) {
 	case 0:
@@ -613,5 +613,6 @@ sigterm()
 	debuglog(IDENT, "sigterm", "Function start");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	halog(LOG_INFO, progname, "SIGTERM received, exiting gracefuly ...\n");
+	drop_hash(GLOBAL_HT_SERV);
 	exit(0);
 }
