@@ -382,6 +382,14 @@ list_copy_deep(GList * src)
 	return dst;
 }
 
+void
+drop_list(GList *liste)
+{
+	if (liste == NULL)
+		return;
+	g_list_foreach(liste, delete_data, liste);
+	g_list_free(liste);
+}
 
 void
 drop_hash(GHashTable *HT)
