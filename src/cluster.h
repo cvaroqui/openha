@@ -344,6 +344,7 @@ write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 				     FILE_STATE)) == NULL) {
 				perror("Unable to reopen SERVICE STATE file");
 				fclose(FILE_STATE);
+				g_free(FILE_NAME);
 				return;
 			} else {
 				to_copy[0] = state;
@@ -357,6 +358,7 @@ write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 			printf("Lock Unsuccessful\n");
 			perror("lockf:");
 			fclose(FILE_STATE);
+			g_free(FILE_NAME);
 			return;
 		}
 	} else {
@@ -839,6 +841,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 						"Error: unable to open SERVICE STATE file %s\n",
 						FILE_NAME);
 					g_free(FILE_NAME);
+					g_free(m);
 					return (-1);
 				}
 				g_free(FILE_NAME);
@@ -1290,6 +1293,7 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 		printf("Error: failed to stop %s.\n", service);
 #endif
 		write_status(service, '5', nodename);
+		g_free(m);
 		return -1;
 	}
 }
@@ -1339,6 +1343,7 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 	    g_strconcat("Ready to force start, partner node is ", VAL[ostate],
 			", we are ", VAL[state], ".\n", NULL);
 	halog(LOG_INFO, progname, message);
+	g_free(message);
 
 #ifdef VERBOSE
 	printf("Service %s forced to started\n", service);
@@ -1348,6 +1353,7 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 	halog(LOG_INFO, progname, message);
 
 	write_status(service, '2', nodename);
+	g_free(message);
 	return 0;
 }
 
