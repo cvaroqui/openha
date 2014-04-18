@@ -287,7 +287,7 @@ char *argv[];
 		}
 		snprintf(debugmsg, sizeof (debugmsg), "Freeing list_services");
 		debuglog(IDENT, "main", debugmsg);
-		drop_liste(list_services);
+		drop_list(list_services);
 		snprintf(debugmsg, sizeof (debugmsg),
 			 "Removing each HT_SERV key/value");
 		debuglog(IDENT, "main", debugmsg);
