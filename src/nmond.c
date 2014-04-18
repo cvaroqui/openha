@@ -287,13 +287,11 @@ char *argv[];
 		}
 		snprintf(debugmsg, sizeof (debugmsg), "Freeing list_services");
 		debuglog(IDENT, "main", debugmsg);
-		g_list_foreach(list_services, delete_data, NULL);
-		g_list_free(list_services);
-		list_services = NULL;
+		drop_liste(list_services);
 		snprintf(debugmsg, sizeof (debugmsg),
 			 "Removing each HT_SERV key/value");
 		debuglog(IDENT, "main", debugmsg);
-		g_hash_table_foreach_remove(HT_SERV, rm_func_serv, HT_SERV);
+		drop_hash(HT_SERV);
 		snprintf(debugmsg, sizeof (debugmsg), "Calling alarm(2)");
 		debuglog(IDENT, "main", debugmsg);
 		alarm(2);
