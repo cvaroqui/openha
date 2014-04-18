@@ -122,6 +122,8 @@ debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
 	strftime(buf, sizeof (buf), "%c", localtime(&clock));
 	fprintf(fd, "[%s][%s][%s] %s\n", buf, prg_src, prg_func, message);
 
+	g_free(LOGFILE);
+
 	fclose(fd);
 }
 
