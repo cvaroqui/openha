@@ -1305,8 +1305,6 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 	debuglog(IDENT, "change_status_force_stop", "Function start");
 	gchar *message = NULL;
 
-	progname = getenv("PROGNAME");
-
 #ifdef VERBOSE
 	printf("Ready to force stop, partner node is %s , we are %s\n",
 	       VAL[ostate], VAL[state]);
