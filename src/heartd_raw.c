@@ -146,7 +146,7 @@ gint
 get_node_status(gchar * nodename)
 {
 	FILE *EZ_SERVICES, *FILE_STATE;
-	guint i, j, list_size, LIST_NB_ITEM = 5;
+	guint i, j, list_size;
 	gchar *FILE_NAME, STATE, *service;
 
 	if (getenv("EZ_SERVICES") == NULL) {

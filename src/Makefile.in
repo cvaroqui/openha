@@ -67,47 +67,55 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_hb_OBJECTS = hb.$(OBJEXT) sockhelp.$(OBJEXT)
+am_hb_OBJECTS = hb.$(OBJEXT) sockhelp.$(OBJEXT) cluster.$(OBJEXT)
 hb_OBJECTS = $(am_hb_OBJECTS)
 hb_DEPENDENCIES =
 hb_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(hb_LDFLAGS) $(LDFLAGS) -o \
 	$@
-am_heartc_OBJECTS = heartc.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartc_OBJECTS = heartc.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartc_OBJECTS = $(am_heartc_OBJECTS)
 heartc_DEPENDENCIES =
 heartc_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartc_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_heartc_dio_OBJECTS = heartc_dio.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartc_dio_OBJECTS = heartc_dio.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartc_dio_OBJECTS = $(am_heartc_dio_OBJECTS)
 heartc_dio_DEPENDENCIES =
 heartc_dio_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartc_dio_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_heartc_raw_OBJECTS = heartc_raw.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartc_raw_OBJECTS = heartc_raw.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartc_raw_OBJECTS = $(am_heartc_raw_OBJECTS)
 heartc_raw_DEPENDENCIES =
 heartc_raw_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartc_raw_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_heartd_OBJECTS = heartd.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartd_OBJECTS = heartd.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartd_OBJECTS = $(am_heartd_OBJECTS)
 heartd_DEPENDENCIES =
 heartd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartd_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_heartd_dio_OBJECTS = heartd_dio.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartd_dio_OBJECTS = heartd_dio.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartd_dio_OBJECTS = $(am_heartd_dio_OBJECTS)
 heartd_dio_DEPENDENCIES =
 heartd_dio_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartd_dio_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_heartd_raw_OBJECTS = heartd_raw.$(OBJEXT) sockhelp.$(OBJEXT)
+am_heartd_raw_OBJECTS = heartd_raw.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 heartd_raw_OBJECTS = $(am_heartd_raw_OBJECTS)
 heartd_raw_DEPENDENCIES =
 heartd_raw_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(heartd_raw_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_nmond_OBJECTS = nmond.$(OBJEXT) sockhelp.$(OBJEXT)
+am_nmond_OBJECTS = nmond.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 nmond_OBJECTS = $(am_nmond_OBJECTS)
 nmond_DEPENDENCIES =
 nmond_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(nmond_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_service_OBJECTS = service.$(OBJEXT) sockhelp.$(OBJEXT)
+am_service_OBJECTS = service.$(OBJEXT) sockhelp.$(OBJEXT) \
+	cluster.$(OBJEXT)
 service_OBJECTS = $(am_service_OBJECTS)
 service_DEPENDENCIES =
 service_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(service_LDFLAGS) \
@@ -233,31 +241,31 @@ AM_CFLAGS = \
 	 -O2\
 	 -g
 
-service_SOURCES = service.c sockhelp.c cluster.h sockhelp.h
+service_SOURCES = service.c sockhelp.c cluster.c
 service_LDFLAGS = $(glib_LIBS)
 service_LDADD = 
-heartc_SOURCES = heartc.c sockhelp.c
+heartc_SOURCES = heartc.c sockhelp.c cluster.c
 heartc_LDFLAGS = $(glib_LIBS)
 heartc_LDADD = 
-heartc_raw_SOURCES = heartc_raw.c sockhelp.c
+heartc_raw_SOURCES = heartc_raw.c sockhelp.c cluster.c
 heartc_raw_LDFLAGS = $(glib_LIBS)
 heartc_raw_LDADD = 
-heartc_dio_SOURCES = heartc_dio.c sockhelp.c
+heartc_dio_SOURCES = heartc_dio.c sockhelp.c cluster.c
 heartc_dio_LDFLAGS = $(glib_LIBS)
 heartc_dio_LDADD = 
-heartd_SOURCES = heartd.c sockhelp.c
+heartd_SOURCES = heartd.c sockhelp.c cluster.c
 heartd_LDFLAGS = $(glib_LIBS)
 heartd_LDADD = 
-heartd_raw_SOURCES = heartd_raw.c sockhelp.c
+heartd_raw_SOURCES = heartd_raw.c sockhelp.c cluster.c
 heartd_raw_LDFLAGS = $(glib_LIBS)
 heartd_raw_LDADD = 
-heartd_dio_SOURCES = heartd_dio.c sockhelp.c
+heartd_dio_SOURCES = heartd_dio.c sockhelp.c cluster.c
 heartd_dio_LDFLAGS = $(glib_LIBS)
 heartd_dio_LDADD = 
-nmond_SOURCES = nmond.c sockhelp.c
+nmond_SOURCES = nmond.c sockhelp.c cluster.c
 nmond_LDFLAGS = $(glib_LIBS)
 nmond_LDADD = 
-hb_SOURCES = hb.c sockhelp.c checks.h
+hb_SOURCES = hb.c sockhelp.c checks.h cluster.c
 hb_LDFLAGS = $(glib_LIBS)
 hb_LDADD = 
 all: all-am
@@ -368,6 +376,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cluster.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/heartc_dio.Po@am__quote@
