@@ -18,7 +18,7 @@ check_node(gchar * name)
 	gboolean found = FALSE;
 
 	if ((File = fopen(EZ_NODES, "r")) != NULL) {
-		list_nodes = get_liste(File, 1);
+		list_nodes = get_liste_generic(File, 1);
 		fclose(File);
 	} else {
 		return TRUE;

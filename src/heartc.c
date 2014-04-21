@@ -237,7 +237,7 @@ gchar *argv[];
 				 sizeof (struct sendstruct),
 				 inet_ntoa(stFrom.sin_addr),
 				 ntohs(stFrom.sin_port));
-			debuglog(IDENT, "main", debugmsg);
+			debuglog("main", debugmsg);
 
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
@@ -250,7 +250,7 @@ gchar *argv[];
 						 to_recV.service_state[j],
 						 to_recV.nodename,
 						 to_recV.elapsed);
-					debuglog(IDENT, "main", debugmsg);
+					debuglog("main", debugmsg);
 					write_status(to_recV.service_name[j],
 						     to_recV.service_state[j],
 						     to_recV.nodename);

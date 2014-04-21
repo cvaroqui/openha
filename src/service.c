@@ -59,7 +59,6 @@ char *argv[];
 	//FILE *EZ_SERVICES;
 	gint i, list_size, svccount;
 	gboolean PRIMARY, SECONDARY;
-	GList *list_services = NULL;
 	GHashTable *HT_SERV = NULL;
 
 	if ((argc < 2) || (argc > 7)) {
@@ -75,30 +74,30 @@ char *argv[];
 
 	init_var();
 	get_nodename();
-	list_services = get_services_list();
-	list_size = g_list_length(list_services);
+	get_services_list();
+	list_size = g_list_length(GlobalList);
 	svccount = list_size / LIST_NB_ITEM;
 
 	Setenv("PROGNAME", "service");
 	progname = getenv("PROGNAME");
 	Setenv("VERBOSE", "1");
 
-	if (list_services == NULL) {
+	if (GlobalList == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
 		HT_SERV = NULL;
 	} else {
-		HT_SERV = get_hash(list_services);
+		HT_SERV = get_hash(GlobalList);
 	}
 
 	// STATUS
 	if ((strcmp(argv[1], "-s") == 0) && (argc == 2)) {
-		service_status(list_services, HT_SERV);
+		service_status(GlobalList, HT_SERV);
 		return 0;
 	}
 	//INFO
 	if ((strcmp(argv[1], "-i") == 0) && (argc == 3)) {
 		service = argv[2];
-		service_info(list_services, HT_SERV, nodename, service);
+		service_info(GlobalList, HT_SERV, nodename, service);
 		return 0;
 	}
 	//SERVICE ADD RM
@@ -139,8 +138,8 @@ char *argv[];
 		pointer = g_hash_table_lookup(HT_SERV, (gchar *) service);
 		primary = ((struct srvstruct *) (pointer))->primary;
 		secondary = ((struct srvstruct *) (pointer))->secondary;
-		pstate = get_status(list_services, primary, service);
-		sstate = get_status(list_services, secondary, service);
+		pstate = get_status(GlobalList, primary, service);
+		sstate = get_status(GlobalList, secondary, service);
 
 		if (pointer == NULL) {
 			printf("Error: service %s not found !\n", service);

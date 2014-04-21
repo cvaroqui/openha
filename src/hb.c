@@ -355,7 +355,7 @@ hb_status()
 		return FALSE;
 	}
 	memcpy(tabinfo, shm, sizeof (tabinfo));
-	list_heart = get_liste(File, LIST_NB_ITEM);
+	list_heart = get_liste_generic(File, LIST_NB_ITEM);
 	for (i = 0; i < (g_list_length(list_heart) / 5); i++) {
 		node = g_malloc0(MAX_NODENAME_SIZE);
 		status = g_malloc0(8);

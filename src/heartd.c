@@ -36,12 +36,10 @@
 #define BUFSIZE   1024
 #define TTL_VALUE 8
 
-GList *list_services = NULL;
-GList *list_state = NULL;
 gint shmid;
 struct sendstruct to_send;
 void clean_tab();
-gint get_node_status(gchar *);
+void get_node_status(gchar *);
 gchar *progname = NULL;
 void sighup();
 void sigterm();
@@ -208,13 +206,13 @@ char *argv[];
 				 sizeof (to_send),
 				 inet_ntoa(stLocal.sin_addr),
 				 ntohs(stLocal.sin_port));
-			debuglog(IDENT, "main", debugmsg);
+			debuglog("main", debugmsg);
 			snprintf(debugmsg,
 				 sizeof (debugmsg),
 				 "sendto() OK : Dest %s:%d",
 				 inet_ntoa(stTo.sin_addr),
 				 ntohs(stTo.sin_port));
-			debuglog(IDENT, "main", debugmsg);
+			debuglog("main", debugmsg);
 		}
 
 		alarm(1);
@@ -222,7 +220,7 @@ char *argv[];
 	}
 }				/* end main() */
 
-gint
+void
 get_node_status(gchar * nodename)
 {
 	FILE *EZ_SERVICES, *FILE_STATE;
@@ -232,23 +230,21 @@ get_node_status(gchar * nodename)
 	if (getenv("EZ_SERVICES") == NULL) {
 		printf
 		    ("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		return 0;
-		//exit(-1);
+		return;
 	}
 	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
 		//No service(s) defined (unable to open $EZ_SERVICES file)
-		return 0;
+		return;
 	}
-	GlobalForceRefresh = TRUE;
-	list_services = get_services_list();
+	get_services_list();
 	fclose(EZ_SERVICES);
-	list_size = g_list_length(list_services) / LIST_NB_ITEM;
+	list_size = g_list_length(GlobalList) / LIST_NB_ITEM;
 	clean_tab();
 	j = 0;
 	for (i = 0; i < list_size; i++) {
 		service = malloc(MAX_SERVICES_SIZE);
 		strcpy(service,
-		       (gchar *) g_list_nth_data(list_services,
+		       (gchar *) g_list_nth_data(GlobalList,
 						 (i * LIST_NB_ITEM)));
 		if (is_primary(nodename, service)
 		    || is_secondary(nodename, service)) {
@@ -271,10 +267,7 @@ get_node_status(gchar * nodename)
 		}
 		g_free(service);
 	}
-	g_list_foreach(list_services, delete_data, NULL);
-	g_list_free(list_services);
-	list_services = list_state = NULL;
-	return list_size;
+	return;
 }
 
 void

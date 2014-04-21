@@ -103,11 +103,10 @@ gchar debugmsg[512];
 time_t GlobalListTimeStamp;
 GList *GlobalList;
 GHashTable *GLOBAL_HT_SERV;
-gboolean GlobalForceRefresh;
 
 gchar nodename[MAX_NODENAME_SIZE];
 
-GList *get_services_list(void);
+void get_services_list(void);
 gint get_status(GList *, gchar *, gchar *);
 gint launch(gchar *, gchar **);
 
@@ -130,7 +129,7 @@ gint service_mod(gchar *);
 gint rm_file(gchar *);
 gint set_mcast_if(gint, gchar *);
 void halog(gint, gchar *, gchar *);
-void debuglog(gchar *, gchar *, gchar *);
+void debuglog(gchar *, gchar *);
 void signal_usr1_callback_handler();
 void signal_usr2_callback_handler();
 gboolean init_var();
@@ -148,7 +147,7 @@ glong Elapsed(void);
 void delete_data(gpointer, gpointer);
 void drop_list(GList *);
 void drop_hash(GHashTable *);
-GList * get_liste(FILE *, guint);
+void get_liste(FILE *, guint);
 GList * get_liste_generic(FILE *, guint);
 
 #endif /* CLUSTER_H */

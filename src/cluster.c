@@ -15,7 +15,7 @@ delete_data(gpointer data, gpointer user_data)
 }
 
 void
-debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
+debuglog(gchar * prg_func, gchar * message)
 {
 	if (DEBUGGING != 1) {
 		return;
@@ -33,7 +33,7 @@ debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
 		exit(-1);
 	}
 	strftime(buf, sizeof(buf), "%c", localtime(&clock));
-	fprintf(fd, "[%s][%s][%s] %s\n", buf, prg_src, prg_func, message);
+	fprintf(fd, "[%s][%s][%s] %s\n", buf, IDENT, prg_func, message);
 
 	g_free(LOGFILE);
 
@@ -43,7 +43,7 @@ debuglog(gchar * prg_src, gchar * prg_func, gchar * message)
 void
 debug_list(GList * liste)
 {
-	debuglog(IDENT, "debug_list", "Function start");
+	debuglog("debug_list", "Function start");
 	gint i = 0;
 
 	for (i = 0; i <= (g_list_length(liste) / LIST_NB_ITEM) - 1; i++) {
@@ -58,17 +58,17 @@ debug_list(GList * liste)
 						  (i * LIST_NB_ITEM) + 3),
 			 (char *) g_list_nth_data(liste,
 						  (i * LIST_NB_ITEM) + 4));
-		debuglog(IDENT, "debug_list", debugmsg);
+		debuglog("debug_list", debugmsg);
 	}
 }
 
 void
 halog(gint type, gchar * prg_src, gchar * message)
 {
-	debuglog(IDENT, "halog", "Function start");
+	debuglog("halog", "Function start");
 	gchar *msg;
 
-	debuglog(prg_src, "halog", message);
+	debuglog("halog", message);
 	msg = g_strconcat("EZ-HA: ", prg_src, "\n", NULL);
 	openlog(msg, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(type, "%s", message);
@@ -93,7 +93,7 @@ signal_usr2_callback_handler()
 glong
 Elapsed(void)
 {
-	debuglog(IDENT, "Elapsed", "Function start");
+	debuglog("Elapsed", "Function start");
 	gint ts;
 	struct timeval buf;
 	if ((ts = gettimeofday(&buf, NULL)) == 0)
@@ -118,7 +118,7 @@ file_lock(short type, short whence)
 void
 get_nodename()
 {
-	debuglog(IDENT, "get_nodename", "Function start");
+	debuglog("get_nodename", "Function start");
 	struct utsname tmp_name;
 	uname(&tmp_name);
 	strncpy(nodename, tmp_name.nodename, MAX_NODENAME_SIZE);
@@ -127,7 +127,7 @@ get_nodename()
 gboolean
 is_primary(gchar * node, gchar * service)
 {
-	debuglog(IDENT, "is_primary", "Function start");
+	debuglog("is_primary", "Function start");
 	gchar *primary;
 	gpointer ptr;
 
@@ -142,7 +142,7 @@ is_primary(gchar * node, gchar * service)
 gboolean
 is_secondary(gchar * node, gchar * service)
 {
-	debuglog(IDENT, "is_secondary", "Function start");
+	debuglog("is_secondary", "Function start");
 	gchar *secondary;
 	gpointer ptr;
 
@@ -157,7 +157,7 @@ is_secondary(gchar * node, gchar * service)
 gchar *
 get_our_secondary(gchar * node, gchar * service, GList * liste)
 {
-	debuglog(IDENT, "get_our_secondary", "Function start");
+	debuglog("get_our_secondary", "Function start");
 	gint i = 0, j, list_size;
 	gchar *service_to_cmp, *node_to_cmp;
 
@@ -177,14 +177,14 @@ get_our_secondary(gchar * node, gchar * service, GList * liste)
 gint
 read_lock(gint fd)
 {				/* a shared lock on an entire file */
-	debuglog(IDENT, "read_lock", "Function start");
+	debuglog("read_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_RDLCK, SEEK_SET)));
 }
 
 gint
 write_lock(gint fd)
 {				/* an exclusive lock on an entire file */
-	debuglog(IDENT, "write_lock", "Function start");
+	debuglog("write_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_SET)));
 }
 
@@ -192,14 +192,14 @@ gint
 append_lock(gint fd)
 {				/* a lock on the _end_ of a file -- other
 				   processes may access existing records */
-	debuglog(IDENT, "append_lock", "Function start");
+	debuglog("append_lock", "Function start");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_END)));
 }
 
 void
 write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 {
-	debuglog(IDENT, "write_status", "Function start");
+	debuglog("write_status", "Function start");
 	gchar *FILE_NAME;
 	FILE *FILE_STATE;
 	gchar to_copy[2];
@@ -275,7 +275,7 @@ drop_hash(GHashTable *HT)
 GHashTable *
 get_hash(GList * liste)
 {
-	debuglog(IDENT, "get_hash", "Function start");
+	debuglog("get_hash", "Function start");
 	GHashTable *HT;
 	gint i = 0;
 	struct srvstruct *service;
@@ -302,7 +302,7 @@ GList *
 get_liste_generic(FILE * File, guint elem)
 {
 	/* appel direct depuis nmond.c func init() */
-	debuglog(IDENT, "get_liste_generic", "Function start");
+	debuglog("get_liste_generic", "Function start");
 	GList *L = NULL;
 	gint i = 0, j = 0, k = 0, l = 0, LAST;
 	gchar *s = NULL;
@@ -322,7 +322,7 @@ get_liste_generic(FILE * File, guint elem)
 			tmp_tab[i][ln] = '\0';
 		/*
 		   snprintf(debugmsg,sizeof(debugmsg),"loading line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
-		   debuglog(IDENT,"get_liste_generic",debugmsg);
+		   debuglog("get_liste_generic",debugmsg);
 		 */
 		i++;
 	}
@@ -346,7 +346,7 @@ get_liste_generic(FILE * File, guint elem)
 			}
 			/*
 			   snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
-			   debuglog(IDENT,"get_liste_generic",debugmsg);
+			   debuglog("get_liste_generic",debugmsg);
 			 */
 			k = 0;
 			s = g_strdup(item);
@@ -358,15 +358,17 @@ get_liste_generic(FILE * File, guint elem)
 	return L;
 }
 
-GList *
+void
 get_liste(FILE * File, guint elem)
 {
-	debuglog(IDENT, "get_liste", "Function start");
-	GList *L = NULL;
+	debuglog("get_liste", "Function start");
 	gint i = 0, j = 0, k = 0, l = 0, LAST;
 	gchar *s = NULL;
 	gchar item[MAX_ITEM];
 	gchar tmp_tab[MAX_ITEM][MAX_ITEM];
+
+	drop_list(GlobalList);
+	GlobalList = NULL;
 
 	for (i = 0; i < MAX_ITEM; i++)
 		for (j = 0; j < MAX_ITEM; j++)
@@ -379,10 +381,10 @@ get_liste(FILE * File, guint elem)
 		size_t ln = strlen(tmp_tab[i]) - 1;
 		if (tmp_tab[i][ln] == '\n')
 			tmp_tab[i][ln] = '\0';
-		/*
-		   snprintf(debugmsg,sizeof(debugmsg),"loading service line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
-		   debuglog(IDENT,"get_liste",debugmsg);
-		 */
+/*
+		snprintf(debugmsg,sizeof(debugmsg), "loading service line tmp_tab[%d] => [%s]", i, tmp_tab[i]);
+		debuglog("get_liste", debugmsg);
+ */
 		i++;
 	}
 	LAST = i;
@@ -403,35 +405,30 @@ get_liste(FILE * File, guint elem)
 			       || (tmp_tab[i][j] == '\t')) {
 				j++;
 			}
-			/*
-			   snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
-			   debuglog(IDENT,"get_liste",debugmsg);
-			 */
+/*
+			snprintf(debugmsg, sizeof(debugmsg), "item [%s] - item len [%d]", item, strlen(item));
+			debuglog("get_liste", debugmsg);
+ */
 			k = 0;
 			s = g_strdup(item);
-			L = g_list_append(L, s);
+			GlobalList = g_list_append(GlobalList, s);
 			item[0] = '\0';
 		}
 	}
 	fseek(File, 0L, SEEK_SET);
-	g_list_foreach(GlobalList, delete_data, NULL);
-	g_list_free(GlobalList);
-	GlobalList = NULL;
-	GlobalList = list_copy_deep(L);
 	time(&GlobalListTimeStamp);
 	/* on rafraichi aussi la hash table globale */
 	/* attention les états de service ne sont pas tenus à jour */
 	/* utile pour identifier quel noeud est primaire/secondaire pour quel service */
 	drop_hash(GLOBAL_HT_SERV);
 	GLOBAL_HT_SERV = get_hash(GlobalList);
-	GlobalForceRefresh = FALSE;
-	return L;
+	return;
 }
 
 gboolean
 need_refresh(gchar * path2file, time_t refstamp)
 {
-	debuglog(IDENT, "need_refresh", "Function start");
+	debuglog("need_refresh", "Function start");
 
 	struct stat *buf;
 	time_t filestamp;
@@ -452,45 +449,47 @@ need_refresh(gchar * path2file, time_t refstamp)
 	}
 }
 
-GList *
+void
 get_services_list()
 {
-	debuglog(IDENT, "get_services_list", "Function start");
+	debuglog("get_services_list", "Function start");
 
 	FILE *EZFD_SERVICES;
-	GList *L = NULL;
 
 	if ((EZ_SERVICES = getenv("EZ_SERVICES")) == NULL) {
 		//printf("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		return NULL;
+		drop_list(GlobalList);
+		GlobalList = NULL;
+		return;
 	}
 
-	if (GlobalForceRefresh || GlobalList == NULL
-	    || need_refresh(EZ_SERVICES, GlobalListTimeStamp)) {
-
+	if (GlobalList == NULL || need_refresh(EZ_SERVICES, GlobalListTimeStamp)) {
 		if ((EZFD_SERVICES = fopen(EZ_SERVICES, "r")) == NULL) {
 			//printf("No service(s) defined (unable to open $EZ_SERVICES file)\n");
-			return NULL;
+			drop_list(GlobalList);
+			GlobalList = NULL;
+			return;
 		}
-		L = get_liste(EZFD_SERVICES, LIST_NB_ITEM);
-		/* snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
-		   debuglog(IDENT,"get_services_list",debugmsg); 
-		 */
+		get_liste(EZFD_SERVICES, LIST_NB_ITEM);
+/*
+		snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
+		debuglog("get_services_list",debugmsg); 
+ */
 		fclose(EZFD_SERVICES);
 	} else {
-		L = list_copy_deep(GlobalList);
-		/* snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
-		   debuglog(IDENT,"get_services_list",debugmsg);
-		 */
+/*
+		 snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
+		 debuglog("get_services_list",debugmsg);
+ */
 	}
 	/* debug_list(L); */
-	return (L);
+	return;
 }
 
 gint
 Cmd(char *prg, gchar * argsin[2])
 {
-	debuglog(IDENT, "Cmd", "Function start");
+	debuglog("Cmd", "Function start");
 	gint pid, etat;
 	gchar *message;
 	//gint  del, fs;
@@ -532,7 +531,7 @@ Cmd(char *prg, gchar * argsin[2])
 gint
 is_num(gchar * val)
 {
-	debuglog(IDENT, "is_num", "Function start");
+	debuglog("is_num", "Function start");
 	gint i = 0, RET = 0;
 	if (val == NULL)
 		return -1;
@@ -553,7 +552,7 @@ is_num(gchar * val)
 gint
 change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_start", "Function start");
+	debuglog("change_status_start", "Function start");
 	gpointer pointer;
 	gchar *arg[3];
 	gchar *arg0[3];
@@ -562,6 +561,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	gint old_state, pstate, sstate;
 	gchar *primary, *secondary;
 	gchar *m;
+	gint r = 0;
 
 	if (((state == 0) || (state == 8)) &&
 	    ((ostate == 0) || (ostate == 6) || (ostate == 8))) {
@@ -593,7 +593,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	write_status(service, '7', nodename);
 	sleep(5);
 	// Si l'autre a decider de START en meme temps:
-	List_services = get_services_list();
+	get_services_list();
 	pointer = g_hash_table_lookup(HT, (gchar *) service);
 	primary = ((struct srvstruct *) (pointer))->primary;
 	secondary = ((struct srvstruct *) (pointer))->secondary;
@@ -615,10 +615,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		g_free(m);
 		if (SECONDARY) {
 			write_status(service, '0', nodename);
-			g_list_foreach(List_services, delete_data, NULL);
-			g_list_free(List_services);
-			g_free(nodename);
-			return 0;
+			r = 0;
+			goto out;
 		}
 	}
 	// OK, we are really ready to start. Put state service in STARTING
@@ -630,9 +628,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
 		write_status(service, '4', nodename);
-		g_list_foreach(List_services, delete_data, NULL);
-		g_list_free(List_services);
-		return -1;
+		r = -1;
+		goto out;
 	} else {
 		m = g_strconcat("Check script for service ", service, " OK.\n",
 				NULL);
@@ -645,25 +642,27 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, progname, m);
 		g_free(m);
 		write_status(service, '2', nodename);
-		g_list_foreach(List_services, delete_data, NULL);
-		g_list_free(List_services);
-		return 0;
+		r = 0;
+		goto out;
 	} else {
 		m = g_strconcat("Error: failed to start ", service,
 				". State is now start-failed.\n", NULL);
 		halog(LOG_WARNING, progname, m);
 		g_free(m);
 		write_status(service, '4', nodename);
-		g_list_foreach(List_services, delete_data, NULL);
-		g_list_free(List_services);
-		return -1;
+		r = -1;
+		goto out;
 	}
+out:
+	g_list_foreach(List_services, delete_data, NULL);
+	g_list_free(List_services);
+	return r;
 }
 
 gint
 launch(gchar * command, gchar * arg[])
 {
-	debuglog(IDENT, "launch", "Function start");
+	debuglog("launch", "Function start");
 	gint i = 0;
 	i = Cmd(command, arg);
 	//printf("command: %s %s i: %d \n",argsIn[0],argsIn[1],i);
@@ -676,8 +675,8 @@ launch(gchar * command, gchar * arg[])
 gint
 get_status(GList * liste, gchar * node, gchar * service)
 {
-	debuglog(IDENT, "get_status", "Function start");
-	gint i, j, k, size;
+	debuglog("get_status", "Function start");
+	gint i, j, k = 0, size;
 	gchar *FILE_NAME, STATE, *m;
 	FILE *FILE_STATE;
 
@@ -732,7 +731,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 gint
 service_rm(gchar * name, GHashTable * HT)
 {
-	debuglog(IDENT, "service_rm", "Function start");
+	debuglog("service_rm", "Function start");
 	gpointer pointer;
 	gchar *envdir, *file1, *file2, *dir, *primary, *secondary;
 
@@ -796,7 +795,7 @@ service_rm(gchar * name, GHashTable * HT)
 gint
 service_mod(gchar * name)
 {
-	debuglog(IDENT, "service_mod", "Function start");
+	debuglog("service_mod", "Function start");
 	FILE *EZ_SERVICES, *TMP;
 	gchar lu[5][300];
 	gchar *tmp, *services;
@@ -848,7 +847,7 @@ service_add(gchar * name, gchar * startup_script,
 	    gchar * primary, gchar * secondary,
 	    gchar * check_script, GHashTable * HT)
 {
-	debuglog(IDENT, "service_add", "Function start");
+	debuglog("service_add", "Function start");
 	gpointer pointer;
 	FILE *FILE_STATE, *EZ_SERVICES, *SCRIPT;
 	struct hostent *host;
@@ -955,7 +954,7 @@ service_add(gchar * name, gchar * startup_script,
 gint
 rm_file(gchar * name)
 {
-	debuglog(IDENT, "rm_file", "Function start");
+	debuglog("rm_file", "Function start");
 	if (unlink(name) != 0) {
 		perror("Error:");
 		return -1;
@@ -966,7 +965,7 @@ rm_file(gchar * name)
 gint
 create_file(gchar * name, gchar * node)
 {
-	debuglog(IDENT, "create_file", "Function start");
+	debuglog("create_file", "Function start");
 	gchar *O, *env;
 	struct stat buf;
 	FILE *F;
@@ -1007,7 +1006,7 @@ create_file(gchar * name, gchar * node)
 gint
 create_dir(gchar * name)
 {
-	debuglog(IDENT, "create_dir", "Function start");
+	debuglog("create_dir", "Function start");
 	gchar *File, *env;
 	struct stat buf;
 
@@ -1036,7 +1035,7 @@ create_dir(gchar * name)
 gint
 find_action(gchar ** tab, gchar * action)
 {
-	debuglog(IDENT, "find_action", "Function start");
+	debuglog("find_action", "Function start");
 	int i = 0;
 	for (i = 0; i < MAX_ACTION; i++) {
 		if (strcmp(action, tab[i]) == 0)
@@ -1048,7 +1047,7 @@ find_action(gchar ** tab, gchar * action)
 void
 print_func(gpointer key, gpointer value, gpointer HT)
 {
-	debuglog(IDENT, "print_func", "Function start");
+	debuglog("print_func", "Function start");
 	gchar check_script[SCRIPT_SIZE];
 
 	strcat(check_script, ((struct srvstruct *) (value))->check_script);
@@ -1058,7 +1057,7 @@ print_func(gpointer key, gpointer value, gpointer HT)
 void
 service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 {
-	debuglog(IDENT, "service_info", "Function start");
+	debuglog("service_info", "Function start");
 	gint pstate, sstate;
 	gpointer pointer;
 	gchar *primary, *secondary;
@@ -1082,7 +1081,7 @@ service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 void
 service_status(GList * liste, GHashTable * HT)
 {
-	debuglog(IDENT, "service_status", "Function start");
+	debuglog("service_status", "Function start");
 	gint i, list_size, pstate, sstate;
 	gpointer pointer;
 	gchar *service, *primary, *secondary;
@@ -1105,7 +1104,7 @@ service_status(GList * liste, GHashTable * HT)
 gint
 change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_stop", "Function start");
+	debuglog("change_status_stop", "Function start");
 	gpointer pointer;
 	gchar *arg[3];
 	gchar *m = NULL;
@@ -1173,7 +1172,7 @@ gint
 change_status_force_stop(gint state, gint ostate, gchar * service,
 			 GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_force_stop", "Function start");
+	debuglog("change_status_force_stop", "Function start");
 	gchar *message = NULL;
 
 	progname = getenv("PROGNAME");
@@ -1203,7 +1202,7 @@ gint
 change_status_force_start(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_force_start", "Function start");
+	debuglog("change_status_force_start", "Function start");
 	gchar *message = NULL;
 
 #ifdef VERBOSE
@@ -1232,7 +1231,7 @@ gint
 change_status_freeze_stop(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_freeze_stop", "Function start");
+	debuglog("change_status_freeze_stop", "Function start");
 	gchar *message = NULL;
 
 	if ((state == 0) || (state == 2) || (state == 4) || (state == 5)) {
@@ -1302,7 +1301,7 @@ gint
 change_status_freeze_start(gint state, gint ostate, gchar * service,
 			   GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_freeze_start", "Function start");
+	debuglog("change_status_freeze_start", "Function start");
 
 	if ((state == 0) || (state == 2)) {
 		printf("Ready to FREEZE, we are %s\n", VAL[state]);
@@ -1334,7 +1333,7 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 gint
 change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 {
-	debuglog(IDENT, "change_status_unfreeze", "Function start");
+	debuglog("change_status_unfreeze", "Function start");
 	gchar *message = NULL;
 
 	if ((state == 6) || (state == 7)) {
@@ -1377,7 +1376,7 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 gint
 if_getaddr(const char *ifname, struct in_addr * addr)
 {
-	debuglog(IDENT, "if_getaddr", "Function start");
+	debuglog("if_getaddr", "Function start");
 	gint fd;
 	struct ifreq if_info;
 
@@ -1419,7 +1418,7 @@ if_getaddr(const char *ifname, struct in_addr * addr)
 gint
 set_mcast_if(gint sockfd, gchar * ifname)
 {
-	debuglog(IDENT, "set_mcast_if", "Function start");
+	debuglog("set_mcast_if", "Function start");
 	gint rc, i = 0;
 	struct in_addr mreq;
 
@@ -1450,7 +1449,7 @@ rm_func_serv(gpointer key, gpointer value, gpointer user_data)
 gboolean
 init_var()
 {
-	debuglog(IDENT, "init_var", "Function start");
+	debuglog("init_var", "Function start");
 
 	if ((EZ_BIN = getenv("EZ_BIN")) == NULL) {
 		printf("Error: variable EZ_BIN not defined\n");
@@ -1482,7 +1481,7 @@ init_var()
 void
 daemonize(gchar * message)
 {
-	debuglog(IDENT, "daemonize", "Function start");
+	debuglog("daemonize", "Function start");
 	gint pid;
 
 	switch (pid = fork()) {
@@ -1501,7 +1500,7 @@ daemonize(gchar * message)
 void
 Setenv(gchar * name, gchar * value)
 {
-	debuglog(IDENT, "Setenv", "Function start");
+	debuglog("Setenv", "Function start");
 	gchar *env;
 	env = g_strconcat(name, "=", value, NULL);
 	putenv(env);
