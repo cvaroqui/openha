@@ -41,7 +41,6 @@ gint fill_seg(gint, key_t, gchar *);
 gboolean rm_func(gpointer, gpointer, gpointer);
 void copy_func(gpointer, gpointer, gpointer);
 void check_node_func(gpointer, gpointer, gpointer);
-gint change_status_start(gint, gint, gchar *, GHashTable *);
 void sighup();
 void sigquit();
 void sigterm();
