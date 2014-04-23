@@ -51,13 +51,12 @@ char *argv[];
 
 	gint i, fd, address;
 	struct utsname tmp_name;
-	gchar *message, *shm, *FILE_KEY, *raw_device;
+	gchar *shm, *FILE_KEY, *raw_device;
 	FILE *File;
 	gchar **NEW_KEY;
 	gchar *n;
 	key_t key;
 
-	message = g_malloc0(160);
 	raw_device = g_malloc0(128);
 
 	if (argc != 3) {
@@ -78,24 +77,20 @@ char *argv[];
 
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		printf("key: %s\n", FILE_KEY);
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "unable to open key file");
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "unable to lock key file");
 		exit(-1);
 	}
 	key = ftok(FILE_KEY, 0);
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		message = g_strconcat("shmget failed\n", NULL);
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "shmget failed");
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message = g_strconcat("shmat failed\n", NULL);
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "shmat failed");
 		exit(-1);
 	}
 
@@ -107,8 +102,7 @@ char *argv[];
 	//signal(SIGALRM,sighup);
 	File = fopen(argv[1], "r+");
 	if (File == NULL) {
-		strcpy(message, "Error: unable to open raw device");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "unable to open raw device");
 		exit(-1);
 	}
 	while (1) {
@@ -118,8 +112,7 @@ char *argv[];
 		get_node_status(to_send.nodename);
 		i = write_raw(File, to_send, raw_device, address);
 		if (i < 0) {
-			strcpy(message, "write_raw() failed");
-			halog(LOG_ERR, "heartd_raw", message);
+			halog(LOG_ERR, "write_raw() failed");
 		}
 		memcpy(shm, &to_send, sizeof (to_send));
 		alarm(1);

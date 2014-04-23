@@ -59,7 +59,7 @@ gchar *argv[];
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
-	gchar *message, *FILE_KEY, *device;
+	gchar *FILE_KEY, *device;
 	gint address;
 	long old_elapsed = 0;
 	gchar **NEW_KEY;
@@ -68,7 +68,6 @@ gchar *argv[];
 
 	device = g_malloc0(128);
 
-	message = g_malloc0(80);
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
 
@@ -84,17 +83,14 @@ gchar *argv[];
 	strncpy(ADDR, argv[1], 64);
 
 	if ((timeout = atoi(argv[3])) < 2) {
-		strcpy(message, "timeout must be > 1 second\n ");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "timeout must be > 1 second");
 		exit(-1);
 	}
 
 	f_stat = malloc(sizeof (stat));
 
 	if (getenv("EZ_LOG") == NULL) {
-		strcpy(message,
-		       "environment variable EZ_LOG not defined ...\n ");
-		halog(LOG_ERR, "heartc_dio: ", message);
+		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
@@ -109,42 +105,35 @@ gchar *argv[];
 	FILE_KEY = SHM_KEY;
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		strcpy(message, "Error: unable to open SHMFILE");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "unable to open SHMFILE");
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock SHMFILE");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "unable to lock SHMFILE");
 		exit(-1);
 	}
 	key = ftok(SHM_KEY, 0);
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		strcpy(message, "shmget failed");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "shmget failed");
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		strcpy(message, "shmat failed");
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "shmat failed");
 		exit(-1);
 	}
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		printf("key: %s\n", FILE_KEY);
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "unable to open key file");
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "unable to lock key file");
 		exit(-1);
 	}
 	fd = open(argv[1], O_DIRECT | O_RDONLY);
 	if (fd < 0) {
-		strcpy(message, "Error: unable to open dio device");
-		halog(LOG_ERR, "heartc_dio", message);
+		halog(LOG_ERR, "unable to open dio device");
 		exit(-1);
 	}
 	to_recV.up = FALSE;
@@ -162,8 +151,7 @@ gchar *argv[];
 		}
 		r = read_dio(fd, address);
 		if (r != 0) {
-			strcpy(message, "Error: unable to read dio device");
-			halog(LOG_ERR, "heartc_dio", message);
+			halog(LOG_ERR, "unable to read dio device");
 			sleep(timeout);
 			continue;
 		}
@@ -179,11 +167,7 @@ gchar *argv[];
 			to_recV.elapsed = Elapsed();
 			to_recV.up = TRUE;
 			if (was_down == TRUE) {
-				gchar *m;
-				m = g_strconcat("peer on ", ADDR, " up !",
-						NULL);
-				halog(LOG_WARNING, "heartc_dio", m);
-				g_free(m);
+				halog(LOG_WARNING, "peer on %s  up !", ADDR);
 				was_down = FALSE;
 			}
 			for (j = 0; j < MAX_SERVICES; j++) {
@@ -204,15 +188,10 @@ gchar *argv[];
 void
 sighup()
 {
-	gchar *message;
-
-	message = g_malloc0(80);
 	to_recV.up = FALSE;
 	to_recV.elapsed = Elapsed();
 	memcpy(shm, &to_recV, sizeof (to_recV));
-	message = g_strconcat("peer on ", ADDR, " down !", NULL);
-	halog(LOG_WARNING, "heartc_dio", message);
-	g_free(message);
+	halog(LOG_WARNING, "peer on %s  down !", ADDR);
 	flag = 1;
 }
 
@@ -221,19 +200,16 @@ read_dio(gint fd, gint where)
 {
 	void *buff;
 	int r;
-	char message[160];
 	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
 	if (r != 0) {
-		strcpy(message, "heartc_dio() posix_memalign error.\n");
-		halog(LOG_WARNING, "heartc_dio", message);
+		halog(LOG_WARNING, "heartc_dio() posix_memalign error");
 		return 1;
 	}
 	memset(buff, 0, BLKSIZE);
 	lseek(fd, (BLKSIZE * where), SEEK_SET);
 	r = read(fd, buff, BLKSIZE);
 	if (r != BLKSIZE) {
-		strcpy(message, "heartc_dio() read error.\n");
-		halog(LOG_WARNING, "heartc_dio", message);
+		halog(LOG_WARNING, "heartc_dio() read error");
 		return 1;
 	}
 	memcpy(&to_recV, buff, sizeof (struct sendstruct));
@@ -244,8 +220,7 @@ read_dio(gint fd, gint where)
 void
 sigterm()
 {
-	halog(LOG_WARNING, progname,
-	      "SIGTERM received, exiting gracefuly ...\n");
+	halog(LOG_WARNING, "SIGTERM received, exiting gracefuly ...");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	exit(0);
 }

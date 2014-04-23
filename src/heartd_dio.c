@@ -54,13 +54,12 @@ char *argv[];
 
 	gint i, fd, address;
 	struct utsname tmp_name;
-	gchar *message, *shm, *FILE_KEY, *device;
+	gchar *shm, *FILE_KEY, *device;
 	gint fd2;
 	gchar **NEW_KEY;
 	gchar *n;
 	key_t key;
 
-	message = g_malloc0(160);
 	device = g_malloc0(128);
 
 	if (argc != 3) {
@@ -81,24 +80,20 @@ char *argv[];
 
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		printf("key: %s\n", FILE_KEY);
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "unable to open key file");
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "unable to lock key file");
 		exit(-1);
 	}
 	key = ftok(FILE_KEY, 0);
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		message = g_strconcat("shmget failed\n", NULL);
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "shmget failed");
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message = g_strconcat("shmat failed\n", NULL);
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "shmat failed");
 		exit(-1);
 	}
 
@@ -110,8 +105,7 @@ char *argv[];
 	//signal(SIGALRM,sighup);
 	fd2 = open(argv[1], O_DIRECT | O_RDWR);
 	if (fd2 < 0) {
-		strcpy(message, "Error: unable to open device");
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "unable to open device");
 		exit(-1);
 	}
 	while (1) {
@@ -121,8 +115,7 @@ char *argv[];
 		get_node_status(to_send.nodename);
 		i = write_dio(fd2, to_send, device, address);
 		if (i != 0) {
-			strcpy(message, "write_dio() failed");
-			halog(LOG_ERR, "heartd_dio", message);
+			halog(LOG_ERR, "write_dio() failed");
 		}
 		memcpy(shm, &to_send, sizeof (to_send));
 		alarm(1);
@@ -135,19 +128,16 @@ write_dio(gint fd, struct sendstruct to_write, gchar * device, gint where)
 {
 	void *buff;
 	int r;
-	char message[160];
 	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
 	if (r != 0) {
-		strcpy(message, "write_dio() posix_memalign failed");
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "write_dio() posix_memalign failed");
 		return 1;
 	}
 	memcpy(buff, &to_write, sizeof (struct sendstruct));
 	lseek(fd, (where * BLKSIZE), SEEK_SET);
 	r = write(fd, buff, BLKSIZE);
 	if (r != BLKSIZE) {
-		strcpy(message, "write_dio() write failed");
-		halog(LOG_ERR, "heartd_dio", message);
+		halog(LOG_ERR, "write_dio() write failed");
 		return 1;
 	}
 	free(buff);

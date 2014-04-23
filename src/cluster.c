@@ -1,5 +1,7 @@
 #include <cluster.h>
 
+gint loglevel = LOG_INFO;
+
 gchar *VAL[MAX_STATE] = {
         "STOPPED", "STOPPING", "STARTED",
         "STARTING", "START_FAILED", "STOP_FAILED",
@@ -15,40 +17,14 @@ delete_data(gpointer data, gpointer user_data)
 }
 
 void
-debuglog(gchar * prg_func, gchar * message)
-{
-	if (DEBUGGING != 1) {
-		return;
-	}
-
-	gchar *LOGFILE;
-	FILE *fd;
-	time_t clock = time(NULL);
-	char buf[1024];
-
-	LOGFILE = g_strconcat(getenv("EZ_LOG"), "/cluster.log", NULL);
-	if ((fd = fopen(LOGFILE, "a+")) == NULL) {
-		printf("Error opening logging file <%s>\n", LOGFILE);
-		g_free(LOGFILE);
-		exit(-1);
-	}
-	strftime(buf, sizeof(buf), "%c", localtime(&clock));
-	fprintf(fd, "[%s][%s][%s] %s\n", buf, IDENT, prg_func, message);
-
-	g_free(LOGFILE);
-
-	fclose(fd);
-}
-
-void
 debug_list(GList * liste)
 {
-	debuglog("debug_list", "Function start");
+	halog(LOG_DEBUG, "[debug_list] enter");
 	gint i = 0;
 
 	for (i = 0; i <= (g_list_length(liste) / LIST_NB_ITEM) - 1; i++) {
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "i=%d SVC[%s] SCRIPT[%s] PRI[%s] SEC[%s] CHK[%s]", i,
+		halog(LOG_DEBUG, "[debug_list] i=%d SVC[%s] SCRIPT[%s] PRI[%s] SEC[%s] CHK[%s]",
+			 i,
 			 (char *) g_list_nth_data(liste, i * LIST_NB_ITEM),
 			 (char *) g_list_nth_data(liste,
 						  (i * LIST_NB_ITEM) + 1),
@@ -58,42 +34,33 @@ debug_list(GList * liste)
 						  (i * LIST_NB_ITEM) + 3),
 			 (char *) g_list_nth_data(liste,
 						  (i * LIST_NB_ITEM) + 4));
-		debuglog("debug_list", debugmsg);
 	}
-}
-
-void
-halog(gint type, gchar * prg_src, gchar * message)
-{
-	debuglog("halog", "Function start");
-	gchar *msg;
-
-	debuglog("halog", message);
-	msg = g_strconcat("EZ-HA: ", prg_src, "\n", NULL);
-	openlog(msg, LOG_PID | LOG_CONS, LOG_DAEMON);
-	syslog(type, "%s", message);
-#ifdef VERBOSE
-	printf("%s", message);
-#endif
-	g_free(msg);
 }
 
 void
 signal_usr1_callback_handler()
 {
-	DEBUGGING = 1;
+	if (loglevel == LOG_DEBUG)
+		return;
+	gint prev = loglevel;
+	loglevel += 1;
+	halog(LOG_INFO, "loglevel changed from %d to %d", prev, loglevel);
 }
 
 void
 signal_usr2_callback_handler()
 {
-	DEBUGGING = 0;
+	if (loglevel == LOG_CRIT)
+		return;
+	gint prev = loglevel;
+	loglevel -= 1;
+	halog(LOG_INFO, "loglevel changed from %d to %d", prev, loglevel);
 }
 
 glong
 Elapsed(void)
 {
-	debuglog("Elapsed", "Function start");
+	halog(LOG_DEBUG, "[Elapsed] enter");
 	gint ts;
 	struct timeval buf;
 	if ((ts = gettimeofday(&buf, NULL)) == 0)
@@ -118,7 +85,7 @@ file_lock(short type, short whence)
 void
 get_nodename()
 {
-	debuglog("get_nodename", "Function start");
+	halog(LOG_DEBUG, "[get_nodename] enter");
 	struct utsname tmp_name;
 	uname(&tmp_name);
 	strncpy(nodename, tmp_name.nodename, MAX_NODENAME_SIZE);
@@ -127,7 +94,7 @@ get_nodename()
 gboolean
 is_primary(gchar * node, gchar * service)
 {
-	debuglog("is_primary", "Function start");
+	halog(LOG_DEBUG, "[is_primary] enter");
 	gchar *primary;
 	gpointer ptr;
 
@@ -142,7 +109,7 @@ is_primary(gchar * node, gchar * service)
 gboolean
 is_secondary(gchar * node, gchar * service)
 {
-	debuglog("is_secondary", "Function start");
+	halog(LOG_DEBUG, "[is_secondary] enter");
 	gchar *secondary;
 	gpointer ptr;
 
@@ -157,7 +124,7 @@ is_secondary(gchar * node, gchar * service)
 gchar *
 get_our_secondary(gchar * node, gchar * service, GList * liste)
 {
-	debuglog("get_our_secondary", "Function start");
+	halog(LOG_DEBUG, "[get_our_secondary] enter");
 	gint i = 0, j, list_size;
 	gchar *service_to_cmp, *node_to_cmp;
 
@@ -177,14 +144,14 @@ get_our_secondary(gchar * node, gchar * service, GList * liste)
 gint
 read_lock(gint fd)
 {				/* a shared lock on an entire file */
-	debuglog("read_lock", "Function start");
+	halog(LOG_DEBUG, "{read_lock] enter");
 	return (fcntl(fd, F_SETLKW, file_lock(F_RDLCK, SEEK_SET)));
 }
 
 gint
 write_lock(gint fd)
 {				/* an exclusive lock on an entire file */
-	debuglog("write_lock", "Function start");
+	halog(LOG_DEBUG, "[write_lock] enter");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_SET)));
 }
 
@@ -192,14 +159,14 @@ gint
 append_lock(gint fd)
 {				/* a lock on the _end_ of a file -- other
 				   processes may access existing records */
-	debuglog("append_lock", "Function start");
+	halog(LOG_DEBUG, "[append_lock] enter");
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_END)));
 }
 
 void
 write_status(gchar service[MAX_SERVICES_SIZE], gchar state, gchar * node)
 {
-	debuglog("write_status", "Function start");
+	halog(LOG_DEBUG, "[write_status] enter");
 	gchar *FILE_NAME;
 	FILE *FILE_STATE;
 	gchar to_copy[2];
@@ -275,7 +242,7 @@ drop_hash(GHashTable *HT)
 GHashTable *
 get_hash(GList * liste)
 {
-	debuglog("get_hash", "Function start");
+	halog(LOG_DEBUG, "[get_hash] enter");
 	GHashTable *HT;
 	gint i = 0;
 	struct srvstruct *service;
@@ -302,7 +269,7 @@ GList *
 get_liste_generic(FILE * File, guint elem)
 {
 	/* appel direct depuis nmond.c func init() */
-	debuglog("get_liste_generic", "Function start");
+	halog(LOG_DEBUG, "[get_liste_generic] enter");
 	GList *L = NULL;
 	gint i = 0, j = 0, k = 0, l = 0, LAST;
 	gchar *s = NULL;
@@ -321,8 +288,7 @@ get_liste_generic(FILE * File, guint elem)
 		if (tmp_tab[i][ln] == '\n')
 			tmp_tab[i][ln] = '\0';
 		/*
-		   snprintf(debugmsg,sizeof(debugmsg),"loading line tmp_tab[%d] => [%s]",i,tmp_tab[i]);
-		   debuglog("get_liste_generic",debugmsg);
+		   halog(LOG_DEBUG, "[get_liste_generic] loading line tmp_tab[%d] => [%s]", i, tmp_tab[i]);
 		 */
 		i++;
 	}
@@ -345,8 +311,7 @@ get_liste_generic(FILE * File, guint elem)
 				j++;
 			}
 			/*
-			   snprintf(debugmsg,sizeof(debugmsg),"item [%s] - item len [%d]",item,strlen(item));
-			   debuglog("get_liste_generic",debugmsg);
+			   halog(LOG_DEBUG, "[get_liste_generic] item [%s] - item len [%d]", item, strlen(item));
 			 */
 			k = 0;
 			s = g_strdup(item);
@@ -361,7 +326,7 @@ get_liste_generic(FILE * File, guint elem)
 void
 get_liste(FILE * File, guint elem)
 {
-	debuglog("get_liste", "Function start");
+	halog(LOG_DEBUG, "[get_liste] enter");
 	gint i = 0, j = 0, k = 0, l = 0, LAST;
 	gchar *s = NULL;
 	gchar item[MAX_ITEM];
@@ -382,8 +347,7 @@ get_liste(FILE * File, guint elem)
 		if (tmp_tab[i][ln] == '\n')
 			tmp_tab[i][ln] = '\0';
 /*
-		snprintf(debugmsg,sizeof(debugmsg), "loading service line tmp_tab[%d] => [%s]", i, tmp_tab[i]);
-		debuglog("get_liste", debugmsg);
+		halog(LOG_DEBUG, "[get_liste] loading service line tmp_tab[%d] => [%s]", i, tmp_tab[i]);
  */
 		i++;
 	}
@@ -406,8 +370,7 @@ get_liste(FILE * File, guint elem)
 				j++;
 			}
 /*
-			snprintf(debugmsg, sizeof(debugmsg), "item [%s] - item len [%d]", item, strlen(item));
-			debuglog("get_liste", debugmsg);
+			halog(LOG_DEBUG, "[get_liste] item [%s] - item len [%d]", item, strlen(item));
  */
 			k = 0;
 			s = g_strdup(item);
@@ -428,7 +391,7 @@ get_liste(FILE * File, guint elem)
 gboolean
 need_refresh(gchar * path2file, time_t refstamp)
 {
-	debuglog("need_refresh", "Function start");
+	halog(LOG_DEBUG, "[need_refresh] enter");
 
 	struct stat *buf;
 	time_t filestamp;
@@ -452,7 +415,7 @@ need_refresh(gchar * path2file, time_t refstamp)
 void
 get_services_list()
 {
-	debuglog("get_services_list", "Function start");
+	halog(LOG_DEBUG, "[get_services_list] enter");
 
 	FILE *EZFD_SERVICES;
 
@@ -472,14 +435,12 @@ get_services_list()
 		}
 		get_liste(EZFD_SERVICES, LIST_NB_ITEM);
 /*
-		snprintf(debugmsg,sizeof(debugmsg),"REFRESHED Service List Content");
-		debuglog("get_services_list",debugmsg); 
+		halog(LOG_DEBUG, "[get_services_list] REFRESHED Service List Content"); 
  */
 		fclose(EZFD_SERVICES);
 	} else {
 /*
-		 snprintf(debugmsg,sizeof(debugmsg),"GLOBAL Service List Content");
-		 debuglog("get_services_list",debugmsg);
+		 halog(LOG_DEBUG, "[get_services_list] GLOBAL Service List Content");
  */
 	}
 	/* debug_list(L); */
@@ -489,9 +450,8 @@ get_services_list()
 gint
 Cmd(char *prg, gchar * argsin[2])
 {
-	debuglog("Cmd", "Function start");
+	halog(LOG_DEBUG, "[Cmd] enter");
 	gint pid, etat;
-	gchar *message;
 	//gint  del, fs;
 
 	signal(SIGTERM, SIG_IGN);
@@ -506,32 +466,22 @@ Cmd(char *prg, gchar * argsin[2])
 		//signal(SIGQUIT, fs);
 		//Mettre un fstat sur le prg a executer
 		execv(prg, argsin);
-		message =
-		    g_strconcat("Error: exec failed: ", strerror(errno), " \n",
-				NULL);
-		halog(LOG_WARNING, progname, message);
-		g_free(message);
+		halog(LOG_WARNING, "Error: exec failed: %s", strerror(errno));
 		exit(-1);
 	case (-1):
-		//fprintf(stderr,"Error in fork().\n");
-		message =
-		    g_strconcat("Error: in Cmd(): ", strerror(errno), " \n",
-				NULL);
-		halog(LOG_WARNING, progname, message);
-		g_free(message);
+		halog(LOG_WARNING, "Error: in Cmd(): %s", strerror(errno));
 		etat = -1;
 		break;
 	default:
 		while (wait(&etat) != pid) ;
 	}
-	//printf("result: %d\n",execv(prg,arg));
 	return etat;
 }
 
 gint
 is_num(gchar * val)
 {
-	debuglog("is_num", "Function start");
+	halog(LOG_DEBUG, "[is_num] enter");
 	gint i = 0, RET = 0;
 	if (val == NULL)
 		return -1;
@@ -552,7 +502,7 @@ is_num(gchar * val)
 gint
 change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog("change_status_start", "Function start");
+	halog(LOG_DEBUG, "[change_status_start] enter");
 	gpointer pointer;
 	gchar *arg[3];
 	gchar *arg0[3];
@@ -560,24 +510,17 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	GList *List_services = NULL;
 	gint old_state, pstate, sstate;
 	gchar *primary, *secondary;
-	gchar *m;
 	gint r = 0;
 
 	if (((state == 0) || (state == 8)) &&
 	    ((ostate == 0) || (ostate == 6) || (ostate == 8))) {
 
 		//printf("Ready to start, partner node is %s , we are %s\n",VAL[ostate],VAL[state]);
-		m = g_strconcat("Ready to start, partner node is ", VAL[ostate],
-				", we are ", VAL[state], ".\n", NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_NOTICE, "Ready to start, partner node is %s , we are %s",
+			VAL[ostate], VAL[state]);
 	} else {
-		m = g_strconcat("Cannot start ", service,
-				": service not in correct state (partner node is ",
-				VAL[ostate], ", we are ", VAL[state], ".\n",
-				NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_NOTICE, "Cannot start %s: service not in correct state (partner node is %s, we are %s)",
+			service, VAL[ostate], VAL[state]);
 		return -1;
 	}
 
@@ -609,10 +552,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		ostate = pstate;
 	}
 	if (old_state != ostate) {
-		m = g_strconcat("Service ", service,
-				" state has changed on Partner node\n", NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_NOTICE, "Service %s state has changed on Partner node", service);
 		if (SECONDARY) {
 			write_status(service, '0', nodename);
 			r = 0;
@@ -622,33 +562,20 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	// OK, we are really ready to start. Put state service in STARTING
 	write_status(service, '3', nodename);
 	if (launch(arg0[0], arg0) != 0) {
-		m = g_strconcat("Error: failed to start ", service,
-				". Check script failed. State is now start-failed.\n",
-				NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_ERR, "failed to start %s. Check script failed. State is now start-failed", service);
 		write_status(service, '4', nodename);
 		r = -1;
 		goto out;
 	} else {
-		m = g_strconcat("Check script for service ", service, " OK.\n",
-				NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_NOTICE, "Check script for service %s OK", service);
 	}
 	if (launch(arg[0], arg) == 0) {
-		m = g_strconcat("Service ", service, " successfully started.\n",
-				NULL);
-		halog(LOG_NOTICE, progname, m);
-		g_free(m);
+		halog(LOG_NOTICE, "Service %s successfully started", service);
 		write_status(service, '2', nodename);
 		r = 0;
 		goto out;
 	} else {
-		m = g_strconcat("Error: failed to start ", service,
-				". State is now start-failed.\n", NULL);
-		halog(LOG_WARNING, progname, m);
-		g_free(m);
+		halog(LOG_ERR, "failed to start %s. State is now start-failed", service);
 		write_status(service, '4', nodename);
 		r = -1;
 		goto out;
@@ -662,7 +589,7 @@ out:
 gint
 launch(gchar * command, gchar * arg[])
 {
-	debuglog("launch", "Function start");
+	halog(LOG_DEBUG, "[launch] enter");
 	gint i = 0;
 	i = Cmd(command, arg);
 	//printf("command: %s %s i: %d \n",argsIn[0],argsIn[1],i);
@@ -675,9 +602,9 @@ launch(gchar * command, gchar * arg[])
 gint
 get_status(GList * liste, gchar * node, gchar * service)
 {
-	debuglog("get_status", "Function start");
+	halog(LOG_DEBUG, "[get_status] enter");
 	gint i, j, k = 0, size;
-	gchar *FILE_NAME, STATE, *m;
+	gchar *FILE_NAME, STATE;
 	FILE *FILE_STATE;
 
 	size = g_list_length(liste) / LIST_NB_ITEM;
@@ -699,19 +626,11 @@ get_status(GList * liste, gchar * node, gchar * service)
 
 				if ((FILE_STATE =
 				     fopen((char *) FILE_NAME, "r")) == NULL) {
-					m = g_strconcat
-					    ("Error: unable to open SERVICE STATE file ",
-					     FILE_NAME, ".\n", NULL);
-					halog(LOG_ERR, progname, m);
-					/*
-					   openlog("EZ-HA: nmond", LOG_PID|LOG_CONS, LOG_DAEMON);
-					   syslog(LOG_ERR,"Error: unable to open SERVICE STATE file %s\n",FILE_NAME);
-					 */
+					halog(LOG_ERR, "unable to open SERVICE STATE file %s", FILE_NAME);
 					fprintf(stderr,
 						"Error: unable to open SERVICE STATE file %s\n",
 						FILE_NAME);
 					g_free(FILE_NAME);
-					g_free(m);
 					return (-1);
 				}
 				g_free(FILE_NAME);
@@ -731,7 +650,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 gint
 service_rm(gchar * name, GHashTable * HT)
 {
-	debuglog("service_rm", "Function start");
+	halog(LOG_DEBUG, "[service_rm] enter");
 	gpointer pointer;
 	gchar *envdir, *file1, *file2, *dir, *primary, *secondary;
 
@@ -795,7 +714,7 @@ service_rm(gchar * name, GHashTable * HT)
 gint
 service_mod(gchar * name)
 {
-	debuglog("service_mod", "Function start");
+	halog(LOG_DEBUG, "[service_mod] enter");
 	FILE *EZ_SERVICES, *TMP;
 	gchar lu[5][300];
 	gchar *tmp, *services;
@@ -847,7 +766,7 @@ service_add(gchar * name, gchar * startup_script,
 	    gchar * primary, gchar * secondary,
 	    gchar * check_script, GHashTable * HT)
 {
-	debuglog("service_add", "Function start");
+	halog(LOG_DEBUG, "[service_add] enter");
 	gpointer pointer;
 	FILE *FILE_STATE, *EZ_SERVICES, *SCRIPT;
 	struct hostent *host;
@@ -954,7 +873,7 @@ service_add(gchar * name, gchar * startup_script,
 gint
 rm_file(gchar * name)
 {
-	debuglog("rm_file", "Function start");
+	halog(LOG_DEBUG, "[rm_file] enter");
 	if (unlink(name) != 0) {
 		perror("Error:");
 		return -1;
@@ -965,7 +884,7 @@ rm_file(gchar * name)
 gint
 create_file(gchar * name, gchar * node)
 {
-	debuglog("create_file", "Function start");
+	halog(LOG_DEBUG, "[create_file] enter");
 	gchar *O, *env;
 	struct stat buf;
 	FILE *F;
@@ -1006,7 +925,7 @@ create_file(gchar * name, gchar * node)
 gint
 create_dir(gchar * name)
 {
-	debuglog("create_dir", "Function start");
+	halog(LOG_DEBUG, "[create_dir] enter");
 	gchar *File, *env;
 	struct stat buf;
 
@@ -1035,7 +954,7 @@ create_dir(gchar * name)
 gint
 find_action(gchar ** tab, gchar * action)
 {
-	debuglog("find_action", "Function start");
+	halog(LOG_DEBUG, "[find_action] enter");
 	int i = 0;
 	for (i = 0; i < MAX_ACTION; i++) {
 		if (strcmp(action, tab[i]) == 0)
@@ -1047,7 +966,7 @@ find_action(gchar ** tab, gchar * action)
 void
 print_func(gpointer key, gpointer value, gpointer HT)
 {
-	debuglog("print_func", "Function start");
+	halog(LOG_DEBUG, "[print_func] enter");
 	gchar check_script[SCRIPT_SIZE];
 
 	strcat(check_script, ((struct srvstruct *) (value))->check_script);
@@ -1057,7 +976,7 @@ print_func(gpointer key, gpointer value, gpointer HT)
 void
 service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 {
-	debuglog("service_info", "Function start");
+	halog(LOG_DEBUG, "[service_info] enter");
 	gint pstate, sstate;
 	gpointer pointer;
 	gchar *primary, *secondary;
@@ -1081,7 +1000,7 @@ service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 void
 service_status(GList * liste, GHashTable * HT)
 {
-	debuglog("service_status", "Function start");
+	halog(LOG_DEBUG, "[service_status] enter");
 	gint i, list_size, pstate, sstate;
 	gpointer pointer;
 	gchar *service, *primary, *secondary;
@@ -1104,44 +1023,33 @@ service_status(GList * liste, GHashTable * HT)
 gint
 change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 {
-	debuglog("change_status_stop", "Function start");
+	halog(LOG_DEBUG, "[change_status_stop] enter");
 	gpointer pointer;
 	gchar *arg[3];
-	gchar *m = NULL;
 
 	if ((state == 2) || (state == 8)) {
-		m = g_strconcat("Ready to stop, partner node is ", VAL[ostate],
-				" we are ", VAL[state], ".\n", NULL);
-		halog(LOG_NOTICE, progname, m);
+		halog(LOG_NOTICE, "Ready to stop, partner node is %s we are %s",
+			VAL[ostate], VAL[state]);
 #ifdef VERBOSE
 		printf("%s", m);
 #endif
-		g_free(m);
 	} else {
-		m = g_strconcat("Cannot stop, ", service,
-				": service not in correct state (partner node is ",
-				VAL[ostate], ", we are ", VAL[state], ".\n",
-				NULL);
-		halog(LOG_NOTICE, progname, m);
+		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s",
+			service, VAL[ostate],VAL[state]);
 #ifdef VERBOSE
 		printf
 		    ("Cannot stop %s: service not in correct state (partner node is %s , we are %s),\n",
 		     service, VAL[ostate], VAL[state]);
 #endif
-		g_free(m);
 		return -1;
 	}
 
 	if (ostate != 0) {
-		m = g_strconcat
-		    ("Warning: PARTNER is not in STOPPED state: service will not migrate.\n",
-		     NULL);
-		halog(LOG_NOTICE, progname, m);
+		halog(LOG_NOTICE, "PARTNER is not in STOPPED state: service will not migrate");
 #ifdef VERBOSE
 		printf
 		    ("Warning: PARTNER is not in STOPPED state: service will not migrate.\n");
 #endif
-		g_free(m);
 	}
 	pointer = g_hash_table_lookup(HT, service);
 	arg[0] = ((struct srvstruct *) (pointer))->script;
@@ -1149,21 +1057,18 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	arg[2] = (gchar *) 0;
 	write_status(service, '1', nodename);
 	if (launch(arg[0], arg) == 0) {
-		m = g_strconcat("Service ", service, " successfully stopped\n",
-				NULL);
+		halog(LOG_INFO, "Service %s successfully stopped", service);
 #ifdef VERBOSE
 		printf("Service %s successfully stopped\n", service);
 #endif
 		write_status(service, '0', nodename);
-		g_free(m);
 		return 0;
 	} else {
-		m = g_strconcat("Error: failed to stop ", service, ".\n", NULL);
+		halog(LOG_ERR, "failed to stop %s", service);
 #ifdef VERBOSE
 		printf("Error: failed to stop %s.\n", service);
 #endif
 		write_status(service, '5', nodename);
-		g_free(m);
 		return -1;
 	}
 }
@@ -1172,29 +1077,20 @@ gint
 change_status_force_stop(gint state, gint ostate, gchar * service,
 			 GHashTable * HT)
 {
-	debuglog("change_status_force_stop", "Function start");
-	gchar *message = NULL;
-
-	progname = getenv("PROGNAME");
+	halog(LOG_DEBUG, "[change_status_force_stop] enter");
 
 #ifdef VERBOSE
 	printf("Ready to force stop, partner node is %s , we are %s\n",
 	       VAL[ostate], VAL[state]);
 #endif
-	message =
-	    g_strconcat("Ready to force stop, partner node is ", VAL[ostate],
-			", we are ", VAL[state], "\n", NULL);
-	halog(LOG_INFO, progname, message);
-	g_free(message);
+	halog(LOG_INFO, "Ready to force stop, partner node is %s, we are %s",
+		VAL[ostate], VAL[state]);
 
 	write_status(service, '0', nodename);
 #ifdef VERBOSE
 	printf("Service %s successfully stopped\n", service);
 #endif
-	message =
-	    g_strconcat("Service ", service, " successfully stopped\n", NULL);
-	halog(LOG_INFO, progname, message);
-	g_free(message);
+	halog(LOG_INFO, "Service %s successfully stopped", service);
 	return 0;
 }
 
@@ -1202,28 +1098,21 @@ gint
 change_status_force_start(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog("change_status_force_start", "Function start");
-	gchar *message = NULL;
+	halog(LOG_DEBUG, "[change_status_force_start] enter");
 
 #ifdef VERBOSE
 	printf("Ready to force start, partner node is %s , we are %s\n",
 	       VAL[ostate], VAL[state]);
 #endif
-	message =
-	    g_strconcat("Ready to force start, partner node is ", VAL[ostate],
-			", we are ", VAL[state], ".\n", NULL);
-	halog(LOG_INFO, progname, message);
-	g_free(message);
+	halog(LOG_INFO, "Ready to force start, partner node is  %s, we are %s",
+		VAL[ostate], VAL[state]);
 
 #ifdef VERBOSE
 	printf("Service %s forced to started\n", service);
 #endif
-	message =
-	    g_strconcat("Service ", service, " forced to started\n", NULL);
-	halog(LOG_INFO, progname, message);
+	halog(LOG_INFO, "Service %s forced to started", service);
 
 	write_status(service, '2', nodename);
-	g_free(message);
 	return 0;
 }
 
@@ -1231,26 +1120,17 @@ gint
 change_status_freeze_stop(gint state, gint ostate, gchar * service,
 			  GHashTable * HT)
 {
-	debuglog("change_status_freeze_stop", "Function start");
-	gchar *message = NULL;
+	halog(LOG_DEBUG, "[change_status_freeze_stop] enter");
 
 	if ((state == 0) || (state == 2) || (state == 4) || (state == 5)) {
-		message =
-		    g_strconcat("Ready to FREEZE, we are ", VAL[state], ".\n",
-				NULL);
-		halog(LOG_INFO, progname, message);
-		g_free(message);
+		halog(LOG_INFO, "Ready to FREEZE, we are %s", VAL[state]);
 
 #ifdef VERBOSE
 		printf("Ready to FREEZE, we are %s\n", VAL[state]);
 #endif
 		if ((state == 0) || (state == 4) || (state == 5)) {
 			write_status(service, '6', nodename);
-			message =
-			    g_strconcat("Service ", service, " FROZEN-STOP.\n",
-					NULL);
-			halog(LOG_INFO, progname, message);
-			g_free(message);
+			halog(LOG_INFO, "Service %s FROZEN-STOP", service);
 #ifdef VERBOSE
 			printf("Service %s FROZEN-STOP\n", service);
 #endif
@@ -1262,11 +1142,7 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 #ifdef VERBOSE
 				printf("Service %s FROZEN-STOP\n", service);
 #endif
-				message =
-				    g_strconcat("Service ", service,
-						" FROZEN-STOP.\n", NULL);
-				halog(LOG_INFO, progname, message);
-				g_free(message);
+				halog(LOG_INFO, "Service %s FROZEN-STOP", service);
 				return 0;
 			} else {
 #ifdef VERBOSE
@@ -1274,11 +1150,7 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 				    ("Warning: error in stopping service %s\n",
 				     service);
 #endif
-				message =
-				    g_strconcat("error in stopping service ",
-						service, ".\n", NULL);
-				halog(LOG_INFO, progname, message);
-				g_free(message);
+				halog(LOG_INFO, "error in stopping service %s", service);
 				return -1;
 			}
 		}
@@ -1288,12 +1160,8 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 	    ("Cannot FREEZE-STOP %s: service not in STARTED/STOPPED state (we are %s),\n",
 	     service, VAL[state]);
 #endif
-	message =
-	    g_strconcat("Cannot FREEZE-STOP ", service,
-			": service not in STARTED/STOPPED state (we are ",
-			VAL[state], ".\n", NULL);
-	halog(LOG_INFO, progname, message);
-	g_free(message);
+	halog(LOG_INFO, "Cannot FREEZE-STOP %s: service not in STARTED/STOPPED state (we are %s)",
+		service, VAL[state]);
 	return -1;
 }
 
@@ -1301,7 +1169,7 @@ gint
 change_status_freeze_start(gint state, gint ostate, gchar * service,
 			   GHashTable * HT)
 {
-	debuglog("change_status_freeze_start", "Function start");
+	halog(LOG_DEBUG, "[change_status_freeze_start] enter");
 
 	if ((state == 0) || (state == 2)) {
 		printf("Ready to FREEZE, we are %s\n", VAL[state]);
@@ -1333,18 +1201,13 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 gint
 change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 {
-	debuglog("change_status_unfreeze", "Function start");
-	gchar *message = NULL;
+	halog(LOG_DEBUG, "[change_status_unfreeze] enter");
 
 	if ((state == 6) || (state == 7)) {
 #ifdef VERBOSE
 		printf("Ready to UNFREEZE, we are %s\n", VAL[state]);
 #endif
-		message =
-		    g_strconcat("Ready to UNFREEZE, we are (", VAL[state],
-				").\n", NULL);
-		halog(LOG_INFO, progname, message);
-		g_free(message);
+		halog(LOG_INFO, "Ready to UNFREEZE, we are (%s)", VAL[state]);
 		if (state == 6)
 			write_status(service, '0', nodename);
 		if (state == 7)
@@ -1352,18 +1215,11 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 #ifdef VERBOSE
 		printf("Service %s UNFROZEN\n", service);
 #endif
-		message =
-		    g_strconcat("Service ", service, " UNFROZEN.\n", NULL);
-		halog(LOG_INFO, progname, message);
-		g_free(message);
+		halog(LOG_INFO, "Service %s UNFROZEN", service);
 		return 0;
 	} else {
-		message =
-		    g_strconcat("Cannot UNFREEZE ", service,
-				": not in FREEZE state (we are ", VAL[state],
-				").\n", NULL);
-		halog(LOG_INFO, progname, message);
-		g_free(message);
+		halog(LOG_INFO, "Cannot UNFREEZE %s: not in FREEZE state (we are %s)",
+			service, VAL[state]);
 #ifdef VERBOSE
 		printf
 		    ("Cannot UNFREEZE %s: service not in FREEZE state (we are %s),\n",
@@ -1376,7 +1232,7 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 gint
 if_getaddr(const char *ifname, struct in_addr * addr)
 {
-	debuglog("if_getaddr", "Function start");
+	halog(LOG_DEBUG, "[if_getaddr] enter");
 	gint fd;
 	struct ifreq if_info;
 
@@ -1418,15 +1274,14 @@ if_getaddr(const char *ifname, struct in_addr * addr)
 gint
 set_mcast_if(gint sockfd, gchar * ifname)
 {
-	debuglog("set_mcast_if", "Function start");
+	halog(LOG_DEBUG, "[set_mcast_if] enter");
 	gint rc, i = 0;
 	struct in_addr mreq;
 
 	memset(&mreq, 0, sizeof (mreq));
 	rc = if_getaddr(ifname, &mreq);
 	if (rc == -1) {
-		//strcpy(message," failed. Bad interface name ? \n");
-		//halog(LOG_ERR,"if_getaddr: ",message);
+		//halog(LOG_ERR, "if_getaddr: failed. Bad interface name ?");
 		perror("set_mcast_if");
 		return (-1);
 	}
@@ -1449,7 +1304,7 @@ rm_func_serv(gpointer key, gpointer value, gpointer user_data)
 gboolean
 init_var()
 {
-	debuglog("init_var", "Function start");
+	halog(LOG_DEBUG, "[init_var] enter");
 
 	if ((EZ_BIN = getenv("EZ_BIN")) == NULL) {
 		printf("Error: variable EZ_BIN not defined\n");
@@ -1481,16 +1336,16 @@ init_var()
 void
 daemonize(gchar * message)
 {
-	debuglog("daemonize", "Function start");
+	halog(LOG_DEBUG, "[daemonize] enter");
 	gint pid;
 
 	switch (pid = fork()) {
 	case 0:
-		halog(LOG_INFO, message, "starting ...");
+		halog(LOG_INFO, "%s starting ...", message);
 		break;
 	case (-1):
 		fprintf(stderr, "Error in fork().\n");
-		halog(LOG_ERR, message, "Error in fork()");
+		halog(LOG_ERR, "%s Error in fork()", message);
 		exit(-1);
 	default:
 		exit(0);
@@ -1500,9 +1355,28 @@ daemonize(gchar * message)
 void
 Setenv(gchar * name, gchar * value)
 {
-	debuglog("Setenv", "Function start");
+	halog(LOG_DEBUG, "[Setenv] enter");
 	gchar *env;
 	env = g_strconcat(name, "=", value, NULL);
 	putenv(env);
 	g_free(env);
 }
+
+int
+halog(int prio, const char * fmt, ...)
+{
+	va_list ap;
+        char buff[MAX_LOG_MSG_SIZE];
+
+	if (prio > loglevel)
+		return 0;
+	va_start(ap, fmt);
+        vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
+	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
+	syslog(prio, "%s", buff);
+#ifdef VERBOSE
+	printf("%s", buff);
+#endif
+	return 0;
+}
+

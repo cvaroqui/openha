@@ -63,12 +63,9 @@ gchar *argv[];
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
-	gchar *message;
-	gchar debugmsg[512];
 	gint iTmp;
 
 	signal(SIGTERM, sigterm);
-	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
 
 	daemonize("heartc");
 	Setenv("PROGNAME", "heartc");
@@ -86,20 +83,14 @@ gchar *argv[];
 	port = atoport(argv[3], "udp");
 
 	if ((timeout = atoi(argv[4])) < 2) {
-		message = g_strconcat("timeout must be > 1 second\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "timeout must be > 1 second");
 		exit(-1);
 	}
 
 	f_stat = malloc(sizeof (stat));
 
 	if (getenv("EZ_LOG") == NULL) {
-		message =
-		    g_strconcat("environment variable EZ_LOG not defined ...\n",
-				NULL);
-		halog(LOG_ERR, "heartc: ", message);
-		g_free(message);
+		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
@@ -108,50 +99,37 @@ gchar *argv[];
 			argv[1], ".key", NULL);
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		message = g_strconcat("Error: unable to open SHMFILE \n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "unable to open SHMFILE");
 		g_free(SHM_KEY);
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		message = g_strconcat("Error: unable to lock SHMFILE\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "unable to lock SHMFILE");
 		exit(-1);
 	}
 
 	key = ftok(SHM_KEY, 0);
 	g_free(SHM_KEY);
 	if (port == -1) {
-		message =
-		    g_strconcat("Error: invalid port ", argv[3], "\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "invalid port %s", argv[3]);
 		exit(-1);
 	}
 
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		message = g_strconcat("shmget failed\n", NULL);
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "shmget failed");
 		//perror("shmget");
-		g_free(message);
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message = g_strconcat("shmat failed\n", NULL);
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "shmat failed");
 		//perror("shmat");
-		g_free(message);
 		exit(-1);
 	}
 
 	/* get a datagram socket */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		message = g_strconcat("getting socket\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "getting socket");
 		exit(-1);
 	}
 
@@ -159,9 +137,7 @@ gchar *argv[];
 	iTmp = 1;
 	if (setsockopt
 	    (s, SOL_SOCKET, SO_REUSEADDR, (void *) &iTmp, sizeof (iTmp)) < 0) {
-		message = g_strconcat("Error setsockopt(SO_REUSEADDR)\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "Error setsockopt(SO_REUSEADDR)");
 		exit(-1);
 	}
 
@@ -183,11 +159,7 @@ gchar *argv[];
 
 	/* assign interface */
 	if (set_mcast_if(s, argv[1]) < 0) {
-		message =
-		    g_strconcat("Error setting outbound mcast interface: ",
-				argv[1], "\n", NULL);
-		halog(LOG_ERR, "heartc", message);
-		g_free(message);
+		halog(LOG_ERR, "Error setting outbound mcast interface: %s", argv[1]);
 		exit(-1);
 	}
 	/* name the socket */
@@ -197,10 +169,8 @@ gchar *argv[];
 	stLocal.sin_port = port;
 	if (bind(s, (struct sockaddr *) &stLocal, sizeof (stLocal)) != 0) {
 		perror("bind");
-		message = g_strconcat("bind failed\n", NULL);
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "bind failed");
 		//perror("bind");
-		g_free(message);
 		exit(1);
 	}
 
@@ -226,31 +196,25 @@ gchar *argv[];
 		i = recvfrom(s, (void *) &to_recV, sizeof (struct sendstruct),
 			     0, (struct sockaddr *) &stFrom, &addr_size);
 		if ((i < 0) && (flag == 0)) {
-			message = g_strconcat("recvfrom failed\n", NULL);
-			halog(LOG_ERR, "heartc", message);
-			g_free(message);
+			halog(LOG_ERR, "recvfrom failed");
 			continue;
 		}
 		if (i > 0) {
-			snprintf(debugmsg, sizeof (debugmsg),
-				 "recvfrom() OK : %zu bytes From %s:%d",
+			halog(LOG_DEBUG, "[main] recvfrom() OK : %zu bytes From %s:%d",
 				 sizeof (struct sendstruct),
 				 inet_ntoa(stFrom.sin_addr),
 				 ntohs(stFrom.sin_port));
-			debuglog("main", debugmsg);
 
 			for (j = 0; j < MAX_SERVICES; j++) {
 				if (strlen(to_recV.service_name[j]) == 0) {
 					j = MAX_SERVICES;
 				} else {
-					snprintf(debugmsg, sizeof (debugmsg),
-						 "svc #%d name=[%s] state=[%c] node=[%s] ela=[%u]",
+					halog(LOG_DEBUG, "[main] svc #%d name=[%s] state=[%c] node=[%s] ela=[%u]",
 						 j,
 						 to_recV.service_name[j],
 						 to_recV.service_state[j],
 						 to_recV.nodename,
 						 to_recV.elapsed);
-					debuglog("main", debugmsg);
 					write_status(to_recV.service_name[j],
 						     to_recV.service_state[j],
 						     to_recV.nodename);
@@ -262,11 +226,7 @@ gchar *argv[];
 			memcpy(to_recV.addr, ADDR, 15);
 			memcpy(shm, &to_recV, sizeof (to_recV));
 			if (was_down == TRUE) {
-				message =
-				    g_strconcat("peer on @ ", ADDR, " up !\n",
-						NULL);
-				halog(LOG_WARNING, "heartc", message);
-				g_free(message);
+				halog(LOG_WARNING, "peer on @ %s up !", ADDR);
 				was_down = FALSE;
 				DOWN = FALSE;
 			}
@@ -277,24 +237,17 @@ gchar *argv[];
 void
 sighup()
 {
-	gchar *message;
 	to_recV.up = FALSE;
 	DOWN = TRUE;
 	memcpy(shm, &to_recV, sizeof (to_recV));
-	message = g_strconcat("peer on @ ", ADDR, " down !\n", NULL);
-	halog(LOG_WARNING, "heartc", message);
-	g_free(message);
+	halog(LOG_WARNING, "peer on @ %s down !", ADDR);
 	flag = 1;
 }
 
 void
 sigterm()
 {
-	gchar *message;
-	message =
-	    g_strconcat("SIGTERM received, exiting gracefully ...\n", NULL);
-	halog(LOG_INFO, "heartc", message);
-	g_free(message);
+	halog(LOG_INFO, "SIGTERM received, exiting gracefully ...");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	exit(0);
 }

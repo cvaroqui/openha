@@ -56,16 +56,12 @@ char *argv[];
 	gint addr_size, i, port = -1, fd;
 	unsigned char ttl = 6;
 	struct utsname tmp_name;
-	gchar *message, *FILE_KEY;
+	gchar *FILE_KEY;
 	gchar ADDR[15];
 	pid_t pid;
 	key_t key;
 	gchar *shm, *SHM_KEY;
-	gchar debugmsg[512];
 
-	sprintf(IDENT, "%s-%s-%s-%s", argv[0], argv[1], argv[2], argv[3]);
-
-	message = g_malloc0(160);
 
 	if (argc != 4) {
 		fprintf(stderr, "Usage: heartd interface address port\n");
@@ -81,23 +77,19 @@ char *argv[];
 	pid = getpid();
 
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "unable to open key file");
 		g_free(FILE_KEY);
 		exit(-1);
 	}
 	g_free(FILE_KEY);
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "unable to lock key file");
 		exit(-1);
 	}
 
 	port = atoport(argv[3], "udp");
 	if (port == -1) {
-		strcpy(message, "unable to find service: ");
-		strcat(message, argv[3]);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "unable to find service: %s", argv[3]);
 		exit(EXIT_FAILURE);
 	}
 
@@ -110,15 +102,13 @@ char *argv[];
 			argv[1], ".key", NULL);
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		message = g_strconcat("Error: unable to open SHMFILE \n", NULL);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "unable to open SHMFILE");
 		g_free(SHM_KEY);
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		message = g_strconcat("Error: unable to lock SHMFILE\n", NULL);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "unable to lock SHMFILE");
 		g_free(SHM_KEY);
 		exit(-1);
 	}
@@ -126,21 +116,17 @@ char *argv[];
 	key = ftok(SHM_KEY, 0);
 	g_free(SHM_KEY);
 	if (port == -1) {
-		message =
-		    g_strconcat("Error: invalid port ", argv[3], "\n", NULL);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "invalid port %s", argv[3]);
 		exit(-1);
 	}
 
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		message = g_strconcat("shmget failed\n", NULL);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "shmget failed");
 		//perror("shmget");
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		message = g_strconcat("shmat failed\n", NULL);
-		halog(LOG_ERR, "heartd", message);
+		halog(LOG_ERR, "shmat failed");
 		//perror("shmat");
 		exit(-1);
 	}
@@ -153,9 +139,7 @@ char *argv[];
 	bind(s, (struct sockaddr *) &stLocal, sizeof (stLocal));
 
 	if (set_mcast_if(s, argv[1]) < 0) {
-		strcpy(message, "Error setting outbound mcast interface: ");
-		strcat(message, argv[1]);
-		halog(LOG_ERR, "heartd:", message);
+		halog(LOG_ERR, "Error setting outbound mcast interface: %s", argv[1]);
 		exit(-1);
 	}
 
@@ -198,21 +182,15 @@ char *argv[];
 		i = sendto(s, (const void *) &to_send, sizeof (to_send),
 			   0, (struct sockaddr *) &stTo, addr_size);
 		if (i < 0) {
-			strcpy(message, "sento() failed");
-			halog(LOG_ERR, "heartd", message);
+			halog(LOG_ERR, "sento() failed");
 		} else {
-			snprintf(debugmsg, sizeof (debugmsg),
-				 "sendto() OK : %zu bytes From %s:%d",
+			halog(LOG_DEBUG, "[main] sendto() OK : %zu bytes From %s:%d",
 				 sizeof (to_send),
 				 inet_ntoa(stLocal.sin_addr),
 				 ntohs(stLocal.sin_port));
-			debuglog("main", debugmsg);
-			snprintf(debugmsg,
-				 sizeof (debugmsg),
-				 "sendto() OK : Dest %s:%d",
+			halog(LOG_DEBUG, "[main] sendto() OK : Dest %s:%d",
 				 inet_ntoa(stTo.sin_addr),
 				 ntohs(stTo.sin_port));
-			debuglog("main", debugmsg);
 		}
 
 		alarm(1);
@@ -288,11 +266,7 @@ sighup()
 void
 sigterm()
 {
-	gchar *message;
-	message =
-	    g_strconcat("SIGTERM received, exiting gracefully ...\n", NULL);
-	halog(LOG_INFO, "heartd", message);
-	g_free(message);
+	halog(LOG_INFO, "SIGTERM received, exiting gracefully ...");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	exit(0);
 }

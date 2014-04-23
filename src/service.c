@@ -65,13 +65,6 @@ char *argv[];
 		exit_usage(argv[0]);
 	}
 
-	/* filling in IDENT for debugging purposes */
-	sprintf(IDENT, "%s_%s", argv[0], argv[1]);
-
-	if ((getenv("OPENHADEBUG")) != NULL) {
-		DEBUGGING = 1;
-	}
-
 	init_var();
 	get_nodename();
 	get_services_list();

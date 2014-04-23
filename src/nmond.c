@@ -75,22 +75,16 @@ char *argv[];
 	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
 	struct srvstruct *ptr_service;
 	gint pid;
-	gchar *m;
 	gchar service[MAX_SERVICES_SIZE];
 
-	if ((getenv("OPENHADEBUG")) != NULL) {
-		DEBUGGING = 1;
-	}
-
 	GlobalList = NULL;
-	sprintf(IDENT, "%s", argv[0]);
 	Setenv("PROGNAME", "nmond");
 	progname = getenv("PROGNAME");
 	//Setenv("VERBOSE", "0");
 
 	switch (pid = fork()) {
 	case 0:
-		halog(LOG_INFO, "nmond", "starting ...");
+		halog(LOG_INFO, "nmond starting ...");
 		break;
 	case (-1):
 		fprintf(stderr, "Error in fork().\n");
@@ -130,7 +124,7 @@ char *argv[];
 		signal(SIGUSR1, signal_usr1_callback_handler);
 		signal(SIGUSR2, signal_usr2_callback_handler);
 
-		debuglog("main", "looping");
+		halog(LOG_DEBUG, "[main] looping");
 
 		get_services_list();
 
@@ -158,9 +152,7 @@ char *argv[];
 			g_hash_table_insert(HT_SERV, ptr_service->service_name,
 					    ptr_service);
 		}
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "HT_SERV hash table built (key=svcname / value = svcstruct)");
-		debuglog("main", debugmsg);
+		halog(LOG_DEBUG, "[main] HT_SERV hash table built (key=svcname / value = svcstruct)");
 
 		// Node Status management
 		// 
@@ -177,15 +169,13 @@ char *argv[];
 			g_hash_table_foreach_remove(HT_NODES, rm_func,
 						    HT_NODES);
 		}
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "HT_NODES_OLD built. HT_NODES empty");
-		debuglog("main", debugmsg);
+		halog(LOG_DEBUG, "[main] HT_NODES_OLD built. HT_NODES empty");
 		j = 0;
 		for (i = 0; i < nb_seg; i++) {
 			// On remplit tab_shm (nodename + shmid)
 			if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename)
 			    != 0) {
-				halog(LOG_ERR, progname, "fill_seg failed.\n");
+				halog(LOG_ERR, "fill_seg failed");
 				return -1;
 			}
 			pointer =
@@ -202,8 +192,7 @@ char *argv[];
 			}
 			j++;	/* a quoi sert j ? */
 		}
-		snprintf(debugmsg, sizeof (debugmsg), "HT_NODES built.");
-		debuglog("main", debugmsg);
+		halog(LOG_DEBUG, "[main] HT_NODES built");
 		g_hash_table_foreach(HT_NODES, check_node_func, NULL);
 		memcpy(shm, tabinfo, sizeof (tabinfo));
 
@@ -224,15 +213,11 @@ char *argv[];
 			secondary = ((struct srvstruct *) (pointer))->secondary;
 			pstate = get_status(GlobalList, primary, service);
 			sstate = get_status(GlobalList, secondary, service);
-			snprintf(debugmsg, sizeof (debugmsg),
-				 "Processing service [%s] - Pri[%s@%s] - Sec[%s@%s]",
+			halog(LOG_DEBUG, "[main] Processing service [%s] - Pri[%s@%s] - Sec[%s@%s]",
 				 service, VAL[pstate], primary, VAL[sstate], secondary);
-			debuglog("main", debugmsg);
 			if (is_primary(nodename, service)) {
-				snprintf(debugmsg, sizeof (debugmsg),
-					 "is_primary is true for service [%s] on node [%s]",
+				halog(LOG_DEBUG, "[main] is_primary is true for service [%s] on node [%s]",
 					 service, nodename);
-				debuglog("main", debugmsg);
 				if (((sstate == 0)
 				     || (sstate == 6)
 				     || (sstate == 8))
@@ -244,20 +229,14 @@ char *argv[];
 				    && (pstate != 6)
 				    && (sstate != 7)
 				    ) {
-					m = g_strconcat
-					    ("Changing state of service ",
-					     service, ".\n", NULL);
-					halog(LOG_NOTICE, progname, m);
-					g_free(m);
+					halog(LOG_NOTICE, "Changing state of service %s", service);
 					change_status_start(pstate, sstate,
 							    service, HT_SERV);
 				}
 			}
 			if (is_secondary(nodename, service)) {
-				snprintf(debugmsg, sizeof (debugmsg),
-					 "is_secondary is true for service [%s] on node [%s]",
+				halog(LOG_DEBUG, "[main] is_secondary is true for service [%s] on node [%s]",
 					 service, nodename);
-				debuglog("main", debugmsg);
 				if (((pstate == 0)
 				     || (pstate == 6)
 				     || (pstate == 8))
@@ -270,11 +249,7 @@ char *argv[];
 				    && (sstate != 7)
 				    ) {
 
-					m = g_strconcat
-					    ("Changing state of service ",
-					     service, ".\n", NULL);
-					halog(LOG_NOTICE, progname, m);
-					g_free(m);
+					halog(LOG_NOTICE, "Changing state of service %s", service);
 					change_status_start(sstate, pstate,
 							    service, HT_SERV);
 				}
@@ -282,12 +257,9 @@ char *argv[];
 				//      printf("Nothing to do for service %s\n",service);
 			}
 		}
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "Removing each HT_SERV key/value");
-		debuglog("main", debugmsg);
+		halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
 		drop_hash(HT_SERV);
-		snprintf(debugmsg, sizeof (debugmsg), "Calling alarm(2)");
-		debuglog("main", debugmsg);
+		halog(LOG_DEBUG, "[main] Calling alarm(2)");
 		alarm(2);
 		pause();
 	}
@@ -302,10 +274,10 @@ sighup()
 void
 check_node_func(gpointer key, gpointer value, gpointer HT)
 {
-	debuglog("check_node_func", "Function start");
+	halog(LOG_DEBUG, "check_node_func", "Function start");
 	gpointer new_pointer, old_pointer;
 	gint i = 0;
-	gchar *service, *m;
+	gchar *service;
 	gchar *node_to_check;
 
 	service = g_malloc(MAX_SERVICES_SIZE);
@@ -314,16 +286,13 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 	old_pointer = g_hash_table_lookup(HT_NODES_OLD, key);
 	node_to_check =
 	    strncpy(node_to_check, (gchar *) key, MAX_NODENAME_SIZE);
-	snprintf(debugmsg, sizeof (debugmsg), "Will check node [%s]",
+	halog(LOG_DEBUG, "[check_node_func] Will check node [%s]",
 		 node_to_check);
-	debuglog("check_node_func", debugmsg);
 
 	//Node is down  
 	if ((((struct nodestruct *) new_pointer)->up) == FALSE) {
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "Node [%s] is DOWN. Need update for all services running on node.",
+		halog(LOG_DEBUG, "[check_node_func] Node [%s] is DOWN. Need update for all services running on node.",
 			 node_to_check);
-		debuglog("check_node_func", debugmsg);
 		if (old_pointer != NULL) {
 			for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
 				service = strncpy(service, (gchar *)
@@ -337,24 +306,17 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 					    (GlobalList, node_to_check,
 					     service) != 8) {
 						/* status 8 = UNKNOWN */
-						m = g_strconcat
-						    ("WARNING: setting service ",
-						     service,
-						     " to UNKNOWN for node ",
-						     node_to_check, "\n", NULL);
 						write_status(service, '8',
 							     node_to_check);
-						halog(LOG_WARNING, progname, m);
-						g_free(m);
+						halog(LOG_WARNING, "setting service %s to UNKNOWN for node %s",
+							service, node_to_check);
 					}
 				}
 			}
 		}
 	} else {
-		snprintf(debugmsg, sizeof (debugmsg),
-			 "Node [%s] is UP. Leaving check_node_func.",
+		halog(LOG_DEBUG, "[check_node_func] Node [%s] is UP. Leaving check_node_func.",
 			 node_to_check);
-		debuglog("check_node_func", debugmsg);
 	}
 	g_free(service);
 	g_free(node_to_check);
@@ -375,47 +337,34 @@ rm_func(gpointer key, gpointer value, gpointer user_data)
 void
 init()
 {
-	gchar *message;
 	gint fd;
 
-	message = g_malloc0(80);
 	get_nodename();
 
 	if (getenv("EZ_LOG") == NULL) {
-		strcpy(message,
-		       "environment variable EZ_LOG not defined ...\n ");
-		halog(LOG_ERR, progname, message);
+		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
 		perror("Error: environment variable EZ_LOG not defined ...\n");
-		g_free(message);
 		exit(-1);
 	}
 	FILE_KEY = g_strconcat(getenv("EZ_LOG"), "/proc/nmond.key", NULL);
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, progname, message);
+		halog(LOG_ERR, "unable to open key file");
 		perror("Error: unable to open key file");
-		g_free(message);
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, progname, message);
+		halog(LOG_ERR, "unable to lock key file");
 		perror("Error: unable to lock key file");
-		g_free(message);
 		exit(-1);
 	}
 	if ((EZ_MONITOR = getenv("EZ_MONITOR")) == NULL) {
-		halog(LOG_ERR, progname,
-		      "Error: variable EZ_MONITOR not defined\n");
+		halog(LOG_ERR, "Error: variable EZ_MONITOR not defined");
 		perror("Error: variable EZ_MONITOR not defined");
-		g_free(message);
 		exit(-1);
 	}
 	if ((File = fopen(EZ_MONITOR, "r")) == NULL) {
-		halog(LOG_ERR, progname,
-		      "Nothing to monitor: unable to open $EZ_MONITOR\n");
+		halog(LOG_ERR, "Nothing to monitor: unable to open $EZ_MONITOR");
 		perror("Nothing to monitor: unable to open $EZ_MONITOR");
-		g_free(message);
 		exit(-1);
 	}
 //a rajouter: si EZ_MONITOR est vide, on sort 
@@ -427,7 +376,6 @@ init()
 	list_size = g_list_length(list_heart) / LIST_NB_ITEM;
 	fclose(File);
 	//printf("nombre de heartbeat a surveiller:%d\n",list_size);
-	g_free(message);
 }
 
 //for future use
@@ -460,7 +408,7 @@ copy_tab_send(struct sendstruct *dest, struct sendstruct *from, guint size)
 void
 clean_tab()
 {
-	debuglog("clean_tab", "Function start");
+	halog(LOG_DEBUG, "clean_tab", "Function start");
 	gint i = 0;
 	for (i = 0; i < MAX_HEARTBEAT; i++) {
 		tabnode[i].nodename[0] = '\0';
@@ -472,7 +420,7 @@ clean_tab()
 gint
 find_node(gchar * val)
 {
-	debuglog("find_node", "Function start");
+	halog(LOG_DEBUG, "find_node", "Function start");
 	gint index = 0;
 
 	for (index = 0; index < MAX_HEARTBEAT; index++) {
@@ -487,7 +435,7 @@ find_node(gchar * val)
 gint
 get_node(GList * liste, gchar * port, gchar * addr)
 {
-	debuglog("get_node", "Function start");
+	halog(LOG_DEBUG, "get_node", "Function start");
 	gint i = 0;
 
 	for (i = 0; i < g_list_length(liste); i++) {
@@ -507,7 +455,7 @@ get_node(GList * liste, gchar * port, gchar * addr)
 gint
 get_seg(gint i, struct shmtab_struct * S)
 {
-	debuglog("get_seg", "Function start");
+	halog(LOG_DEBUG, "get_seg", "Function start");
 	gint shmid, itmp;
 	key_t key;
 	gchar nodename[MAX_NODENAME_SIZE], **NEW_KEY;
@@ -584,7 +532,7 @@ get_seg(gint i, struct shmtab_struct * S)
 gint
 fill_seg(gint i, key_t key, gchar * nodename)
 {
-	debuglog("fill_seg", "Function start");
+	halog(LOG_DEBUG, "fill_seg", "Function start");
 	gpointer *R;
 	struct sendstruct to_recv;
 
@@ -604,9 +552,8 @@ fill_seg(gint i, key_t key, gchar * nodename)
 void
 sigterm()
 {
-	debuglog("sigterm", "Function start");
+	halog(LOG_INFO, "SIGTERM received, exiting gracefuly ...");
 	(void) shmctl(shmid, IPC_RMID, NULL);
-	halog(LOG_INFO, progname, "SIGTERM received, exiting gracefuly ...\n");
 	drop_list(GlobalList);
 	drop_hash(GLOBAL_HT_SERV);
 	exit(0);

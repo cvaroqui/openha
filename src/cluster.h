@@ -44,7 +44,7 @@
 #define SCRIPT_SIZE 128
 #define LIST_NB_ITEM 5	/* nb colonne dans fichier services / nb item dans liste */
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
-
+#define MAX_LOG_MSG_SIZE 1024
 
 extern unsigned sleep(unsigned);
 gchar *EZ;
@@ -96,10 +96,6 @@ struct shmtab_struct {
 	key_t shmid;
 };
 
-gint DEBUGGING;
-gchar IDENT[128];
-gchar debugmsg[512];
-
 time_t GlobalListTimeStamp;
 GList *GlobalList;
 GHashTable *GLOBAL_HT_SERV;
@@ -128,8 +124,6 @@ gint service_rm(gchar *, GHashTable *);
 gint service_mod(gchar *);
 gint rm_file(gchar *);
 gint set_mcast_if(gint, gchar *);
-void halog(gint, gchar *, gchar *);
-void debuglog(gchar *, gchar *);
 void signal_usr1_callback_handler();
 void signal_usr2_callback_handler();
 gboolean init_var();
@@ -149,5 +143,7 @@ void drop_list(GList *);
 void drop_hash(GHashTable *);
 void get_liste(FILE *, guint);
 GList * get_liste_generic(FILE *, guint);
+int halog(int prio, const char * fmt, ...);
+
 
 #endif /* CLUSTER_H */

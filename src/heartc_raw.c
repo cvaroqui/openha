@@ -57,7 +57,7 @@ gchar *argv[];
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
-	gchar *message, *FILE_KEY, *raw_device;
+	gchar *FILE_KEY, *raw_device;
 	gint address;
 	FILE *File;
 	long old_elapsed = 0;
@@ -66,7 +66,6 @@ gchar *argv[];
 	int r;
 
 	raw_device = g_malloc0(128);
-	message = g_malloc0(80);
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
 
@@ -83,17 +82,14 @@ gchar *argv[];
 	strncpy(ADDR, argv[1], 64);
 
 	if ((timeout = atoi(argv[3])) < 2) {
-		strcpy(message, "timeout must be > 1 second\n ");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "timeout must be > 1 second");
 		exit(-1);
 	}
 
 	f_stat = malloc(sizeof (stat));
 
 	if (getenv("EZ_LOG") == NULL) {
-		strcpy(message,
-		       "environment variable EZ_LOG not defined ...\n ");
-		halog(LOG_ERR, "heartc_raw: ", message);
+		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
@@ -108,42 +104,35 @@ gchar *argv[];
 	FILE_KEY = SHM_KEY;
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-		strcpy(message, "Error: unable to open SHMFILE");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "unable to open SHMFILE");
 		exit(-1);
 	}
 
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock SHMFILE");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "unable to lock SHMFILE");
 		exit(-1);
 	}
 	key = ftok(SHM_KEY, 0);
 	if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0644)) < 0) {
-		strcpy(message, "shmget failed");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "shmget failed");
 		exit(-1);
 	}
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		strcpy(message, "shmat failed");
-		halog(LOG_ERR, "heartc", message);
+		halog(LOG_ERR, "shmat failed");
 		exit(-1);
 	}
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		printf("key: %s\n", FILE_KEY);
-		strcpy(message, "Error: unable to open key file");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "unable to open key file");
 		exit(-1);
 	}
 	if (lockf(fd, F_TLOCK, 0) != 0) {
-		strcpy(message, "Error: unable to lock key file");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "unable to lock key file");
 		exit(-1);
 	}
 	File = fopen(argv[1], "r");
 	if (File == NULL) {
-		strcpy(message, "Error: unable to open raw device");
-		halog(LOG_ERR, "heartd_raw", message);
+		halog(LOG_ERR, "unable to open raw device");
 		exit(-1);
 	}
 	to_recV.up = FALSE;
@@ -177,11 +166,7 @@ gchar *argv[];
 			to_recV.elapsed = Elapsed();
 			to_recV.up = TRUE;
 			if (was_down == TRUE) {
-				gchar *m;
-				m = g_strconcat("peer on ", ADDR, " up !",
-						NULL);
-				halog(LOG_WARNING, "heartc_raw", m);
-				g_free(m);
+				halog(LOG_WARNING, "peer on %s up !", ADDR);
 				was_down = FALSE;
 			}
 			for (j = 0; j < MAX_SERVICES; j++) {
@@ -202,15 +187,10 @@ gchar *argv[];
 void
 sighup()
 {
-	gchar *message;
-
-	message = g_malloc0(80);
 	to_recV.up = FALSE;
 	to_recV.elapsed = Elapsed();
 	memcpy(shm, &to_recV, sizeof (to_recV));
-	message = g_strconcat("peer on ", ADDR, " down !", NULL);
-	halog(LOG_WARNING, "heartc_raw", message);
-	g_free(message);
+	halog(LOG_WARNING, "peer on %s down !", ADDR);
 	flag = 1;
 }
 
@@ -218,13 +198,11 @@ gint
 read_raw(FILE * f, gint where)
 {
 	int n;
-	char message[160];
 	fseek(f, (512 * where), SEEK_SET);
 	n = fread(&to_recV, sizeof (to_recV), 1, f);
 	fflush(f);
 	if (n != 1) {
-		strcpy(message, "read_raw() error reading 1 element.\n");
-		halog(LOG_ERR, "heartc_raw", message);
+		halog(LOG_ERR, "read_raw() error reading 1 element");
 		return 1;
 	}
 	return 0;
@@ -233,8 +211,7 @@ read_raw(FILE * f, gint where)
 void
 sigterm()
 {
-	halog(LOG_WARNING, progname,
-	      "SIGTERM received, exiting gracefuly ...\n");
+	halog(LOG_WARNING, "SIGTERM received, exiting gracefuly ...");
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	exit(0);
 }

@@ -81,8 +81,7 @@ check_interface(gchar * type, gchar * interface, gchar * address, gchar * port)
 		memset(&mreq, 0, sizeof (mreq));
 		rc = if_getaddr(interface, &mreq);
 		if (rc == -1) {
-			//strcpy(message," failed. Bad interface name ? \n");
-			//halog(LOG_ERR,"if_getaddr: ",message);
+			//halog(LOG_ERR,"if_getaddr failed. Bad interface name ?");
 			perror("set_mcast_if failed ");
 			fprintf(stderr, "Bad interface name ?\n");
 			return FALSE;
