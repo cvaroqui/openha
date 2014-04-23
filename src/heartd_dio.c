@@ -43,6 +43,7 @@ void clean_tab();
 void get_node_status(gchar *);
 gint write_dio(gint fd, struct sendstruct, gchar *, gint);
 void sighup();
+void sigterm();
 gchar *progname;
 gint shmid;
 
@@ -66,6 +67,7 @@ char *argv[];
 		fprintf(stderr, "Usage: heartd_dio [device] offset \n");
 		exit(-1);
 	}
+	signal(SIGTERM, sigterm);
 	daemonize("heartd_dio");
 	Setenv("PROGNAME", "heartd_dio");
 
@@ -210,3 +212,12 @@ void
 sighup()
 {
 }
+
+void
+sigterm()
+{
+        halog(LOG_INFO, "SIGTERM received, exiting gracefully ...");
+        (void) shmctl(shmid, IPC_RMID, NULL);
+        exit(0);
+}
+
