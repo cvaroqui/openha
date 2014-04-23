@@ -119,7 +119,6 @@ char *argv[];
 		perror("shmat failed");
 	}
 
-	signal(SIGALRM, sighup);
 	signal(SIGTERM, sigterm);
 	signal(SIGUSR1, signal_usr1_callback_handler);
 	signal(SIGUSR2, signal_usr2_callback_handler);
@@ -258,9 +257,8 @@ char *argv[];
 		}
 		halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
 		drop_hash(HT_SERV);
-		halog(LOG_DEBUG, "[main] Calling alarm(2)");
-		alarm(2);
-		pause();
+		halog(LOG_DEBUG, "[main] sleeping 2 seconds");
+		sleep(2);
 	}
 	return 0;
 }
