@@ -10,7 +10,11 @@ AM_CFLAGS =\
 	 -O2\
 	 -g
 
+if SOLARIS
+bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw nmond hb
+else
 bin_PROGRAMS = service heartc heartd heartc_raw heartd_raw heartc_dio heartd_dio nmond hb
+endif
 
 service_SOURCES = service.c sockhelp.c cluster.c
 service_LDFLAGS = $(glib_LIBS)
