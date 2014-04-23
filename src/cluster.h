@@ -33,13 +33,28 @@
 #include <sys/sockio.h>
 #endif
 
+/*
+ * Service status
+ */
+#define MAX_STATE 10
+
+#define STATE_STOPPED 0
+#define STATE_STOPPING 1
+#define STATE_STARTED 2
+#define STATE_STARTING 3
+#define STATE_START_FAILED 4
+#define STATE_STOP_FAILED 5
+#define STATE_FROZEN_STOP 6
+#define STATE_START_READY 7
+#define STATE_UNKNOWN 8
+#define STATE_FORCE_STOP 9
+
 #define MAX_SERVICES 128
 #define MAX_SERVICES_SIZE 16
 #define MAX_HEARTBEAT 16
 #define MAX_NODENAME_SIZE 128
 #define MAX_NODES 16
 #define MAX_ITEM 256
-#define MAX_STATE 10
 #define MAX_ACTION 7
 #define SCRIPT_SIZE 128
 #define LIST_NB_ITEM 5	/* nb colonne dans fichier services / nb item dans liste */
@@ -136,7 +151,7 @@ gint change_status_force_stop(gint, gint, gchar *, GHashTable *);
 gint change_status_force_start(gint, gint, gchar *, GHashTable *);
 void daemonize(gchar *);
 gint if_getaddr(const char *ifname, struct in_addr *);
-void write_status(gchar *, gchar, gchar *);
+void write_status(gchar *, gint, gchar *);
 glong Elapsed(void);
 void delete_data(gpointer, gpointer);
 void drop_list(GList *);

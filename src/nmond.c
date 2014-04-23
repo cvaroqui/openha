@@ -217,44 +217,44 @@ char *argv[];
 			if (is_primary(nodename, service)) {
 				halog(LOG_DEBUG, "[main] is_primary is true for service [%s] on node [%s]",
 					 service, nodename);
-				if (((sstate == 0)
-				     || (sstate == 6)
-				     || (sstate == 8))
-				    && (pstate != 1)
-				    && (pstate != 2)
-				    && (pstate != 3)
-				    && (pstate != 4)
-				    && (pstate != 5)
-				    && (pstate != 6)
-				    && (sstate != 7)
+				if ((sstate == STATE_STOPPED
+				     || sstate == STATE_FROZEN_STOP
+				     || sstate == STATE_UNKNOWN)
+				    && pstate != STATE_STOPPING
+				    && pstate != STATE_STARTED
+				    && pstate != STATE_STARTING
+				    && pstate != STATE_START_FAILED
+				    && pstate != STATE_STOP_FAILED
+				    && pstate != STATE_FROZEN_STOP
+				    && sstate != STATE_START_READY
 				    ) {
 					halog(LOG_NOTICE, "Changing state of service %s", service);
 					change_status_start(pstate, sstate,
 							    service, HT_SERV);
 				}
 			}
-			if (is_secondary(nodename, service)) {
+			else if (is_secondary(nodename, service)) {
 				halog(LOG_DEBUG, "[main] is_secondary is true for service [%s] on node [%s]",
 					 service, nodename);
-				if (((pstate == 0)
-				     || (pstate == 6)
-				     || (pstate == 8))
-				    && (pstate != 1)
-				    && (sstate != 2)
-				    && (sstate != 3)
-				    && (sstate != 4)
-				    && (sstate != 5)
-				    && (sstate != 6)
-				    && (sstate != 7)
+				if ((pstate == STATE_STOPPED
+				     || pstate == STATE_FROZEN_STOP
+				     || pstate == STATE_UNKNOWN)
+				    && pstate != STATE_STOPPING
+				    && sstate != STATE_STARTED
+				    && sstate != STATE_STARTING
+				    && sstate != STATE_START_FAILED
+				    && sstate != STATE_STOP_FAILED
+				    && sstate != STATE_FROZEN_STOP
+				    && sstate != STATE_START_READY
 				    ) {
 
 					halog(LOG_NOTICE, "Changing state of service %s", service);
 					change_status_start(sstate, pstate,
 							    service, HT_SERV);
 				}
-				//else
-				//      printf("Nothing to do for service %s\n",service);
 			}
+			//else
+			//      printf("Nothing to do for service %s\n",service);
 		}
 		halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
 		drop_hash(HT_SERV);
@@ -303,9 +303,8 @@ check_node_func(gpointer key, gpointer value, gpointer HT)
 				     || is_secondary(node_to_check, service))) {
 					if (get_status
 					    (GlobalList, node_to_check,
-					     service) != 8) {
-						/* status 8 = UNKNOWN */
-						write_status(service, '8',
+					     service) != STATE_UNKNOWN) {
+						write_status(service, STATE_UNKNOWN,
 							     node_to_check);
 						halog(LOG_WARNING, "setting service %s to UNKNOWN for node %s",
 							service, node_to_check);
