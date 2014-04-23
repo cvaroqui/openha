@@ -650,6 +650,18 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+GNU_FALSE
+GNU_TRUE
+SOLARIS_FALSE
+SOLARIS_TRUE
+OPENBSD_FALSE
+OPENBSD_TRUE
+NETBSD_FALSE
+NETBSD_TRUE
+FREEBSD_FALSE
+FREEBSD_TRUE
+LINUX_FALSE
+LINUX_TRUE
 am__untar
 am__tar
 AMTAR
@@ -2570,6 +2582,86 @@ am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 
 ac_config_headers="$ac_config_headers config.h"
+
+
+case $host_os in
+	*freebsd* | *dragonfly*)
+		freebsd=yes
+		;;
+	*linux*)
+		linux=yes
+		;;
+	*netbsd*)
+		case $host in
+		*i386*)
+			PCIACCESS_LIBS="-li386"
+			;;
+		*x86_64*|*amd64*)
+			PCIACCESS_LIBS="-lx86_64"
+			;;
+		esac
+		netbsd=yes
+		;;
+	*openbsd*)
+		openbsd=yes
+		;;
+	*solaris*)
+		solaris=yes
+		PCIACCESS_LIBS="$PCIACCESS_LIBS -ldevinfo"
+		;;
+	gnu*)
+		gnu=yes
+		;;
+esac
+
+ if test "x$linux" = xyes; then
+  LINUX_TRUE=
+  LINUX_FALSE='#'
+else
+  LINUX_TRUE='#'
+  LINUX_FALSE=
+fi
+
+ if test "x$freebsd" = xyes; then
+  FREEBSD_TRUE=
+  FREEBSD_FALSE='#'
+else
+  FREEBSD_TRUE='#'
+  FREEBSD_FALSE=
+fi
+
+ if test "x$netbsd" = xyes; then
+  NETBSD_TRUE=
+  NETBSD_FALSE='#'
+else
+  NETBSD_TRUE='#'
+  NETBSD_FALSE=
+fi
+
+ if test "x$openbsd" = xyes; then
+  OPENBSD_TRUE=
+  OPENBSD_FALSE='#'
+else
+  OPENBSD_TRUE='#'
+  OPENBSD_FALSE=
+fi
+
+ if test "x$solaris" = xyes; then
+  SOLARIS_TRUE=
+  SOLARIS_FALSE='#'
+else
+  SOLARIS_TRUE='#'
+  SOLARIS_FALSE=
+fi
+
+ if test "x$gnu" = xyes; then
+  GNU_TRUE=
+  GNU_FALSE='#'
+else
+  GNU_TRUE='#'
+  GNU_FALSE=
+fi
+
 
 
 DEPDIR="${am__leading_dot}deps"
@@ -5673,6 +5765,30 @@ else
   am__EXEEXT_FALSE=
 fi
 
+if test -z "${LINUX_TRUE}" && test -z "${LINUX_FALSE}"; then
+  as_fn_error $? "conditional \"LINUX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${FREEBSD_TRUE}" && test -z "${FREEBSD_FALSE}"; then
+  as_fn_error $? "conditional \"FREEBSD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${NETBSD_TRUE}" && test -z "${NETBSD_FALSE}"; then
+  as_fn_error $? "conditional \"NETBSD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${OPENBSD_TRUE}" && test -z "${OPENBSD_FALSE}"; then
+  as_fn_error $? "conditional \"OPENBSD\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${SOLARIS_TRUE}" && test -z "${SOLARIS_FALSE}"; then
+  as_fn_error $? "conditional \"SOLARIS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${GNU_TRUE}" && test -z "${GNU_FALSE}"; then
+  as_fn_error $? "conditional \"GNU\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
   as_fn_error $? "conditional \"AMDEP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5

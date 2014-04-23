@@ -52,9 +52,13 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = service$(EXEEXT) heartc$(EXEEXT) heartd$(EXEEXT) \
-	heartc_raw$(EXEEXT) heartd_raw$(EXEEXT) heartc_dio$(EXEEXT) \
-	heartd_dio$(EXEEXT) nmond$(EXEEXT) hb$(EXEEXT)
+@SOLARIS_FALSE@bin_PROGRAMS = service$(EXEEXT) heartc$(EXEEXT) \
+@SOLARIS_FALSE@	heartd$(EXEEXT) heartc_raw$(EXEEXT) \
+@SOLARIS_FALSE@	heartd_raw$(EXEEXT) heartc_dio$(EXEEXT) \
+@SOLARIS_FALSE@	heartd_dio$(EXEEXT) nmond$(EXEEXT) hb$(EXEEXT)
+@SOLARIS_TRUE@bin_PROGRAMS = service$(EXEEXT) heartc$(EXEEXT) \
+@SOLARIS_TRUE@	heartd$(EXEEXT) heartc_raw$(EXEEXT) \
+@SOLARIS_TRUE@	heartd_raw$(EXEEXT) nmond$(EXEEXT) hb$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
