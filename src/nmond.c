@@ -118,12 +118,13 @@ char *argv[];
 	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
 		perror("shmat failed");
 	}
-	while (TRUE) {
-		signal(SIGALRM, sighup);
-		signal(SIGTERM, sigterm);
-		signal(SIGUSR1, signal_usr1_callback_handler);
-		signal(SIGUSR2, signal_usr2_callback_handler);
 
+	signal(SIGALRM, sighup);
+	signal(SIGTERM, sigterm);
+	signal(SIGUSR1, signal_usr1_callback_handler);
+	signal(SIGUSR2, signal_usr2_callback_handler);
+
+	while (TRUE) {
 		halog(LOG_DEBUG, "[main] looping");
 
 		get_services_list();
