@@ -67,7 +67,7 @@ main(argc, argv)
 int argc;
 char *argv[];
 {
-	gint i, j, nb_seg;
+	gint i, nb_seg;
 	key_t Key;
 	gpointer pointer;
 	gint pstate, sstate;
@@ -153,14 +153,14 @@ char *argv[];
 			g_hash_table_insert(HT_SERV, ptr_service->service_name,
 					    ptr_service);
 		}
-		halog(LOG_DEBUG, "[main] HT_SERV hash table built (key=svcname / value = svcstruct)");
+		halog(LOG_DEBUG, "[main] HT_SERV hash table built (key=svcname, value=svcstruct)");
 
 		// Node Status management
 		// 
 		// On met tous les status a FALSE
 		// On sauvegarde les valeurs N-1 de tabinfo 
 		if (HT_NODES != NULL) {
-			memcpy(tabinfo_b, tabinfo, sizeof (tabinfo));
+			memcpy(tabinfo_b, tabinfo, sizeof(tabinfo));
 			for (i = 0; i < MAX_HEARTBEAT; i++)
 				g_hash_table_insert(HT_NODES_OLD,
 						    tab_shm[i].nodename,
@@ -171,7 +171,6 @@ char *argv[];
 						    HT_NODES);
 		}
 		halog(LOG_DEBUG, "[main] HT_NODES_OLD built. HT_NODES empty");
-		j = 0;
 		for (i = 0; i < nb_seg; i++) {
 			// On remplit tab_shm (nodename + shmid)
 			if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename)
@@ -191,7 +190,6 @@ char *argv[];
 						    tab_shm[i].nodename,
 						    &tabinfo[i]);
 			}
-			j++;	/* a quoi sert j ? */
 		}
 		halog(LOG_DEBUG, "[main] HT_NODES built");
 		g_hash_table_foreach(HT_NODES, check_node_func, NULL);
