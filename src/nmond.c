@@ -34,6 +34,7 @@
 
 void copy_tab_send(struct sendstruct *, struct sendstruct *, guint);
 void copy_tab_node(struct nodestruct *, struct nodestruct *, guint);
+void *MakeDecision(void *);
 void clean_tab(void);
 void init(void);
 gint get_seg(gint, struct shmtab_struct *);
@@ -62,20 +63,183 @@ gchar SERVICE[MAX_SERVICES][MAX_SERVICES_SIZE];
 gint shmid;
 gchar *progname = NULL;
 
+struct thread_info {
+	pthread_t thread_id;
+	gint i;
+};
+
+static void *
+nmon_service_loop(void * arg)
+{
+	struct thread_info * ti = arg;
+	gint i = ti->i;
+	gpointer pointer;
+	gchar service[MAX_SERVICES_SIZE];
+	gchar *primary, *secondary;
+	gint pstate, sstate;
+
+	strncpy(service, SERVICE[i], 16);
+	pointer = g_hash_table_lookup(HT_SERV, service);
+	primary = ((struct srvstruct *) (pointer))->primary;
+	secondary = ((struct srvstruct *) (pointer))->secondary;
+	pstate = get_status(GlobalList, primary, service);
+	sstate = get_status(GlobalList, secondary, service);
+	halog(LOG_DEBUG, "[main] Processing service [%s] - Pri[%s@%s] - Sec[%s@%s]",
+		 service, VAL[pstate], primary, VAL[sstate], secondary);
+	if (is_primary(nodename, service)) {
+		halog(LOG_DEBUG, "[main] is_primary is true for service [%s] on node [%s]",
+			 service, nodename);
+		if ((sstate == STATE_STOPPED
+		     || sstate == STATE_FROZEN_STOP
+		     || sstate == STATE_UNKNOWN)
+		    && pstate != STATE_STOPPING
+		    && pstate != STATE_STARTED
+		    && pstate != STATE_STARTING
+		    && pstate != STATE_START_FAILED
+		    && pstate != STATE_STOP_FAILED
+		    && pstate != STATE_FROZEN_STOP
+		    && sstate != STATE_START_READY
+		    ) {
+			halog(LOG_NOTICE, "Changing state of service %s", service);
+			change_status_start(pstate, sstate, service, HT_SERV);
+		}
+	}
+	else if (is_secondary(nodename, service)) {
+		halog(LOG_DEBUG, "[main] is_secondary is true for service [%s] on node [%s]",
+			 service, nodename);
+		if ((pstate == STATE_STOPPED
+		     || pstate == STATE_FROZEN_STOP
+		     || pstate == STATE_UNKNOWN)
+		    && pstate != STATE_STOPPING
+		    && sstate != STATE_STARTED
+		    && sstate != STATE_STARTING
+		    && sstate != STATE_START_FAILED
+		    && sstate != STATE_STOP_FAILED
+		    && sstate != STATE_FROZEN_STOP
+		    && sstate != STATE_START_READY
+		    ) {
+			halog(LOG_NOTICE, "Changing state of service %s", service);
+			change_status_start(sstate, pstate, service, HT_SERV);
+		}
+	}
+	//else
+	//      printf("Nothing to do for service %s\n",service);
+	return NULL;
+}
+
+gint
+nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
+{
+	gint i;
+	struct srvstruct *ptr_service;
+	gint rc;
+	gpointer pointer;
+	struct thread_info *tinfo;
+
+	halog(LOG_DEBUG, "[main] looping");
+
+	get_services_list();
+
+	for (i = 0; i < (g_list_length(GlobalList) / LIST_NB_ITEM); i++) {
+		ptr_service = g_malloc(sizeof (struct srvstruct));
+		strcpy(SERVICE[i],
+		       g_list_nth_data(GlobalList, i * LIST_NB_ITEM));
+		strcpy(ptr_service->service_name,
+		       g_list_nth_data(GlobalList, i * LIST_NB_ITEM));
+		strcpy(ptr_service->script,
+		       g_list_nth_data(GlobalList, (i * LIST_NB_ITEM) + 1));
+		strcpy(ptr_service->primary,
+		       g_list_nth_data(GlobalList, (i * LIST_NB_ITEM) + 2));
+		strcpy(ptr_service->secondary,
+		       g_list_nth_data(GlobalList, (i * LIST_NB_ITEM) + 3));
+		strcpy(ptr_service->check_script,
+		       g_list_nth_data(GlobalList, (i * LIST_NB_ITEM) + 4));
+		g_hash_table_insert(HT_SERV, ptr_service->service_name,
+				    ptr_service);
+	}
+	halog(LOG_DEBUG, "[main] HT_SERV hash table built (key=svcname, value=svcstruct)");
+
+	/*
+	 * Node Status management
+	 * 
+	 * On met tous les status a FALSE
+	 * On sauvegarde les valeurs N-1 de tabinfo 
+	 */
+	if (HT_NODES != NULL) {
+		memcpy(tabinfo_b, tabinfo, sizeof(tabinfo));
+		for (i = 0; i < MAX_HEARTBEAT; i++)
+			g_hash_table_insert(HT_NODES_OLD, tab_shm[i].nodename,
+					    &tabinfo_b[i]);
+
+		/* supprime tous les couples cle/valeur car rm_func retourne toujours true */
+		g_hash_table_foreach_remove(HT_NODES, rm_func, HT_NODES);
+	}
+	halog(LOG_DEBUG, "[main] HT_NODES_OLD built. HT_NODES empty");
+	for (i = 0; i < nb_seg; i++) {
+		// On remplit tab_shm (nodename + shmid)
+		if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename) != 0) {
+			halog(LOG_ERR, "fill_seg failed");
+			return -1;
+		}
+		pointer = g_hash_table_lookup(HT_NODES, tab_shm[i].nodename);
+
+		// si le noeud est dela reference dans HT_NODES
+		if ((pointer != NULL) && (((struct nodestruct *) pointer)->up == TRUE)) {
+		} else {
+			//printf("UP or DOWN : %d\n",tabinfo[i].up);
+			g_hash_table_insert(HT_NODES, tab_shm[i].nodename,
+					    &tabinfo[i]);
+		}
+	}
+	halog(LOG_DEBUG, "[main] HT_NODES built");
+	g_hash_table_foreach(HT_NODES, check_node_func, NULL);
+	memcpy(shm, tabinfo, sizeof (tabinfo));
+
+	// Services Status management
+	//
+	// Ouvre les segments SHM, pour chaque entree de EZ_MONITOR     
+	// Remplit le tableau des node (tabnode): nodename, statut (UP ou DOWN), date de l'etat
+	//printf("size HT: %d\n",g_hash_table_size(HT_SERV));
+	//
+	//
+	//
+	//EZ-HA: nmond[16020]: Cannot start mysql: service not in correct state (partner node is STOPPED, we are STOPPING.
+	//Si on est on s'arrete, avec service -A  ..., pas la peine d'essayer de re-démarrer tout de suite ...
+
+	tinfo = calloc(g_hash_table_size(HT_SERV), sizeof(struct thread_info));
+
+	for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
+		halog(LOG_DEBUG, "[main] spawning thread [%d]", i);
+		tinfo[i].i = i;
+		rc = pthread_create(&tinfo[i].thread_id, NULL, &nmon_service_loop, &tinfo[i]);
+		if (rc) {
+			printf("ERROR; return code from pthread_create() is %d\n", rc);
+			exit(-1);
+		}
+	}
+	for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
+		halog(LOG_DEBUG, "[main] joining thread [%d]", i);
+		pthread_join(tinfo[i].thread_id, NULL);
+	}
+	halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
+	drop_hash(HT_SERV);
+	halog(LOG_DEBUG, "[main] sleeping 2 seconds");
+	sleep(2);
+	free(tinfo);
+	return 0;
+}
+
+
 int
 main(argc, argv)
 int argc;
 char *argv[];
 {
-	gint i, nb_seg;
 	key_t Key;
-	gpointer pointer;
-	gint pstate, sstate;
-	gchar *primary, *secondary;
-	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
-	struct srvstruct *ptr_service;
 	gint pid;
-	gchar service[MAX_SERVICES_SIZE];
+	gint i;
+	gint nb_seg, rc;
+	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
 
 	GlobalList = NULL;
 	Setenv("PROGNAME", "nmond");
@@ -124,141 +288,9 @@ char *argv[];
 	signal(SIGUSR2, signal_usr2_callback_handler);
 
 	while (TRUE) {
-		halog(LOG_DEBUG, "[main] looping");
-
-		get_services_list();
-
-		for (i = 0; i < (g_list_length(GlobalList) / LIST_NB_ITEM);
-		     i++) {
-			ptr_service = g_malloc(sizeof (struct srvstruct));
-			strcpy(SERVICE[i],
-			       g_list_nth_data(GlobalList,
-					       i * LIST_NB_ITEM));
-			strcpy(ptr_service->service_name,
-			       g_list_nth_data(GlobalList,
-					       i * LIST_NB_ITEM));
-			strcpy(ptr_service->script,
-			       g_list_nth_data(GlobalList,
-					       (i * LIST_NB_ITEM) + 1));
-			strcpy(ptr_service->primary,
-			       g_list_nth_data(GlobalList,
-					       (i * LIST_NB_ITEM) + 2));
-			strcpy(ptr_service->secondary,
-			       g_list_nth_data(GlobalList,
-					       (i * LIST_NB_ITEM) + 3));
-			strcpy(ptr_service->check_script,
-			       g_list_nth_data(GlobalList,
-					       (i * LIST_NB_ITEM) + 4));
-			g_hash_table_insert(HT_SERV, ptr_service->service_name,
-					    ptr_service);
-		}
-		halog(LOG_DEBUG, "[main] HT_SERV hash table built (key=svcname, value=svcstruct)");
-
-		// Node Status management
-		// 
-		// On met tous les status a FALSE
-		// On sauvegarde les valeurs N-1 de tabinfo 
-		if (HT_NODES != NULL) {
-			memcpy(tabinfo_b, tabinfo, sizeof(tabinfo));
-			for (i = 0; i < MAX_HEARTBEAT; i++)
-				g_hash_table_insert(HT_NODES_OLD,
-						    tab_shm[i].nodename,
-						    &tabinfo_b[i]);
-
-			/* supprime tous les couples cle/valeur car rm_func retourne toujours true */
-			g_hash_table_foreach_remove(HT_NODES, rm_func,
-						    HT_NODES);
-		}
-		halog(LOG_DEBUG, "[main] HT_NODES_OLD built. HT_NODES empty");
-		for (i = 0; i < nb_seg; i++) {
-			// On remplit tab_shm (nodename + shmid)
-			if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename)
-			    != 0) {
-				halog(LOG_ERR, "fill_seg failed");
-				return -1;
-			}
-			pointer =
-			    g_hash_table_lookup(HT_NODES, tab_shm[i].nodename);
-/******************************************************************************************/
-			// si le noeud est dela reference dans HT_NODES
-			if ((pointer != NULL) &&
-			    (((struct nodestruct *) pointer)->up == TRUE)) {
-			} else {
-				//printf("UP or DOWN : %d\n",tabinfo[i].up);
-				g_hash_table_insert(HT_NODES,
-						    tab_shm[i].nodename,
-						    &tabinfo[i]);
-			}
-		}
-		halog(LOG_DEBUG, "[main] HT_NODES built");
-		g_hash_table_foreach(HT_NODES, check_node_func, NULL);
-		memcpy(shm, tabinfo, sizeof (tabinfo));
-
-		// Services Status management
-		//
-		// Ouvre les segments SHM, pour chaque entree de EZ_MONITOR     
-		// Remplit le tableau des node (tabnode): nodename, statut (UP ou DOWN), date de l'etat
-		//printf("size HT: %d\n",g_hash_table_size(HT_SERV));
-		//
-		//
-		//
-		//EZ-HA: nmond[16020]: Cannot start mysql: service not in correct state (partner node is STOPPED, we are STOPPING.
-		//Si on est on s'arrete, avec service -A  ..., pas la peine d'essayer de re-démarrer tout de suite ...
-		for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
-			strncpy(service, SERVICE[i], 16);
-			pointer = g_hash_table_lookup(HT_SERV, service);
-			primary = ((struct srvstruct *) (pointer))->primary;
-			secondary = ((struct srvstruct *) (pointer))->secondary;
-			pstate = get_status(GlobalList, primary, service);
-			sstate = get_status(GlobalList, secondary, service);
-			halog(LOG_DEBUG, "[main] Processing service [%s] - Pri[%s@%s] - Sec[%s@%s]",
-				 service, VAL[pstate], primary, VAL[sstate], secondary);
-			if (is_primary(nodename, service)) {
-				halog(LOG_DEBUG, "[main] is_primary is true for service [%s] on node [%s]",
-					 service, nodename);
-				if ((sstate == STATE_STOPPED
-				     || sstate == STATE_FROZEN_STOP
-				     || sstate == STATE_UNKNOWN)
-				    && pstate != STATE_STOPPING
-				    && pstate != STATE_STARTED
-				    && pstate != STATE_STARTING
-				    && pstate != STATE_START_FAILED
-				    && pstate != STATE_STOP_FAILED
-				    && pstate != STATE_FROZEN_STOP
-				    && sstate != STATE_START_READY
-				    ) {
-					halog(LOG_NOTICE, "Changing state of service %s", service);
-					change_status_start(pstate, sstate,
-							    service, HT_SERV);
-				}
-			}
-			else if (is_secondary(nodename, service)) {
-				halog(LOG_DEBUG, "[main] is_secondary is true for service [%s] on node [%s]",
-					 service, nodename);
-				if ((pstate == STATE_STOPPED
-				     || pstate == STATE_FROZEN_STOP
-				     || pstate == STATE_UNKNOWN)
-				    && pstate != STATE_STOPPING
-				    && sstate != STATE_STARTED
-				    && sstate != STATE_STARTING
-				    && sstate != STATE_START_FAILED
-				    && sstate != STATE_STOP_FAILED
-				    && sstate != STATE_FROZEN_STOP
-				    && sstate != STATE_START_READY
-				    ) {
-
-					halog(LOG_NOTICE, "Changing state of service %s", service);
-					change_status_start(sstate, pstate,
-							    service, HT_SERV);
-				}
-			}
-			//else
-			//      printf("Nothing to do for service %s\n",service);
-		}
-		halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
-		drop_hash(HT_SERV);
-		halog(LOG_DEBUG, "[main] sleeping 2 seconds");
-		sleep(2);
+		rc = nmon_loop(nb_seg, tab_shm);
+		if (rc > 0)
+			return rc;
 	}
 	return 0;
 }
@@ -554,3 +586,4 @@ sigterm()
 	drop_hash(GLOBAL_HT_SERV);
 	exit(0);
 }
+

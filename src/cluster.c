@@ -94,7 +94,7 @@ get_nodename()
 gboolean
 is_primary(gchar * node, gchar * service)
 {
-	halog(LOG_DEBUG, "[is_primary] enter");
+	/* halog(LOG_DEBUG, "[is_primary] enter"); */
 	gchar *primary;
 	gpointer ptr;
 
@@ -109,7 +109,7 @@ is_primary(gchar * node, gchar * service)
 gboolean
 is_secondary(gchar * node, gchar * service)
 {
-	halog(LOG_DEBUG, "[is_secondary] enter");
+	/* halog(LOG_DEBUG, "[is_secondary] enter"); */
 	gchar *secondary;
 	gpointer ptr;
 
@@ -599,7 +599,7 @@ launch(gchar * command, gchar * arg[])
 gint
 get_status(GList * liste, gchar * node, gchar * service)
 {
-	halog(LOG_DEBUG, "[get_status] enter");
+	/* halog(LOG_DEBUG, "[get_status] enter"); */
 	gint i, j, k = 0, size;
 	gchar *FILE_NAME, STATE;
 	FILE *FILE_STATE;

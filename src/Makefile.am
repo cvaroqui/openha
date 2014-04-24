@@ -46,7 +46,7 @@ heartd_dio_LDADD =
 
 nmond_SOURCES = nmond.c sockhelp.c cluster.c
 nmond_LDFLAGS = $(glib_LIBS)
-nmond_LDADD = 
+nmond_LDADD = -lpthread
 
 hb_SOURCES = hb.c sockhelp.c checks.h cluster.c
 hb_LDFLAGS = $(glib_LIBS)
