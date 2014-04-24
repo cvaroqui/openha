@@ -1026,26 +1026,14 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	if (state == STATE_STARTED || state == STATE_UNKNOWN) {
 		halog(LOG_NOTICE, "Ready to stop, partner node is %s we are %s",
 			VAL[ostate], VAL[state]);
-#ifdef VERBOSE
-		printf("%s", m);
-#endif
 	} else {
 		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s",
 			service, VAL[ostate],VAL[state]);
-#ifdef VERBOSE
-		printf
-		    ("Cannot stop %s: service not in correct state (partner node is %s , we are %s),\n",
-		     service, VAL[ostate], VAL[state]);
-#endif
 		return -1;
 	}
 
 	if (ostate != STATE_STOPPED) {
 		halog(LOG_NOTICE, "PARTNER is not in STOPPED state: service will not migrate");
-#ifdef VERBOSE
-		printf
-		    ("Warning: PARTNER is not in STOPPED state: service will not migrate.\n");
-#endif
 	}
 	pointer = g_hash_table_lookup(HT, service);
 	arg[0] = ((struct srvstruct *) (pointer))->script;
@@ -1054,16 +1042,10 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	write_status(service, STATE_STOPPING, nodename);
 	if (launch(arg[0], arg) == 0) {
 		halog(LOG_INFO, "Service %s successfully stopped", service);
-#ifdef VERBOSE
-		printf("Service %s successfully stopped\n", service);
-#endif
 		write_status(service, STATE_STOPPED, nodename);
 		return 0;
 	} else {
 		halog(LOG_ERR, "failed to stop %s", service);
-#ifdef VERBOSE
-		printf("Error: failed to stop %s.\n", service);
-#endif
 		write_status(service, STATE_STOP_FAILED, nodename);
 		return -1;
 	}
@@ -1075,17 +1057,10 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_stop] enter");
 
-#ifdef VERBOSE
-	printf("Ready to force stop, partner node is %s , we are %s\n",
-	       VAL[ostate], VAL[state]);
-#endif
 	halog(LOG_INFO, "Ready to force stop, partner node is %s, we are %s",
 		VAL[ostate], VAL[state]);
 
 	write_status(service, STATE_STOPPED, nodename);
-#ifdef VERBOSE
-	printf("Service %s successfully stopped\n", service);
-#endif
 	halog(LOG_INFO, "Service %s successfully stopped", service);
 	return 0;
 }
@@ -1096,16 +1071,9 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_start] enter");
 
-#ifdef VERBOSE
-	printf("Ready to force start, partner node is %s , we are %s\n",
-	       VAL[ostate], VAL[state]);
-#endif
 	halog(LOG_INFO, "Ready to force start, partner node is  %s, we are %s",
 		VAL[ostate], VAL[state]);
 
-#ifdef VERBOSE
-	printf("Service %s forced to started\n", service);
-#endif
 	halog(LOG_INFO, "Service %s forced to started", service);
 
 	write_status(service, STATE_STARTED, nodename);
@@ -1123,44 +1091,24 @@ change_status_freeze_stop(gint state, gint ostate, gchar * service,
 	    state == STATE_START_FAILED ||
 	    state == STATE_STOP_FAILED) {
 		halog(LOG_INFO, "Ready to FREEZE, we are %s", VAL[state]);
-
-#ifdef VERBOSE
-		printf("Ready to FREEZE, we are %s\n", VAL[state]);
-#endif
 		if (state == STATE_STOPPED ||
 		    state == STATE_START_FAILED ||
 		    state == STATE_STOP_FAILED) {
 			write_status(service, STATE_FROZEN_STOP, nodename);
 			halog(LOG_INFO, "Service %s FROZEN-STOP", service);
-#ifdef VERBOSE
-			printf("Service %s FROZEN-STOP\n", service);
-#endif
 			return 0;
 		}
 		if (state == STATE_STARTED) {
 			if (change_status_stop(state, ostate, service, HT) == 0) {
 				write_status(service, STATE_FROZEN_STOP, nodename);
-#ifdef VERBOSE
-				printf("Service %s FROZEN-STOP\n", service);
-#endif
 				halog(LOG_INFO, "Service %s FROZEN-STOP", service);
 				return 0;
 			} else {
-#ifdef VERBOSE
-				printf
-				    ("Warning: error in stopping service %s\n",
-				     service);
-#endif
 				halog(LOG_INFO, "error in stopping service %s", service);
 				return -1;
 			}
 		}
 	}
-#ifdef VERBOSE
-	printf
-	    ("Cannot FREEZE-STOP %s: service not in STARTED/STOPPED state (we are %s),\n",
-	     service, VAL[state]);
-#endif
 	halog(LOG_INFO, "Cannot FREEZE-STOP %s: service not in STARTED/STOPPED state (we are %s)",
 		service, VAL[state]);
 	return -1;
@@ -1205,27 +1153,16 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 	halog(LOG_DEBUG, "[change_status_unfreeze] enter");
 
 	if (state == STATE_FROZEN_STOP || state == STATE_START_READY) {
-#ifdef VERBOSE
-		printf("Ready to UNFREEZE, we are %s\n", VAL[state]);
-#endif
 		halog(LOG_INFO, "Ready to UNFREEZE, we are (%s)", VAL[state]);
 		if (state == STATE_FROZEN_STOP)
 			write_status(service, STATE_STOPPED, nodename);
 		if (state == STATE_START_READY)
 			write_status(service, STATE_STARTED, nodename);
-#ifdef VERBOSE
-		printf("Service %s UNFROZEN\n", service);
-#endif
 		halog(LOG_INFO, "Service %s UNFROZEN", service);
 		return 0;
 	} else {
 		halog(LOG_INFO, "Cannot UNFREEZE %s: not in FREEZE state (we are %s)",
 			service, VAL[state]);
-#ifdef VERBOSE
-		printf
-		    ("Cannot UNFREEZE %s: service not in FREEZE state (we are %s),\n",
-		     service, VAL[state]);
-#endif
 		return -1;
 	}
 }
@@ -1375,9 +1312,8 @@ halog(int prio, const char * fmt, ...)
         vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
 	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(prio, "%s", buff);
-#ifdef VERBOSE
-	printf("%s", buff);
-#endif
+	if (isatty(0) && prio < LOG_DEBUG)
+		printf("%s\n", buff);
 	return 0;
 }
 

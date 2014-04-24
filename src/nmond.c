@@ -244,7 +244,6 @@ char *argv[];
 	GlobalList = NULL;
 	Setenv("PROGNAME", "nmond");
 	progname = getenv("PROGNAME");
-	//Setenv("VERBOSE", "0");
 
 	switch (pid = fork()) {
 	case 0:

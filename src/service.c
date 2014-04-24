@@ -31,8 +31,6 @@
 #include <cluster.h>
 #include <config.h>
 
-#define VERBOSE 1
-
 void exit_usage(gchar *);
 
 gchar *ACTION[MAX_ACTION] = { "STOP",
@@ -73,7 +71,6 @@ char *argv[];
 
 	Setenv("PROGNAME", "service");
 	progname = getenv("PROGNAME");
-	Setenv("VERBOSE", "1");
 
 	if (GlobalList == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);
