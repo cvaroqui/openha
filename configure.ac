@@ -1,5 +1,6 @@
-AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(openha, 0.3.6.osvc2)
+#AC_INIT(configure.in)
+AC_INIT(openha, 0.3.6.osvc2)
+AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
 case $host_os in
