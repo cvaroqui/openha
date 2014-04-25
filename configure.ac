@@ -2,6 +2,7 @@
 AC_INIT(openha, 0.3.6.osvc2)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
+AC_CANONICAL_HOST
 
 case $host_os in
 	*freebsd* | *dragonfly*)
