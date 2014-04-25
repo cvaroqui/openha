@@ -1,0 +1,12 @@
+aclocal.m4
+configure
+src/Makefile.in
+autom4te.cache
+depcomp
+config.log
+config.status
+Makefile
+Makefile.in
+*/.deps
+stamp-h1
+config.h
