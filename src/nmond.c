@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -223,8 +224,6 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	}
 	halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
 	drop_hash(HT_SERV);
-	halog(LOG_DEBUG, "[main] sleeping 2 seconds");
-	sleep(2);
 	free(tinfo);
 	return 0;
 }
@@ -287,9 +286,13 @@ char *argv[];
 	signal(SIGUSR2, signal_usr2_callback_handler);
 
 	while (TRUE) {
+		signal(SIGALRM, sighup);
 		rc = nmon_loop(nb_seg, tab_shm);
 		if (rc > 0)
 			return rc;
+		halog(LOG_DEBUG, "[main] sleeping 2 seconds");
+		alarm(2);
+		pause();
 	}
 	return 0;
 }
