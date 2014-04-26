@@ -10,3 +10,14 @@ Makefile.in
 */.deps
 stamp-h1
 config.h
+core
+*.o
+src/hb
+src/service
+src/nmond
+src/heartc
+src/heartd
+src/heartc_raw
+src/heartd_raw
+src/heartc_dio
+src/heartd_dio
