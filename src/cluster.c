@@ -450,7 +450,7 @@ gint
 Cmd(char *prg, gchar * argsin[2])
 {
 	halog(LOG_DEBUG, "[Cmd] enter");
-	gint pid, etat;
+	gint pid, status, retval;
 	//gint  del, fs;
 
 	signal(SIGTERM, SIG_IGN);
@@ -464,17 +464,28 @@ Cmd(char *prg, gchar * argsin[2])
 		//signal(SIGINT, del);
 		//signal(SIGQUIT, fs);
 		//Mettre un fstat sur le prg a executer
-		execv(prg, argsin);
+		retval = execv(prg, argsin);
 		halog(LOG_WARNING, "Error: exec failed: %s", strerror(errno));
 		exit(-1);
 	case (-1):
-		halog(LOG_WARNING, "Error: in Cmd(): %s", strerror(errno));
-		etat = -1;
-		break;
+		halog(LOG_WARNING, "Error: fork error in Cmd(): %s", strerror(errno));
+		return -1;
 	default:
-		while (wait(&etat) != pid) ;
+		wait(&status);
+                if (WIFEXITED(status)) {
+                        status = WEXITSTATUS(status);
+                        if (status == 0)
+                                retval = 0;
+                        else
+                                halog(0, "%s exitted with %d", prg, status);
+                }
+                else if (WIFSIGNALED(status))
+                        halog(0, "%s was terminated by signal %d", prg, WTERMSIG(status));
+                else
+                        halog(0, "%s terminated abnormally", prg);
+
 	}
-	return etat;
+	return retval;
 }
 
 gint
