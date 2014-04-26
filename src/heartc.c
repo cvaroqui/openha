@@ -65,6 +65,8 @@ gchar *argv[];
 	gint iTmp;
 
 	signal(SIGTERM, sigterm);
+	signal(SIGUSR1, signal_usr1_callback_handler);
+	signal(SIGUSR2, signal_usr2_callback_handler);
 
 	daemonize("heartc");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartc");

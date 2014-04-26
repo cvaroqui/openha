@@ -39,7 +39,7 @@
 gint shmid;
 struct sendstruct to_send;
 void clean_tab();
-void get_node_status(gchar *);
+gint get_node_status(gchar *);
 void sighup();
 void sigterm();
 
@@ -67,6 +67,8 @@ char *argv[];
 		exit(-1);
 	}
 	signal(SIGTERM, sigterm);
+	signal(SIGUSR1, signal_usr1_callback_handler);
+	signal(SIGUSR2, signal_usr2_callback_handler);
 	daemonize("heartd");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartd");
 
@@ -198,54 +200,61 @@ char *argv[];
 	}
 }				/* end main() */
 
-void
+gint
+get_node_service_status(gchar *nodename, gchar * service, guint j)
+{
+	FILE *fds;
+	char fpath[MAX_PATH_SIZE];
+	gchar state;
+
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
+		 getenv("EZ"), service, nodename);
+	fds = fopen(fpath, "r");
+	if (fds == NULL) {
+		halog(LOG_ERR, "Unable to open read-only %s. send UNKNOWN state", fpath);
+		snprintf(&state, 1, "%d", STATE_UNKNOWN);
+	} else {
+		state = fgetc(fds);
+		halog(LOG_DEBUG, "read state %c from %s", state, fpath);
+		fclose(fds);
+	}
+	strcpy(to_send.service_name[j], service);
+	to_send.service_state[j] = state;
+	to_send.up = TRUE;
+	return 0;
+}
+
+gint
 get_node_status(gchar * nodename)
 {
-	FILE *EZ_SERVICES, *FILE_STATE;
+	FILE *EZ_SERVICES;
 	guint i, j, list_size;
-	gchar *FILE_NAME, STATE, *service;
+	gchar service[MAX_SERVICES_SIZE];
 
 	if (getenv("EZ_SERVICES") == NULL) {
-		printf
-		    ("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		return;
+		halog(LOG_ERR, "Environment variable EZ_SERVICES is not defined");
+		return -1;
 	}
 	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
-		//No service(s) defined (unable to open $EZ_SERVICES file)
-		return;
+		halog(LOG_ERR, "No service defined (unable to open $EZ_SERVICES file)");
+		return -1;
 	}
 	get_services_list();
 	fclose(EZ_SERVICES);
+
 	list_size = g_list_length(GlobalList) / LIST_NB_ITEM;
 	clean_tab();
 	j = 0;
 	for (i = 0; i < list_size; i++) {
-		service = malloc(MAX_SERVICES_SIZE);
-		strcpy(service,
-		       (gchar *) g_list_nth_data(GlobalList,
-						 (i * LIST_NB_ITEM)));
-		if (is_primary(nodename, service)
-		    || is_secondary(nodename, service)) {
-			FILE_NAME =
-			    g_strconcat(getenv("EZ"), "/services/", service,
-					"/STATE.", nodename, NULL);
-			if ((FILE_STATE =
-			     fopen((char *) FILE_NAME, "r")) == NULL) {
-				perror
-				    ("No service(s) defined (unable to open SERVICE STATE file)");
-				exit(-1);
-			}
-			g_free(FILE_NAME);
-			STATE = fgetc(FILE_STATE);
-			fclose(FILE_STATE);
-			strcpy(to_send.service_name[j], service);
-			to_send.service_state[j] = STATE;
-			to_send.up = TRUE;
-			j++;
+		strcpy(service, (gchar *) g_list_nth_data(GlobalList, (i * LIST_NB_ITEM)));
+		if (!is_primary(nodename, service) &&
+		    !is_secondary(nodename, service)) {
+			continue;
 		}
-		g_free(service);
+		get_node_service_status(nodename, service, j);
+		j++;
 	}
-	return;
+	return 0;
 }
 
 void
