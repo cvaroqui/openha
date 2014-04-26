@@ -24,7 +24,6 @@
 
 #include <cluster.h>
 #include <checks.h>
-char *progname = NULL;
 
 void
 usage()
@@ -466,8 +465,9 @@ gchar *argv[];
 	    0;
 	gchar *nvalue, *tvalue, *ivalue, *dvalue, *pvalue = NULL, *Tvalue;
 
-	Setenv("PROGNAME", "hb");
 	init_var();
+	snprintf(progname, MAX_PROGNAME_SIZE, "hb");
+
 	sflag = rflag = aflag = nflag = tflag = iflag = dflag = pflag = Tflag =
 	    0;
 	nvalue = tvalue = ivalue = dvalue = pvalue = Tvalue = NULL;

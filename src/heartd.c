@@ -40,7 +40,6 @@ gint shmid;
 struct sendstruct to_send;
 void clean_tab();
 void get_node_status(gchar *);
-gchar *progname = NULL;
 void sighup();
 void sigterm();
 
@@ -69,7 +68,8 @@ char *argv[];
 	}
 	signal(SIGTERM, sigterm);
 	daemonize("heartd");
-	Setenv("PROGNAME", "heartd");
+	snprintf(progname, MAX_PROGNAME_SIZE, "heartd");
+
 	strncpy(ADDR, argv[2], 15);
 	FILE_KEY =
 	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",

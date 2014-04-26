@@ -49,6 +49,7 @@
 #define STATE_UNKNOWN 8
 #define STATE_FORCE_STOP 9
 
+#define MAX_PROGNAME_SIZE 16
 #define MAX_SERVICES 128
 #define MAX_SERVICES_SIZE 16
 #define MAX_HEARTBEAT 16
@@ -61,14 +62,13 @@
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
 #define MAX_LOG_MSG_SIZE 1024
 
-extern unsigned sleep(unsigned);
 gchar *EZ;
 gchar *EZ_BIN;
 gchar *EZ_SERVICES;
 gchar *EZ_MONITOR;
 gchar *EZ_LOG;
 gchar *EZ_NODES;
-extern gchar *progname;
+extern gchar progname[MAX_PROGNAME_SIZE];
 
 gchar *VAL[MAX_STATE];
 
@@ -144,7 +144,6 @@ void signal_usr1_callback_handler();
 void signal_usr2_callback_handler();
 gboolean init_var();
 void get_nodename();
-void Setenv(gchar *, gchar *);
 GHashTable * get_hash(GList *);
 gboolean is_primary(gchar *, gchar *);
 gboolean is_secondary(gchar *, gchar *);

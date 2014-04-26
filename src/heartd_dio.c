@@ -44,7 +44,6 @@ void get_node_status(gchar *);
 gint write_dio(gint fd, struct sendstruct, gchar *, gint);
 void sighup();
 void sigterm();
-gchar *progname;
 gint shmid;
 
 int
@@ -69,7 +68,8 @@ char *argv[];
 	}
 	signal(SIGTERM, sigterm);
 	daemonize("heartd_dio");
-	Setenv("PROGNAME", "heartd_dio");
+	snprintf(progname, MAX_PROGNAME_SIZE, "heartd_dio");
+
 
 	address = atoi(argv[2]);
 	NEW_KEY = g_strsplit(argv[1], "/", 10);
