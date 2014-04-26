@@ -38,6 +38,7 @@ void copy_tab_node(struct nodestruct *, struct nodestruct *, guint);
 void *MakeDecision(void *);
 void clean_tab(void);
 void init(void);
+gint get_segs(struct shmtab_struct *);
 gint get_seg(gint, struct shmtab_struct *);
 gint fill_seg(gint, key_t, gchar *);
 gboolean rm_func(gpointer, gpointer, gpointer);
@@ -179,6 +180,7 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	for (i = 0; i < nb_seg; i++) {
 		// On remplit tab_shm (nodename + shmid)
 		if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename) != 0) {
+			nb_seg = get_segs(tab_shm);
 			return -1;
 		}
 		pointer = g_hash_table_lookup(HT_NODES, tab_shm[i].nodename);
@@ -229,6 +231,22 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	return 0;
 }
 
+gint
+get_segs(struct shmtab_struct * tab_shm)
+{
+	gint i;
+	gint nb_seg = 0;
+
+	for (i = 0; i < list_size; i++) {
+		if (strcmp(nodename, g_list_nth_data(list_heart, (i * LIST_NB_ITEM))) == 0) {
+			// NOT matching our nodename
+			continue;
+		}
+		get_seg(i, &tab_shm[nb_seg]);
+		nb_seg++;
+	}
+	return nb_seg;
+}
 
 int
 main(argc, argv)
@@ -237,7 +255,6 @@ char *argv[];
 {
 	key_t Key;
 	gint pid;
-	gint i;
 	gint nb_seg, rc;
 	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
 	int arg;
@@ -273,16 +290,7 @@ char *argv[];
 	init_var();
 	init();
 	// chaque ligne de EZ_MONITOR
-	nb_seg = 0;
-	for (i = 0; i < list_size; i++) {
-		// if it's NOT matching our nodename
-		if (strcmp
-		    (nodename,
-		     g_list_nth_data(list_heart, (i * LIST_NB_ITEM))) != 0) {
-			get_seg(i, &tab_shm[nb_seg]);
-			nb_seg++;
-		}
-	}
+	nb_seg = get_segs(tab_shm);
 	HT_NODES_OLD = g_hash_table_new(g_str_hash, g_str_equal);
 	HT_NODES = g_hash_table_new(g_str_hash, g_str_equal);
 	HT_SERV = g_hash_table_new(g_str_hash, g_str_equal);
@@ -540,38 +548,36 @@ get_seg(gint i, struct shmtab_struct * S)
 	}
 
 	if ((itmp = open(SHM_KEY, O_RDONLY)) == -1) {
-		fprintf(stderr, "%s\n", SHM_KEY);
-		perror("Error: unable to open SHMFILE");
-		fprintf(stderr, "Heartc missing ?\n");
-		exit(-2);
+		halog(LOG_CRIT, "Unable to open SHMFILE: %s. heartc missing ?", SHM_KEY);
+		return -1;
 	}
 	key = ftok(SHM_KEY, 0);
 	close(itmp);
 	if ((shmid = shmget(key, SHMSZ, 0444)) == -1) {
-		fprintf(stderr,
-			"Error: unable to get segment for address %s and port %s",
-			(gchar *) g_list_nth_data(list_heart,
-						  (i * LIST_NB_ITEM) + 2),
-			(gchar *) g_list_nth_data(list_heart,
-						  (i * LIST_NB_ITEM) + 3));
-		perror(" ");
-	}
-	if (shmctl(shmid, IPC_STAT, buf) != 0) {
-		perror("Error: unable to stat segment");
-	}
-	if (buf->shm_nattch < 1) {
-		fprintf(stderr,
-			"Error: heartc may not be running for address %s and port %s\n",
+		halog(LOG_ERR,
+			"Unable to get segment for heartc %s:%s",
 			(gchar *) g_list_nth_data(list_heart,
 						  (i * LIST_NB_ITEM) + 2),
 			(gchar *) g_list_nth_data(list_heart,
 						  (i * LIST_NB_ITEM) + 3));
 		return -1;
-	} else {
-		S->shmid = shmid;
-		strcpy(S->nodename, nodename);
-		return 0;
 	}
+	if (shmctl(shmid, IPC_STAT, buf) != 0) {
+		halog(LOG_ERR, "Unable to stat segment (shmid=%x)", shmid);
+		return -1;
+	}
+	if (buf->shm_nattch < 1) {
+		halog(LOG_ERR,
+			"heartc %s:%s may not be running",
+			(gchar *) g_list_nth_data(list_heart,
+						  (i * LIST_NB_ITEM) + 2),
+			(gchar *) g_list_nth_data(list_heart,
+						  (i * LIST_NB_ITEM) + 3));
+		return -1;
+	}
+	S->shmid = shmid;
+	strcpy(S->nodename, nodename);
+	return 0;
 }
 
 gint
