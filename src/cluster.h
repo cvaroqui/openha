@@ -49,6 +49,7 @@
 #define STATE_UNKNOWN 8
 #define STATE_FORCE_STOP 9
 
+#define MAX_PATH_SIZE 256
 #define MAX_PROGNAME_SIZE 16
 #define MAX_SERVICES 128
 #define MAX_SERVICES_SIZE 16
@@ -152,7 +153,7 @@ gint change_status_force_stop(gint, gint, gchar *, GHashTable *);
 gint change_status_force_start(gint, gint, gchar *, GHashTable *);
 void daemonize(gchar *);
 gint if_getaddr(const char *ifname, struct in_addr *);
-void write_status(gchar *, gint, gchar *);
+gint write_status(gchar *, gint, gchar *);
 glong Elapsed(void);
 void delete_data(gpointer, gpointer);
 void drop_list(GList *);

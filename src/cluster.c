@@ -164,48 +164,39 @@ append_lock(gint fd)
 	return (fcntl(fd, F_SETLKW, file_lock(F_WRLCK, SEEK_END)));
 }
 
-void
+int
 write_status(gchar service[MAX_SERVICES_SIZE], gint state, gchar * node)
 {
-	halog(LOG_DEBUG, "[write_status] enter");
-	gchar *FILE_NAME;
-	FILE *FILE_STATE;
+	halog(LOG_DEBUG, "[write_status] enter. state=%d, node=%s", state, node);
+	char fpath[MAX_PATH_SIZE];
+	FILE *fds;
 	gchar to_copy[2];
 
-	FILE_NAME =
-	    g_strconcat(getenv("EZ"), "/services/", service, "/STATE.", node,
-			NULL);
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
+		 getenv("EZ"), service, node);
 
-	if ((FILE_STATE = fopen((char *) FILE_NAME, "r")) != NULL) {
-//                      if (read_lock(fileno(FILE_STATE)) != -1){
-		if (TRUE) {
-//                      Lock success
-			if ((FILE_STATE =
-			     freopen((char *) FILE_NAME, "r+",
-				     FILE_STATE)) == NULL) {
-				perror("Unable to reopen SERVICE STATE file");
-				fclose(FILE_STATE);
-				g_free(FILE_NAME);
-				return;
-			} else {
-				snprintf(to_copy, 2, "%i\n", state);
-				fwrite(to_copy, 2, 1, FILE_STATE);
-				fflush(FILE_STATE);
-				g_free(FILE_NAME);
-				fclose(FILE_STATE);
-			}
-		} else {
-			printf("Lock Unsuccessful\n");
-			perror("lockf:");
-			fclose(FILE_STATE);
-			g_free(FILE_NAME);
-			return;
-		}
-	} else {
-		//perror("No service(s) defined (unable to open SERVICE STATE file)");
-		g_free(FILE_NAME);
-		return;
+	fds = fopen(fpath, "r");
+	if (!fds) {
+		halog(LOG_ERR, "failed to open read-only %s", fpath);
+		return -1;
 	}
+	/*
+	if (read_lock(fileno(FILE_STATE)) == -1) {
+		halog(LOG_ERR, "failed to acquire write state lock");
+		fclose(fds);
+		return -1;
+	}
+	*/
+	fds = freopen(fpath, "r+", fds);
+	if (!fds) {
+		halog(LOG_ERR, "failed to open read+ %s", fpath);
+		return -1;
+	}
+	snprintf(to_copy, 2, "%i\n", state);
+	fwrite(to_copy, 2, 1, fds);
+	fflush(fds);
+	fclose(fds);
+	return 0;
 }
 
 GList *
@@ -451,7 +442,7 @@ gint
 Cmd(char *prg, gchar * argsin[2])
 {
 	halog(LOG_DEBUG, "[Cmd] enter");
-	gint pid, status, retval;
+	gint pid, status, retval = -1;
 	//gint  del, fs;
 
 	signal(SIGTERM, SIG_IGN);
