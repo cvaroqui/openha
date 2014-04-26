@@ -1,6 +1,7 @@
 #include <cluster.h>
 
 gint loglevel = LOG_INFO;
+gchar progname[MAX_PROGNAME_SIZE] = {};
 
 gchar *VAL[MAX_STATE] = {
         "STOPPED", "STOPPING", "STARTED",
@@ -1322,16 +1323,6 @@ daemonize(gchar * message)
 	}
 }
 
-void
-Setenv(gchar * name, gchar * value)
-{
-	halog(LOG_DEBUG, "[Setenv] enter");
-	gchar *env;
-	env = g_strconcat(name, "=", value, NULL);
-	putenv(env);
-	g_free(env);
-}
-
 int
 halog(int prio, const char * fmt, ...)
 {
@@ -1344,7 +1335,10 @@ halog(int prio, const char * fmt, ...)
         vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
 	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(prio, "%s", buff);
-	if (isatty(0) && prio < LOG_DEBUG)
+	if (isatty(0)
+	    && strlen(progname) >= 7
+	    && strncmp(progname, "service", 7) == 0
+	    && prio < LOG_DEBUG)
 		printf("%s\n", buff);
 	return 0;
 }

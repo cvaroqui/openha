@@ -62,12 +62,13 @@ gchar *name, *shm;
 GHashTable *HT_SERV = NULL, *HT_NODES = NULL, *HT_NODES_OLD = NULL;
 gchar SERVICE[MAX_SERVICES][MAX_SERVICES_SIZE];
 gint shmid;
-gchar *progname = NULL;
 
 struct thread_info {
 	pthread_t thread_id;
 	gint i;
 };
+
+struct thread_info *tinfo;
 
 static void *
 nmon_service_loop(void * arg)
@@ -135,7 +136,6 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	struct srvstruct *ptr_service;
 	gint rc;
 	gpointer pointer;
-	struct thread_info *tinfo;
 
 	halog(LOG_DEBUG, "[main] looping");
 
@@ -179,15 +179,12 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	for (i = 0; i < nb_seg; i++) {
 		// On remplit tab_shm (nodename + shmid)
 		if (fill_seg(i, tab_shm[i].shmid, tab_shm[i].nodename) != 0) {
-			halog(LOG_ERR, "fill_seg failed");
 			return -1;
 		}
 		pointer = g_hash_table_lookup(HT_NODES, tab_shm[i].nodename);
 
-		// si le noeud est dela reference dans HT_NODES
-		if ((pointer != NULL) && (((struct nodestruct *) pointer)->up == TRUE)) {
-		} else {
-			//printf("UP or DOWN : %d\n",tabinfo[i].up);
+		// si le noeud est deja reference dans HT_NODES
+		if ((pointer == NULL) || (((struct nodestruct *) pointer)->up != TRUE)) {
 			g_hash_table_insert(HT_NODES, tab_shm[i].nodename,
 					    &tabinfo[i]);
 		}
@@ -196,16 +193,16 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 	g_hash_table_foreach(HT_NODES, check_node_func, NULL);
 	memcpy(shm, tabinfo, sizeof (tabinfo));
 
-	// Services Status management
-	//
-	// Ouvre les segments SHM, pour chaque entree de EZ_MONITOR     
-	// Remplit le tableau des node (tabnode): nodename, statut (UP ou DOWN), date de l'etat
-	//printf("size HT: %d\n",g_hash_table_size(HT_SERV));
-	//
-	//
-	//
-	//EZ-HA: nmond[16020]: Cannot start mysql: service not in correct state (partner node is STOPPED, we are STOPPING.
-	//Si on est on s'arrete, avec service -A  ..., pas la peine d'essayer de re-démarrer tout de suite ...
+	/*
+	 * Services Status management
+	 *
+	 * Ouvre les segments SHM, pour chaque entree de EZ_MONITOR     
+	 * Remplit le tableau des nodes (tabnode): nodename, statut (UP ou DOWN),
+	 * date de l'etat
+	 *
+	 * Si on est on s'arrete, avec service -A  ..., pas la peine d'essayer de
+	 * re-démarrer tout de suite ...
+	 */
 
 	tinfo = calloc(g_hash_table_size(HT_SERV), sizeof(struct thread_info));
 
@@ -224,6 +221,7 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 			continue;
 		halog(LOG_DEBUG, "[main] joining thread [%d]", i);
 		pthread_join(tinfo[i].thread_id, NULL);
+		tinfo[i].thread_id = -1;
 	}
 	halog(LOG_DEBUG, "[main] Removing each HT_SERV key/value");
 	drop_hash(HT_SERV);
@@ -247,8 +245,7 @@ char *argv[];
 
 
 	GlobalList = NULL;
-	Setenv("PROGNAME", "nmond");
-	progname = getenv("PROGNAME");
+	snprintf(progname, MAX_PROGNAME_SIZE, "nmond");
 
 	while ((arg = getopt(argc, argv, "l:")) != EOF ) {
 		switch(arg) {
@@ -299,12 +296,12 @@ char *argv[];
 		perror("shmat failed");
 	}
 
-	signal(SIGTERM, sigterm);
-	signal(SIGUSR1, signal_usr1_callback_handler);
-	signal(SIGUSR2, signal_usr2_callback_handler);
-
 	while (TRUE) {
+		signal(SIGTERM, sigterm);
+		signal(SIGUSR1, signal_usr1_callback_handler);
+		signal(SIGUSR2, signal_usr2_callback_handler);
 		signal(SIGALRM, sighup);
+
 		rc = nmon_loop(nb_seg, tab_shm);
 		if (rc > 0)
 			return rc;
@@ -580,27 +577,36 @@ get_seg(gint i, struct shmtab_struct * S)
 gint
 fill_seg(gint i, key_t key, gchar * nodename)
 {
-	halog(LOG_DEBUG, "fill_seg", "Function start");
 	gpointer *R;
 	struct sendstruct to_recv;
 
 	R = shmat(key, NULL, 0);
-	if (R != ((void *) -1)) {
-		memcpy(&tabinfo[i], R, sizeof (to_recv));
-		memcpy(&tabinfo[i].nodename, nodename, MAX_NODENAME_SIZE);
-		shmdt((void *) R);
-		return 0;
-	} else {
-		fprintf(stderr, "Unable to attach memory segment.\n");
-		perror("");
+	if (R == (void *) -1) {
+		halog(LOG_ERR, "Unable to attach memory segment (shmid=%x, nodename=%s)", (int) key, nodename);
 		return -1;
 	}
+	memcpy(&tabinfo[i], R, sizeof (to_recv));
+	memcpy(&tabinfo[i].nodename, nodename, MAX_NODENAME_SIZE);
+	shmdt((void *) R);
+	return 0;
 }
 
 void
 sigterm()
 {
+	gint i;
+
 	halog(LOG_INFO, "SIGTERM received, exiting gracefuly ...");
+	if (tinfo) {
+		for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
+			if (tinfo[i].thread_id < 0)
+				continue;
+			halog(LOG_DEBUG, "[main] joining thread [%d]", i);
+			pthread_join(tinfo[i].thread_id, NULL);
+			tinfo[i].thread_id = -1;
+		}
+		free(tinfo);
+	}
 	(void) shmctl(shmid, IPC_RMID, NULL);
 	drop_list(GlobalList);
 	drop_hash(GLOBAL_HT_SERV);

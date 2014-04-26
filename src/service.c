@@ -42,8 +42,6 @@ gchar *ACTION[MAX_ACTION] = { "STOP",
 	"FORCE-START"
 };
 
-gchar *progname = NULL;
-
 int
 main(argc, argv)
 int argc;
@@ -69,8 +67,7 @@ char *argv[];
 	list_size = g_list_length(GlobalList);
 	svccount = list_size / LIST_NB_ITEM;
 
-	Setenv("PROGNAME", "service");
-	progname = getenv("PROGNAME");
+	snprintf(progname, MAX_PROGNAME_SIZE, "service");
 
 	if (GlobalList == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);

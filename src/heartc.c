@@ -47,7 +47,6 @@ gchar ADDR[15];
 struct sendstruct to_recV;
 struct stat *f_stat;
 gboolean FIRST = TRUE, DOWN = FALSE;
-gchar *progname = NULL;
 
 gint
 main(argc, argv)
@@ -68,7 +67,7 @@ gchar *argv[];
 	signal(SIGTERM, sigterm);
 
 	daemonize("heartc");
-	Setenv("PROGNAME", "heartc");
+	snprintf(progname, MAX_PROGNAME_SIZE, "heartc");
 
 	if (argc != 5) {
 		fprintf(stderr,

@@ -45,7 +45,6 @@ struct sendstruct to_recV;
 struct stat *f_stat;
 gboolean FIRST = TRUE;
 gchar ADDR[64];
-gchar *progname = NULL;
 
 gint
 main(argc, argv)
@@ -75,7 +74,7 @@ gchar *argv[];
 		exit(-1);
 	}
 	daemonize("heartc_raw");
-	Setenv("PROGNAME", "heartc_raw");
+	snprintf(progname, MAX_PROGNAME_SIZE, "heartc_raw");
 
 	strcpy(raw_device, argv[1]);
 	address = atoi(argv[2]);
