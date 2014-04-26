@@ -126,6 +126,7 @@ void print_func(gpointer, gpointer, gpointer);
 gboolean rm_func_serv(gpointer, gpointer, gpointer);
 void service_info(GList *, GHashTable *, gchar *, gchar *);
 void service_status(GList *, GHashTable *);
+void service_status_cols(GList *, GHashTable *);
 gint change_status_stop(gint, gint, gchar *, GHashTable *);
 gint change_status_start(gint, gint, gchar *, GHashTable *);
 gint change_status_freeze_stop(gint, gint, gchar *, GHashTable *);

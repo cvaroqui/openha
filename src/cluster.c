@@ -1027,6 +1027,27 @@ service_status(GList * liste, GHashTable * HT)
 	}
 }
 
+void
+service_status_cols(GList * liste, GHashTable * HT)
+{
+       halog(LOG_DEBUG, "[service_status_cols] enter");
+       gint i, list_size, pstate, sstate;
+       gpointer pointer;
+       gchar *service, *primary, *secondary;
+
+       list_size = g_list_length(liste) / LIST_NB_ITEM;
+       printf("%16s %16s %14s %16s %14s\n","service","prinode","pristate","secnode","secstate");
+       for (i = 0; i < list_size; i++) {
+               service = g_list_nth_data(liste, i * LIST_NB_ITEM);
+               pointer = g_hash_table_lookup(HT, service);
+               primary = ((struct srvstruct *) (pointer))->primary;
+               secondary = ((struct srvstruct *) (pointer))->secondary;
+               pstate = get_status(liste, primary, service);
+               sstate = get_status(liste, secondary, service);
+               printf("%16s %16s %14s %16s %14s\n",service,primary,VAL[pstate],secondary,VAL[sstate]);
+       }
+}
+
 gint
 change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 {

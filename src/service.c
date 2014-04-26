@@ -84,6 +84,13 @@ char *argv[];
 		service_status(GlobalList, HT_SERV);
 		return 0;
 	}
+
+	// STATUS ONE LINE
+	if ((strcmp(argv[1], "-s") == 0) && (strcmp(argv[2], "-c") == 0) && (argc == 3)) {
+		service_status_cols(GlobalList, HT_SERV);
+		return 0;
+	}
+
 	//INFO
 	if ((strcmp(argv[1], "-i") == 0) && (argc == 3)) {
 		service = argv[2];
