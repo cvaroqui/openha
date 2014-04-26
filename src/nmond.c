@@ -555,7 +555,7 @@ get_seg(gint i, struct shmtab_struct * S)
 	close(itmp);
 	if ((shmid = shmget(key, SHMSZ, 0444)) == -1) {
 		halog(LOG_ERR,
-			"Unable to get segment for address %s and port %s",
+			"Unable to get segment for heartc %s:%s",
 			(gchar *) g_list_nth_data(list_heart,
 						  (i * LIST_NB_ITEM) + 2),
 			(gchar *) g_list_nth_data(list_heart,
@@ -563,12 +563,12 @@ get_seg(gint i, struct shmtab_struct * S)
 		return -1;
 	}
 	if (shmctl(shmid, IPC_STAT, buf) != 0) {
-		halog(LOG_ERR, "Unable to stat segment (%x)", shmid);
+		halog(LOG_ERR, "Unable to stat segment (shmid=%x)", shmid);
 		return -1;
 	}
 	if (buf->shm_nattch < 1) {
 		halog(LOG_ERR,
-			"heartc may not be running for address %s and port %s\n",
+			"heartc %s:%s may not be running",
 			(gchar *) g_list_nth_data(list_heart,
 						  (i * LIST_NB_ITEM) + 2),
 			(gchar *) g_list_nth_data(list_heart,
