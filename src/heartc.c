@@ -217,7 +217,7 @@ gchar *argv[];
 						 to_recV.nodename,
 						 to_recV.elapsed);
 					write_status(to_recV.service_name[j],
-						     to_recV.service_state[j],
+						     atoi(&to_recV.service_state[j]),
 						     to_recV.nodename);
 				}
 			}
