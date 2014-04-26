@@ -215,10 +215,13 @@ nmon_loop(gint nb_seg, struct shmtab_struct * tab_shm)
 		rc = pthread_create(&tinfo[i].thread_id, NULL, &nmon_service_loop, &tinfo[i]);
 		if (rc) {
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
-			exit(-1);
+			tinfo[i].thread_id = -1;
+			//exit(-1);
 		}
 	}
 	for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
+		if (tinfo[i].thread_id < 0)
+			continue;
 		halog(LOG_DEBUG, "[main] joining thread [%d]", i);
 		pthread_join(tinfo[i].thread_id, NULL);
 	}
@@ -239,10 +242,25 @@ char *argv[];
 	gint i;
 	gint nb_seg, rc;
 	struct shmtab_struct tab_shm[MAX_HEARTBEAT] = {};
+	int arg;
+	extern char *optarg;
+
 
 	GlobalList = NULL;
 	Setenv("PROGNAME", "nmond");
 	progname = getenv("PROGNAME");
+
+	while ((arg = getopt(argc, argv, "l:")) != EOF ) {
+		switch(arg) {
+		case 'l':
+			if (sizeof(optarg) > sizeof(char *) ||
+			    !isdigit(optarg[0])) {
+				exit(1);
+			}
+			loglevel = atoi(optarg);
+			break;
+		}
+	}
 
 	switch (pid = fork()) {
 	case 0:

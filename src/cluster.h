@@ -114,6 +114,7 @@ struct shmtab_struct {
 time_t GlobalListTimeStamp;
 GList *GlobalList;
 GHashTable *GLOBAL_HT_SERV;
+extern gint loglevel;
 
 gchar nodename[MAX_NODENAME_SIZE];
 
