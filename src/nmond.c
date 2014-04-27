@@ -36,7 +36,7 @@
 void copy_tab_send(struct sendstruct *, struct sendstruct *, guint);
 void copy_tab_node(struct nodestruct *, struct nodestruct *, guint);
 void *MakeDecision(void *);
-void clean_tab(void);
+void clean_hb_tab(void);
 void init(void);
 gint get_segs(struct shmtab_struct *);
 gint get_seg(gint, struct shmtab_struct *);
@@ -289,6 +289,13 @@ char *argv[];
 
 	init_var();
 	init();
+	halog(LOG_DEBUG, "[main] sizeof service[%d] srvstruct[%d] sendstruct[%d] nodestruct[%d] shmtab_struct[%d]",
+				sizeof(struct service),
+				sizeof(struct srvstruct),
+				sizeof(struct sendstruct),
+				sizeof(struct nodestruct),
+				sizeof(struct shmtab_struct)
+				);
 	// chaque ligne de EZ_MONITOR
 	nb_seg = get_segs(tab_shm);
 	HT_NODES_OLD = g_hash_table_new(g_str_hash, g_str_equal);
@@ -459,9 +466,9 @@ copy_tab_send(struct sendstruct *dest, struct sendstruct *from, guint size)
 }
 
 void
-clean_tab()
+clean_hb_tab()
 {
-	halog(LOG_DEBUG, "clean_tab", "Function start");
+	halog(LOG_DEBUG, "clean_hb_tab", "Function start");
 	gint i = 0;
 	for (i = 0; i < MAX_HEARTBEAT; i++) {
 		tabnode[i].nodename[0] = '\0';
