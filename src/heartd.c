@@ -38,8 +38,6 @@
 
 gint shmid;
 struct sendstruct to_send;
-void clean_tab();
-gint get_node_status(gchar *);
 void sighup();
 void sigterm();
 
@@ -173,7 +171,7 @@ char *argv[];
 		signal(SIGUSR2, signal_usr2_callback_handler);
 
 		i = 0;
-		get_node_status(to_send.nodename);
+		get_node_status(&to_send);
 		to_send.elapsed = Elapsed();
 		to_send.up = TRUE;
 		to_send.pid = pid;
@@ -200,72 +198,6 @@ char *argv[];
 	}
 }				/* end main() */
 
-gint
-get_node_service_status(gchar *nodename, gchar * service, guint j)
-{
-	FILE *fds;
-	char fpath[MAX_PATH_SIZE];
-	gchar state;
-
-	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
-		 getenv("EZ"), service, nodename);
-	fds = fopen(fpath, "r");
-	if (fds == NULL) {
-		halog(LOG_ERR, "Unable to open read-only %s. send UNKNOWN state", fpath);
-		snprintf(&state, 1, "%d", STATE_UNKNOWN);
-	} else {
-		state = fgetc(fds);
-		halog(LOG_DEBUG, "read state %c from %s", state, fpath);
-		fclose(fds);
-	}
-	strcpy(to_send.service_name[j], service);
-	to_send.service_state[j] = state;
-	to_send.up = TRUE;
-	return 0;
-}
-
-gint
-get_node_status(gchar * nodename)
-{
-	FILE *EZ_SERVICES;
-	guint i, j, list_size;
-	gchar service[MAX_SERVICES_SIZE];
-
-	if (getenv("EZ_SERVICES") == NULL) {
-		halog(LOG_ERR, "Environment variable EZ_SERVICES is not defined");
-		return -1;
-	}
-	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
-		halog(LOG_ERR, "No service defined (unable to open $EZ_SERVICES file)");
-		return -1;
-	}
-	get_services_list();
-	fclose(EZ_SERVICES);
-
-	list_size = g_list_length(GlobalList) / LIST_NB_ITEM;
-	clean_tab();
-	j = 0;
-	for (i = 0; i < list_size; i++) {
-		strcpy(service, (gchar *) g_list_nth_data(GlobalList, (i * LIST_NB_ITEM)));
-		if (!is_primary(nodename, service) &&
-		    !is_secondary(nodename, service)) {
-			continue;
-		}
-		get_node_service_status(nodename, service, j);
-		j++;
-	}
-	return 0;
-}
-
-void
-clean_tab()
-{
-	gint i;
-	for (i = 0; i < MAX_SERVICES; i++) {
-		bzero(to_send.service_name[i], MAX_SERVICES);
-		bzero(to_send.service_state, MAX_SERVICES);
-	}
-}
 
 void
 sighup()

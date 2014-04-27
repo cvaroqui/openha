@@ -4,10 +4,16 @@ gint loglevel = LOG_INFO;
 gchar progname[MAX_PROGNAME_SIZE] = {};
 
 gchar *VAL[MAX_STATE] = {
-        "STOPPED", "STOPPING", "STARTED",
-        "STARTING", "START_FAILED", "STOP_FAILED",
-        "FROZEN_STOP", "START_READY", "UNKNOWN",
-        "FORCE-STOP"
+	"STOPPED",	/* 0 */
+	"STOPPING",	/* 1 */
+	"STARTED",	/* 2 */
+	"STARTING",	/* 3 */
+	"START_FAILED",	/* 4 */
+	"STOP_FAILED",	/* 5 */
+	"FROZEN_STOP",	/* 6 */
+	"START_READY",	/* 7 */
+	"UNKNOWN",	/* 8 */
+	"FORCE_STOP"	/* 9 */
 };
 
 void
@@ -464,17 +470,17 @@ Cmd(char *prg, gchar * argsin[2])
 		return -1;
 	default:
 		wait(&status);
-                if (WIFEXITED(status)) {
-                        status = WEXITSTATUS(status);
-                        if (status == 0)
-                                retval = 0;
-                        else
-                                halog(0, "%s exitted with %d", prg, status);
-                }
-                else if (WIFSIGNALED(status))
-                        halog(0, "%s was terminated by signal %d", prg, WTERMSIG(status));
-                else
-                        halog(0, "%s terminated abnormally", prg);
+		if (WIFEXITED(status)) {
+			status = WEXITSTATUS(status);
+			if (status == 0)
+				retval = 0;
+			else
+				halog(0, "%s exitted with %d", prg, status);
+		}
+		else if (WIFSIGNALED(status))
+			halog(0, "%s was terminated by signal %d", prg, WTERMSIG(status));
+		else
+			halog(0, "%s terminated abnormally", prg);
 
 	}
 	return retval;
@@ -509,10 +515,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	gchar *arg[3];
 	gchar *arg0[3];
 	gboolean PRIMARY, SECONDARY;
-	GList *List_services = NULL;
 	gint old_state, pstate, sstate;
 	gchar *primary, *secondary;
-	gint r = 0;
 
 	if ((state == STATE_STOPPED || state == STATE_UNKNOWN) &&
 	    (ostate == STATE_STOPPED || ostate == STATE_FROZEN_STOP || ostate == STATE_UNKNOWN)) {
@@ -532,58 +536,57 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	arg0[0] = ((struct srvstruct *) (pointer))->check_script;
 	arg0[1] = "start";
 	arg0[2] = (gchar *) 0;
+
 	// Put state service in START_READY
 	write_status(service, STATE_START_READY, nodename);
 	sleep(5);
-	// Si l'autre a decider de START en meme temps:
-	get_services_list();
+
+	// check if peer has decided to START in the mean time
+	//get_services_list();
 	pointer = g_hash_table_lookup(HT, (gchar *) service);
 	primary = ((struct srvstruct *) (pointer))->primary;
 	secondary = ((struct srvstruct *) (pointer))->secondary;
-	pstate = get_status(List_services, primary, service);
-	sstate = get_status(List_services, secondary, service);
+	pstate = get_status(GlobalList, primary, service);
+	sstate = get_status(GlobalList, secondary, service);
 	PRIMARY = is_primary(nodename, service);
 	SECONDARY = is_secondary(nodename, service);
 	if (PRIMARY) {
 		state = pstate;
 		ostate = sstate;
-	} else {
+	} else if (SECONDARY) {
 		state = ostate;
 		ostate = pstate;
+	} else {
+		halog(LOG_NOTICE, "this node is not primary nor secondary for service %s. abort start", service);
+		return 0;
 	}
 	if (old_state != ostate) {
-		halog(LOG_NOTICE, "service %s state has changed on partner node", service);
+		halog(LOG_NOTICE, "service %s state has changed on partner node from %s to %s during the grace period", service, VAL[old_state], VAL[ostate]);
 		if (SECONDARY) {
+			halog(LOG_NOTICE, "rollback service %s state to STOPPED", service);
 			write_status(service, STATE_STOPPED, nodename);
-			r = 0;
-			goto out;
+			return 0;
 		}
 	}
 	// OK, we are really ready to start. Put state service in STARTING
 	write_status(service, STATE_STARTING, nodename);
 	if (launch(arg0[0], arg0) != 0) {
-		halog(LOG_ERR, "failed to start %s. Check script failed. State is now start-failed", service);
+		halog(LOG_ERR, "Service %s check script failed. State is now START_FAILED", service);
 		write_status(service, STATE_START_FAILED, nodename);
-		r = -1;
-		goto out;
+		return -1;
 	} else {
 		halog(LOG_NOTICE, "Check script for service %s OK", service);
 	}
 	if (launch(arg[0], arg) == 0) {
 		halog(LOG_NOTICE, "Service %s successfully started", service);
 		write_status(service, STATE_STARTED, nodename);
-		r = 0;
-		goto out;
+		return 0;
 	} else {
 		halog(LOG_ERR, "failed to start %s. State is now start-failed", service);
 		write_status(service, STATE_START_FAILED, nodename);
-		r = -1;
-		goto out;
+		return -1;
 	}
-out:
-	g_list_foreach(List_services, delete_data, NULL);
-	g_list_free(List_services);
-	return r;
+	return 0;
 }
 
 gint
@@ -603,46 +606,36 @@ gint
 get_status(GList * liste, gchar * node, gchar * service)
 {
 	/* halog(LOG_DEBUG, "[get_status] enter"); */
-	gint i, j, k = 0, size;
-	gchar *FILE_NAME, STATE;
-	FILE *FILE_STATE;
-
+	gint i, j, size;
+	gint state;
+	gchar buff[1];
+	FILE *fds;
+	gchar fpath[MAX_PATH_SIZE];
 	size = g_list_length(liste) / LIST_NB_ITEM;
 	for (i = 0; i < size; i++) {
 		j = i * LIST_NB_ITEM;
-		if (strncmp
-		    (g_list_nth_data(liste, j), service,
-		     MAX_SERVICES_SIZE) == 0) {
-			if ((strncmp
-			     (g_list_nth_data(liste, j + 2), node,
-			      MAX_NODENAME_SIZE) == 0)
-			    ||
-			    (strncmp
-			     (g_list_nth_data(liste, j + 3), node,
-			      MAX_NODENAME_SIZE) == 0)) {
-				FILE_NAME =
-				    g_strconcat(EZ, "/services/", service,
-						"/STATE.", node, NULL);
-
-				if ((FILE_STATE =
-				     fopen((char *) FILE_NAME, "r")) == NULL) {
-					halog(LOG_ERR, "unable to open SERVICE STATE file %s", FILE_NAME);
-					fprintf(stderr,
-						"Error: unable to open SERVICE STATE file %s\n",
-						FILE_NAME);
-					g_free(FILE_NAME);
-					return (-1);
-				}
-				g_free(FILE_NAME);
-				STATE = fgetc(FILE_STATE);
-				fclose(FILE_STATE);
-				sscanf(&STATE, "%1d", &k);
-				return (k);
-			}
+		if (strncmp(g_list_nth_data(liste, j), service, MAX_SERVICES_SIZE) != 0) {
+			// not this service
+			continue;
 		}
+		if ((strncmp(g_list_nth_data(liste, j + 2), node, MAX_NODENAME_SIZE) != 0)
+		    && (strncmp(g_list_nth_data(liste, j + 3), node, MAX_NODENAME_SIZE) != 0)) {
+			// node is not pri nor sec
+			continue;
+		}
+		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ, service, node);
+		fds = fopen(fpath, "r");
+		if (fds == NULL) {
+			halog(LOG_ERR, "unable to open read-only %s", fpath);
+			continue;
+		}
+		fread(buff, 1, 1, fds);
+		state = atoi(buff);
+		fclose(fds);
+		return state;
 	}
-	// If not found ...
-	return -1;
+	halog(LOG_ERR, "Unable to read service %s status for node %s. Return UNKNOWN", service, node);
+	return STATE_UNKNOWN;
 }
 
 //SERVICES FUNCTIONS
@@ -1028,15 +1021,15 @@ service_status_cols(GList * liste, GHashTable * HT)
        gchar *service, *primary, *secondary;
 
        list_size = g_list_length(liste) / LIST_NB_ITEM;
-       printf("%16s %16s %14s %16s %14s\n","service","prinode","pristate","secnode","secstate");
+       printf("%-16s %-16s %-14s %-16s %-14s\n","service","prinode","pristate","secnode","secstate");
        for (i = 0; i < list_size; i++) {
-               service = g_list_nth_data(liste, i * LIST_NB_ITEM);
-               pointer = g_hash_table_lookup(HT, service);
-               primary = ((struct srvstruct *) (pointer))->primary;
-               secondary = ((struct srvstruct *) (pointer))->secondary;
-               pstate = get_status(liste, primary, service);
-               sstate = get_status(liste, secondary, service);
-               printf("%16s %16s %14s %16s %14s\n",service,primary,VAL[pstate],secondary,VAL[sstate]);
+	       service = g_list_nth_data(liste, i * LIST_NB_ITEM);
+	       pointer = g_hash_table_lookup(HT, service);
+	       primary = ((struct srvstruct *) (pointer))->primary;
+	       secondary = ((struct srvstruct *) (pointer))->secondary;
+	       pstate = get_status(liste, primary, service);
+	       sstate = get_status(liste, secondary, service);
+	       printf("%-16s %-16s %-14s %-16s %-14s\n",service,primary,VAL[pstate],secondary,VAL[sstate]);
        }
 }
 
@@ -1222,7 +1215,7 @@ if_getaddr(const char *ifname, struct in_addr * addr)
  * This #define w/void cast is to quiet alignment errors on some
  * platforms (notably Solaris)
  */
-#define SOCKADDR_IN(a)        ((struct sockaddr_in *)((void*)(a)))
+#define SOCKADDR_IN(a)	((struct sockaddr_in *)((void*)(a)))
 
 	memcpy(addr, &(SOCKADDR_IN(&if_info.ifr_addr)->sin_addr)
 	       , sizeof (struct in_addr));
@@ -1318,12 +1311,12 @@ int
 halog(int prio, const char * fmt, ...)
 {
 	va_list ap;
-        char buff[MAX_LOG_MSG_SIZE];
+	char buff[MAX_LOG_MSG_SIZE];
 
 	if (prio > loglevel)
 		return 0;
 	va_start(ap, fmt);
-        vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
+	vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
 	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(prio, "%s", buff);
 	if (isatty(0)
@@ -1332,5 +1325,76 @@ halog(int prio, const char * fmt, ...)
 	    && prio < LOG_DEBUG)
 		printf("%s\n", buff);
 	return 0;
+}
+
+void
+clean_tab(struct sendstruct * to_send)
+{
+	gint i;
+	for (i = 0; i < MAX_SERVICES; i++) {
+		bzero(to_send->service_name[i], MAX_SERVICES);
+		to_send->service_state[i] = STATE_UNKNOWN;
+	}
+}
+
+gint
+get_node_service_status(struct sendstruct * to_send, gchar * service, guint j)
+{
+       FILE *fds;
+       char fpath[MAX_PATH_SIZE];
+       gint state;
+       gchar buff[1];
+       gchar *nodename = to_send->nodename;
+
+       snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
+		getenv("EZ"), service, nodename);
+       fds = fopen(fpath, "r");
+       if (fds == NULL) {
+	       halog(LOG_ERR, "Unable to open read-only %s. send UNKNOWN state", fpath);
+	       state = STATE_UNKNOWN;
+       } else {
+	       fread(buff, 1, 1, fds);
+	       state = atoi(buff);
+	       halog(LOG_DEBUG, "read state %d from %s", state, fpath);
+	       fclose(fds);
+       }
+       strcpy(to_send->service_name[j], service);
+       to_send->service_state[j] = state;
+       to_send->up = TRUE;
+       return 0;
+}
+
+gint
+get_node_status(struct sendstruct * to_send)
+{
+       FILE *EZ_SERVICES;
+       guint i, j, list_size;
+       gchar service[MAX_SERVICES_SIZE];
+       gchar *nodename = to_send->nodename;
+
+       if (getenv("EZ_SERVICES") == NULL) {
+	       halog(LOG_ERR, "Environment variable EZ_SERVICES is not defined");
+	       return -1;
+       }
+       if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
+	       halog(LOG_ERR, "No service defined (unable to open $EZ_SERVICES file)");
+	       return -1;
+       }
+       get_services_list();
+       fclose(EZ_SERVICES);
+
+       list_size = g_list_length(GlobalList) / LIST_NB_ITEM;
+       clean_tab(to_send);
+       j = 0;
+       for (i = 0; i < list_size; i++) {
+	       strcpy(service, (gchar *) g_list_nth_data(GlobalList, (i * LIST_NB_ITEM)));
+	       if (!is_primary(nodename, service) &&
+		   !is_secondary(nodename, service)) {
+		       continue;
+	       }
+	       get_node_service_status(to_send, service, j);
+	       j++;
+       }
+       return 0;
 }
 

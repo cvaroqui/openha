@@ -194,10 +194,10 @@ gchar *argv[];
 		} else {
 			alarm(timeout);
 		}
-		i = recvfrom(s, (void *) &to_recV, sizeof (struct sendstruct),
+		i = recvfrom(s, (void *) &to_recV, sizeof(struct sendstruct),
 			     0, (struct sockaddr *) &stFrom, &addr_size);
 		if ((i < 0) && (flag == 0)) {
-			halog(LOG_ERR, "recvfrom failed");
+			halog(LOG_ERR, "recvfrom failed: %s", strerror(errno));
 			continue;
 		}
 		if (i > 0) {
@@ -210,14 +210,14 @@ gchar *argv[];
 				if (strlen(to_recV.service_name[j]) == 0) {
 					j = MAX_SERVICES;
 				} else {
-					halog(LOG_DEBUG, "[main] svc #%d name=[%s] state=[%c] node=[%s] ela=[%u]",
+					halog(LOG_DEBUG, "[main] svc #%d name=[%s] state=[%d] node=[%s] ela=[%u]",
 						 j,
 						 to_recV.service_name[j],
 						 to_recV.service_state[j],
 						 to_recV.nodename,
 						 to_recV.elapsed);
 					write_status(to_recV.service_name[j],
-						     atoi(&to_recV.service_state[j]),
+						     to_recV.service_state[j],
 						     to_recV.nodename);
 				}
 			}

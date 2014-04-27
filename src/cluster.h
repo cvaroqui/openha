@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <signal.h>
 #include <glib.h>
 #include <fcntl.h>
@@ -94,7 +95,7 @@ struct sendstruct {
 	gchar port[5];
 	gchar addr[15];
 	gchar service_name[MAX_SERVICES][MAX_SERVICES_SIZE];
-	gchar service_state[MAX_SERVICES];
+	gint service_state[MAX_SERVICES];
 	gboolean service_lock[MAX_SERVICES];
 	guint32 hostid;
 	guint32 elapsed;
@@ -161,6 +162,7 @@ void drop_hash(GHashTable *);
 void get_liste(FILE *, guint);
 GList * get_liste_generic(FILE *, guint);
 int halog(int prio, const char * fmt, ...);
-
+gint get_node_service_status(struct sendstruct *, gchar *, guint);
+gint get_node_status(struct sendstruct *);
 
 #endif /* CLUSTER_H */

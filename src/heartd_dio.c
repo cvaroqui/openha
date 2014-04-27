@@ -39,8 +39,6 @@
 #define BLKSIZE 512
 
 struct sendstruct to_send;
-void clean_tab();
-void get_node_status(gchar *);
 gint write_dio(gint fd, struct sendstruct, gchar *, gint);
 void sighup();
 void sigterm();
@@ -114,7 +112,7 @@ char *argv[];
 		signal(SIGALRM, sighup);
 		i = 0;
 		to_send.elapsed = Elapsed();
-		get_node_status(to_send.nodename);
+		get_node_status(&to_send);
 		i = write_dio(fd2, to_send, device, address);
 		if (i != 0) {
 			halog(LOG_ERR, "write_dio() failed");
@@ -144,68 +142,6 @@ write_dio(gint fd, struct sendstruct to_write, gchar * device, gint where)
 	}
 	free(buff);
 	return 0;
-}
-
-void
-get_node_status(gchar * nodename)
-{
-	FILE *EZ_SERVICES, *FILE_STATE;
-	guint i, j, list_size;
-	gchar *FILE_NAME, STATE, *service;
-
-	if (getenv("EZ_SERVICES") == NULL) {
-		printf
-		    ("ERROR: environment variable EZ_SERVICES not defined !!!\n");
-		return;
-	}
-	if ((EZ_SERVICES = fopen(getenv("EZ_SERVICES"), "r")) == NULL) {
-		//No service(s) defined (unable to open $EZ_SERVICES file)
-		return;
-	}
-	get_services_list();
-	fclose(EZ_SERVICES);
-	list_size = g_list_length(GlobalList) / LIST_NB_ITEM;
-	clean_tab();
-	j = 0;
-	for (i = 0; i < list_size; i++) {
-		service = malloc(MAX_SERVICES_SIZE);
-		strcpy(service,
-		       (gchar *) g_list_nth_data(GlobalList,
-						 (i * LIST_NB_ITEM)));
-		//printf("Service: %s number %d\n",service,i);
-		if (is_primary(nodename, service)
-		    || is_secondary(nodename, service)) {
-			FILE_NAME =
-			    g_strconcat(getenv("EZ"), "/services/", service,
-					"/STATE.", nodename, NULL);
-			if ((FILE_STATE =
-			     fopen((char *) FILE_NAME, "r")) == NULL) {
-				perror
-				    ("No service(s) defined (unable to open SERVICE STATE file)");
-				STATE = '8';
-			} else {
-				STATE = fgetc(FILE_STATE);
-				fclose(FILE_STATE);
-			}
-			g_free(FILE_NAME);
-			strcpy(to_send.service_name[j], service);
-			to_send.service_state[j] = STATE;
-			to_send.up = TRUE;
-			j++;
-		}
-		g_free(service);
-	}
-	return;
-}
-
-void
-clean_tab()
-{
-	int i;
-	for (i = 0; i < MAX_SERVICES; i++) {
-		bzero(to_send.service_name[i], MAX_SERVICES_SIZE);
-	}
-	bzero(to_send.service_state, MAX_SERVICES);
 }
 
 void
