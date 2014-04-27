@@ -65,6 +65,9 @@ char *argv[];
 		exit(-1);
 	}
 	signal(SIGTERM, sigterm);
+	signal(SIGUSR1, signal_usr1_callback_handler);
+	signal(SIGUSR2, signal_usr2_callback_handler);
+
 	daemonize("heartd_dio");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartd_dio");
 
@@ -128,18 +131,26 @@ write_dio(gint fd, struct sendstruct to_write, gchar * device, gint where)
 {
 	void *buff;
 	int r;
-	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	size_t s = sizeof(struct sendstruct) / BLKSIZE * BLKSIZE;
+
+	if (s < sizeof(struct sendstruct))
+		s += BLKSIZE;
+
+	r = posix_memalign(&buff, BLKSIZE, sizeof(struct sendstruct));
 	if (r != 0) {
 		halog(LOG_ERR, "write_dio() posix_memalign failed");
 		return 1;
 	}
-	memcpy(buff, &to_write, sizeof (struct sendstruct));
+	memcpy(buff, &to_write, sizeof(struct sendstruct));
 	lseek(fd, (where * BLKSIZE), SEEK_SET);
-	r = write(fd, buff, BLKSIZE);
-	if (r != BLKSIZE) {
-		halog(LOG_ERR, "write_dio() write failed");
+	r = write(fd, buff, s);
+	if (r != s) {
+		halog(LOG_ERR, "[write_dio] write failed: wrote %d bytes out of %d", r, s);
+		free(buff);
 		return 1;
 	}
+	halog(LOG_DEBUG, "[write_dio] successfully wrote sendstruct of %d bytes in a %d bytes chunk",
+	      sizeof(struct sendstruct), s);
 	free(buff);
 	return 0;
 }

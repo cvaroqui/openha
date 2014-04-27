@@ -69,13 +69,15 @@ gchar *argv[];
 
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
+	signal(SIGUSR1, signal_usr1_callback_handler);
+	signal(SIGUSR2, signal_usr2_callback_handler);
 
 	if (argc != 4) {
 		fprintf(stderr, "Usage: heartc_dio [device] offset timeout \n");
 		exit(-1);
 	}
-	daemonize("heartc_dio");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartc_dio");
+	daemonize("heartc_dio");
 
 	strcpy(device, argv[1]);
 	address = atoi(argv[2]);
@@ -189,7 +191,7 @@ sighup()
 {
 	to_recV.up = FALSE;
 	to_recV.elapsed = Elapsed();
-	memcpy(shm, &to_recV, sizeof (to_recV));
+	memcpy(shm, &to_recV, sizeof(to_recV));
 	halog(LOG_WARNING, "peer on %s  down !", ADDR);
 	flag = 1;
 }
@@ -199,20 +201,27 @@ read_dio(gint fd, gint where)
 {
 	void *buff;
 	int r;
-	r = posix_memalign(&buff, BLKSIZE, BLKSIZE);
+	size_t s = sizeof(struct sendstruct) / BLKSIZE * BLKSIZE;
+
+	if (s < sizeof(struct sendstruct))
+		s += BLKSIZE;
+
+	r = posix_memalign(&buff, BLKSIZE, s);
 	if (r != 0) {
-		halog(LOG_WARNING, "heartc_dio() posix_memalign error");
+		halog(LOG_WARNING, "[read_dio] posix_memalign error");
 		return 1;
 	}
-	memset(buff, 0, BLKSIZE);
+	memset(buff, 0, sizeof(struct sendstruct));
 	lseek(fd, (BLKSIZE * where), SEEK_SET);
-	r = read(fd, buff, BLKSIZE);
-	if (r != BLKSIZE) {
-		halog(LOG_WARNING, "heartc_dio() read error");
+	r = read(fd, buff, s);
+	if (r != s) {
+		halog(LOG_WARNING, "[read_dio] read error. read %d bytes out of %d", r, s);
+		free(buff);
 		return 1;
 	}
-	memcpy(&to_recV, buff, sizeof (struct sendstruct));
+	memcpy(&to_recV, buff, sizeof(struct sendstruct));
 	free(buff);
+	halog(LOG_DEBUG, "successfully read %d bytes in a %d bytes chunk", sizeof(struct sendstruct), r);
 	return 0;
 }
 
