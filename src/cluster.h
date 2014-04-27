@@ -164,5 +164,6 @@ GList * get_liste_generic(FILE *, guint);
 int halog(int prio, const char * fmt, ...);
 gint get_node_service_status(struct sendstruct *, gchar *, guint);
 gint get_node_status(struct sendstruct *);
+gint create_state_tree(gchar *, gchar *, gchar *);
 
 #endif /* CLUSTER_H */

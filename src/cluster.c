@@ -624,6 +624,8 @@ get_status(GList * liste, gchar * node, gchar * service)
 			continue;
 		}
 		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ, service, node);
+		if (create_state_tree(service, node, NULL) != 0)
+			continue;
 		fds = fopen(fpath, "r");
 		if (fds == NULL) {
 			halog(LOG_ERR, "unable to open read-only %s", fpath);
@@ -755,6 +757,76 @@ service_mod(gchar * name)
 }
 
 gint
+create_file(gchar * name, gchar * node)
+{
+	halog(LOG_DEBUG, "[create_file] enter");
+	gchar fpath[MAX_PATH_SIZE];
+	struct stat buf;
+	FILE *fds;
+	gchar to_copy[2];
+
+	// When a service is created, its initial state is FROZEN_STOP
+	snprintf(to_copy, 2, "%i\n", STATE_FROZEN_STOP);
+
+	if (getenv("EZ") == NULL) {
+		fprintf(stderr, "Variable $EZ not defined.\n");
+		return -1;
+	}
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
+		 getenv("EZ"), name, node);
+
+	if (stat(fpath, &buf) == 0)
+		return 0;
+
+	fds = fopen(fpath, "w");
+	if (fds == NULL) {
+		halog(LOG_ERR, "Unable to create file %s: %s", fpath, strerror(errno));
+		return -1;
+	}
+	fwrite(to_copy, 2, 1, fds);
+	fclose(fds);
+	halog(LOG_INFO, "State file %s created with initial state FROZEN_STOP", fpath);
+	return 0;
+}
+
+gint
+create_dir(gchar * name)
+{
+	halog(LOG_DEBUG, "[create_dir] enter");
+	gchar fpath[MAX_PATH_SIZE];
+	struct stat buf;
+
+	if (getenv("EZ") == NULL) {
+		halog(LOG_ERR, "Variable $EZ not defined");
+		return -1;
+	}
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s", getenv("EZ"), name);
+
+	if (stat(fpath, &buf) == 0)
+		return 0;
+
+	if (mkdir(fpath, 0744) != 0) {
+		halog(LOG_ERR, "Create directory %s failed: %s", fpath, strerror(errno));
+		return -1;
+	}
+
+	halog(LOG_INFO, "Directory %s created", fpath);
+	return 0;
+}
+
+gint
+create_state_tree(gchar * name, gchar * primary, gchar * secondary)
+{
+	if (create_dir(name) != 0)
+		return 1;
+	if (create_file(name, primary) != 0)
+		return 1;
+	if (create_file(name, secondary) != 0)
+		return 1;
+	return 0;
+}
+
+gint
 service_add(gchar * name, gchar * startup_script,
 	    gchar * primary, gchar * secondary,
 	    gchar * check_script, GHashTable * HT)
@@ -856,9 +928,8 @@ service_add(gchar * name, gchar * startup_script,
 	fwrite("\n", 1, 1, EZ_SERVICES);
 	fclose(EZ_SERVICES);
 
-	create_dir(name);
-	create_file(name, primary);
-	create_file(name, secondary);
+	if (create_state_tree(name, primary, secondary) != 0)
+		return 1;
 
 	return 0;
 }
@@ -871,75 +942,6 @@ rm_file(gchar * name)
 		perror("Error:");
 		return -1;
 	}
-	return 0;
-}
-
-gint
-create_file(gchar * name, gchar * node)
-{
-	halog(LOG_DEBUG, "[create_file] enter");
-	gchar *O, *env;
-	struct stat buf;
-	FILE *F;
-	gchar to_copy[2];
-
-	O = g_malloc0(256);
-	env = g_malloc0(256);
-
-	// When a service is created, its initial state is FROZEN_STOP
-	snprintf(to_copy, 2, "%i\n", STATE_FROZEN_STOP);
-
-	env = getenv("EZ");
-	strcat(O, env);
-
-	if (O == NULL) {
-		fprintf(stderr, "Variable $EZ not defined.\n");
-		return -1;
-	}
-	strcat(O, "/services/");
-	strcat(O, name);
-	strcat(O, "/");
-
-	if (stat(O, &buf) == 0) {
-		strcat(O, "STATE.");
-		strcat(O, node);
-		if ((F = fopen(O, "w")) == NULL) {
-			perror("Unable to create file:");
-			return -1;
-		}
-		fwrite(to_copy, 2, 1, F);
-		fclose(F);
-		return 0;
-	} else
-		return -1;
-}
-
-gint
-create_dir(gchar * name)
-{
-	halog(LOG_DEBUG, "[create_dir] enter");
-	gchar *File, *env;
-	struct stat buf;
-
-	env = g_malloc0(256);
-	File = g_malloc0(256);
-	env = getenv("EZ");
-	strcat(File, env);
-	if (File == NULL) {
-		fprintf(stderr, "Variable $EZ not defined.\n");
-		return -1;
-	}
-	strcat(File, "/services/");
-	strcat(File, name);
-	if (stat(File, &buf) != 0) {
-		if (mkdir(File, 0744) != 0) {
-			perror("Make of services directory failed:");
-			g_free(File);
-			return -1;
-		}
-	}
-
-	printf("Make of services directory done\n");
 	return 0;
 }
 
