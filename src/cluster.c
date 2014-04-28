@@ -765,6 +765,9 @@ create_file(gchar * name, gchar * node)
 	FILE *fds;
 	gchar to_copy[2];
 
+	if (node == NULL)
+		return 0;
+
 	// When a service is created, its initial state is FROZEN_STOP
 	snprintf(to_copy, 2, "%i\n", STATE_FROZEN_STOP);
 
