@@ -44,7 +44,6 @@ gint read_dio(gint, gint);
 gchar *S, *shm;
 gint address, flag = 0, shmid;
 struct sendstruct to_recV;
-struct stat *f_stat;
 gboolean FIRST = TRUE;
 gchar ADDR[64];
 
@@ -58,14 +57,12 @@ gchar *argv[];
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
-	gchar *FILE_KEY, *device;
+	gchar *FILE_KEY;
 	gint address;
 	long old_elapsed = 0;
 	gchar **NEW_KEY;
 	gchar *n;
 	int r;
-
-	device = g_malloc0(128);
 
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
@@ -79,7 +76,6 @@ gchar *argv[];
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartc_dio");
 	daemonize("heartc_dio");
 
-	strcpy(device, argv[1]);
 	address = atoi(argv[2]);
 	strncpy(ADDR, argv[1], 64);
 
@@ -87,8 +83,6 @@ gchar *argv[];
 		halog(LOG_ERR, "timeout must be > 1 second");
 		exit(-1);
 	}
-
-	f_stat = malloc(sizeof (stat));
 
 	if (getenv("EZ_LOG") == NULL) {
 		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
