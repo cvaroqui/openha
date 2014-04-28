@@ -41,7 +41,6 @@ gint read_raw(FILE *, gint);
 gchar *S, *shm;
 gint address, flag = 0, shmid;
 struct sendstruct to_recV;
-struct stat *f_stat;
 gboolean FIRST = TRUE;
 gchar ADDR[64];
 
@@ -55,7 +54,7 @@ gchar *argv[];
 	key_t key;
 	gchar *SHM_KEY;
 	gboolean was_down = TRUE;
-	gchar *FILE_KEY, *raw_device;
+	gchar *FILE_KEY;
 	gint address;
 	FILE *File;
 	long old_elapsed = 0;
@@ -63,7 +62,6 @@ gchar *argv[];
 	gchar *n;
 	int r;
 
-	raw_device = g_malloc0(128);
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
         signal(SIGUSR1, signal_usr1_callback_handler);
@@ -77,7 +75,6 @@ gchar *argv[];
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartc_raw");
 	daemonize("heartc_raw");
 
-	strcpy(raw_device, argv[1]);
 	address = atoi(argv[2]);
 	strncpy(ADDR, argv[1], 64);
 
@@ -85,8 +82,6 @@ gchar *argv[];
 		halog(LOG_ERR, "timeout must be > 1 second");
 		exit(-1);
 	}
-
-	f_stat = malloc(sizeof (stat));
 
 	if (getenv("EZ_LOG") == NULL) {
 		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
