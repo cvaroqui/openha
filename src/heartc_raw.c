@@ -32,9 +32,8 @@
 #include <cluster.h>
 #include <sockhelp.h>
 
-#define BUFSIZE   sizeof(struct sendstruct)*MAX_SERVICES
-#define TTL_VALUE 32
-#define UNKNOWN '8'
+#define BUFSIZE   sizeof(struct sendstruct)
+#define BLKSIZE 512
 
 void sighup();
 void sigterm();
@@ -67,14 +66,16 @@ gchar *argv[];
 	raw_device = g_malloc0(128);
 	SHM_KEY = malloc(256);
 	signal(SIGTERM, sigterm);
+        signal(SIGUSR1, signal_usr1_callback_handler);
+        signal(SIGUSR2, signal_usr2_callback_handler);
 
 	if (argc != 4) {
 		fprintf(stderr,
 			"Usage: heartc_raw [raw device] address timeout \n");
 		exit(-1);
 	}
-	daemonize("heartc_raw");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartc_raw");
+	daemonize("heartc_raw");
 
 	strcpy(raw_device, argv[1]);
 	address = atoi(argv[2]);
@@ -132,6 +133,7 @@ gchar *argv[];
 	File = fopen(argv[1], "r");
 	if (File == NULL) {
 		halog(LOG_ERR, "unable to open raw device");
+		printf("Error : unable to open raw device. Exiting.\n");
 		exit(-1);
 	}
 	to_recV.up = FALSE;
@@ -193,18 +195,19 @@ sighup()
 	flag = 1;
 }
 
+
 gint
 read_raw(FILE * f, gint where)
 {
-	int n;
-	fseek(f, (512 * where), SEEK_SET);
-	n = fread(&to_recV, sizeof (to_recV), 1, f);
-	fflush(f);
-	if (n != 1) {
-		halog(LOG_ERR, "read_raw() error reading 1 element");
-		return 1;
-	}
-	return 0;
+        int n;
+        fseek(f, (BLKSIZE * where), SEEK_SET);
+        n = fread(&to_recV, sizeof (to_recV), 1, f);
+        fflush(f);
+        if (n != 1) {
+                halog(LOG_ERR, "read_raw() error reading 1 element");
+                return 1;
+        }
+        return 0;
 }
 
 void

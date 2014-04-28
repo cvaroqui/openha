@@ -30,8 +30,7 @@
 #include <cluster.h>
 #include <sockhelp.h>
 
-#define BUFSIZE   1024
-#define TTL_VALUE 8
+#define BUFSIZE   sizeof(struct sendstruct)
 #define BLKSIZE 512
 
 struct sendstruct to_send;
@@ -61,6 +60,8 @@ char *argv[];
 		exit(-1);
 	}
 	signal(SIGTERM, sigterm);
+        signal(SIGUSR1, signal_usr1_callback_handler);
+        signal(SIGUSR2, signal_usr2_callback_handler);
 	daemonize("heartd_raw");
 	snprintf(progname, MAX_PROGNAME_SIZE, "heartd_raw");
 
@@ -121,14 +122,19 @@ char *argv[];
 gint
 write_raw(FILE * f, struct sendstruct to_write, gchar * device, gint where)
 {
-	gchar *to_read;
-
-	to_read = g_malloc(BLKSIZE);
-	fseek(f, 0L, SEEK_SET);
-	fseek(f, (where * 512), SEEK_SET);
-	fwrite(&to_write, 512, 1, f);
-	g_free(to_read);
-	return 0;
+	size_t count;
+	size_t s = sizeof(struct sendstruct) / BLKSIZE * BLKSIZE;
+	if (s < sizeof(struct sendstruct))
+		s += BLKSIZE;
+        fseek(f, 0L, SEEK_SET);
+        fseek(f, (where * 512), SEEK_SET);
+        count = fwrite(&to_write, s, 1, f);
+	if (count != s) {
+	    halog(LOG_ERR, "[write_raw] write failed: %s", strerror(errno));
+	    return -1;
+	}
+	halog(LOG_DEBUG, "[write_raw] successfully wrote sendstruct of %d bytes in a %d bytes chunk", sizeof(struct sendstruct), s);
+        return 0;
 }
 
 void
