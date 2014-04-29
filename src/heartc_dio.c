@@ -36,7 +36,6 @@
 
 #define BUFSIZE   sizeof(struct sendstruct)*MAX_SERVICES
 #define TTL_VALUE 32
-#define BLKSIZE 512
 
 void sighup();
 void sigterm();

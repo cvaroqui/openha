@@ -32,7 +32,6 @@
 
 #define BUFSIZE   1024
 #define TTL_VALUE 8
-#define BLKSIZE 512
 
 struct sendstruct to_send;
 gint write_raw(FILE *, struct sendstruct, gchar *, gint);

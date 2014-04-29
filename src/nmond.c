@@ -248,6 +248,75 @@ get_segs(struct shmtab_struct * tab_shm)
 	return nb_seg;
 }
 
+gint
+simple_cmp(gconstpointer a, gconstpointer b)
+{
+	gint _a = atoi(a);
+	gint _b = atoi(b);
+	if (_a < _b)
+		return -1;
+	else if (_a > _b)
+		return 1;
+	else
+		return 0;
+}
+
+int
+check_offset_overlap(void)
+{
+	int i, j, err = 0;
+	GHashTable * devices = g_hash_table_new(g_str_hash, g_str_equal);
+	int s = sizeof(struct sendstruct);
+	gchar * device;
+	gchar * offset;
+	GList * offsets;
+	GList * device_list;
+	gpointer p;
+	gint prev = -1;
+	gint current;
+
+	for (i = 0; i < list_size; i++) {
+		if (strcmp("net", g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1)) == 0)
+			continue;
+		device = g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 2);
+		offset = g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 3);
+		p = g_hash_table_lookup(devices, device);
+		if (p == NULL) {
+			offsets = NULL;
+			offsets = g_list_append(offsets, offset);
+			g_hash_table_insert(devices, device, offsets);
+		} else {
+			offsets = (GList *) p;
+			offsets = g_list_insert_sorted(offsets, offset, simple_cmp);
+		}
+	}
+	device_list = g_hash_table_get_keys(devices);
+	for (i = 0; i < g_list_length(device_list); i++) {
+		device = (gchar *) g_list_nth_data(device_list, i);
+		offsets = g_hash_table_lookup(devices, device);
+		for (j = 0; j < g_list_length(offsets); j++) {
+			offset = (gchar *) g_list_nth_data(offsets, j);
+			current = atoi(offset) * BLKSIZE;
+			printf("prev=%d prev+s=%d current=%d\n", prev, prev+s, current);
+			if (prev >= 0 && current > 0 && prev + s > current) {
+				halog(LOG_ERR, "disk heartbeat offset overlap (min spacing must be >%d bytes)", s);
+				err += 1;
+			}
+			prev = current;
+			printf("err=%d\n", err);
+		}
+	}
+	return err;
+}
+
+int
+sanity_checks(void)
+{
+	int r = 0;
+	r += check_offset_overlap();
+	return r;
+}
+
 int
 main(argc, argv)
 int argc;
@@ -289,6 +358,8 @@ char *argv[];
 
 	init_var();
 	init();
+	if (sanity_checks() > 0)
+		exit(-1);
 	halog(LOG_DEBUG, "[main] sizeof service[%d] srvstruct[%d] sendstruct[%d] nodestruct[%d] shmtab_struct[%d]",
 				sizeof(struct service),
 				sizeof(struct srvstruct),
