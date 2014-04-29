@@ -33,6 +33,7 @@
 #define 	UP		1
 #define 	DOWN	0
 
+gboolean break_nmon_loop = FALSE;
 void copy_tab_send(struct sendstruct *, struct sendstruct *, guint);
 void copy_tab_node(struct nodestruct *, struct nodestruct *, guint);
 void *MakeDecision(void *);
@@ -391,10 +392,15 @@ char *argv[];
 		rc = nmon_loop(nb_seg, tab_shm);
 		if (rc > 0)
 			return rc;
+		if (break_nmon_loop)
+			break;
 		halog(LOG_DEBUG, "[main] sleeping 2 seconds");
 		alarm(2);
 		pause();
 	}
+	(void) shmctl(shmid, IPC_RMID, NULL);
+	drop_list(GlobalList);
+	drop_hash(GLOBAL_HT_SERV);
 	return 0;
 }
 
@@ -678,22 +684,7 @@ fill_seg(gint i, key_t key, gchar * nodename)
 void
 sigterm()
 {
-	gint i;
-
 	halog(LOG_INFO, "SIGTERM received, exiting gracefuly ...");
-	if (tinfo) {
-		for (i = 0; i < g_hash_table_size(HT_SERV); i++) {
-			if (tinfo[i].thread_id < 0)
-				continue;
-			halog(LOG_DEBUG, "[main] joining thread [%d]", i);
-			pthread_join(tinfo[i].thread_id, NULL);
-			tinfo[i].thread_id = -1;
-		}
-		free(tinfo);
-	}
-	(void) shmctl(shmid, IPC_RMID, NULL);
-	drop_list(GlobalList);
-	drop_hash(GLOBAL_HT_SERV);
-	exit(0);
+	break_nmon_loop = TRUE;
 }
 
