@@ -316,142 +316,113 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	return TRUE;
 }
 
+
 gboolean
-hb_status()
+_hb_status(GList * list_heart, gint i)
 {
-	gchar *FILE_KEY = NULL, *node, *date, *interface, *HB_KEY = NULL;
-	gchar *status, *shm, *hb_shm;
-	gint i, shmid, hb_shmid, fd;
-	GList *list_heart;
-	FILE *File;
-	key_t key, hb_key;
-	struct sendstruct tabinfo[MAX_HEARTBEAT];
+	gchar * hb_type;
+	gchar * dev;
+	gchar * addr_or_offset;
+	gchar * port;
+	gchar interface[MAX_PATH_SIZE];
+	gchar key_path[MAX_PATH_SIZE];
+	key_t hb_key;
+	gint fd;
+	gint hb_shmid;
+	gchar *hb_shm;
 	struct sendstruct to_ctrl;
 	struct tm TestTime;
 	long tmp_time;
-
 	gchar *fmt = "%b %d %H:%M:%S", buff[256];
 
-	if ((File = fopen(getenv("EZ_MONITOR"), "r")) == NULL) {
-		//printf("Warning: Nothing to monitor: unable to open $EZ_MONITOR\n");
+	hb_type = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1);
+	dev = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 2);
+	addr_or_offset = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 3);
+	port = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 4);
+
+	if (strcmp(hb_type, "net") == 0) {
+		snprintf(interface, MAX_PATH_SIZE, "net %s:%s:%s",
+			 dev, addr_or_offset, port);
+		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s-%s-%s.key",
+			 getenv("EZ_LOG"), addr_or_offset, port, dev);
+	} else {
+		snprintf(interface, MAX_PATH_SIZE, "%s %s:%s",
+			 hb_type, dev, addr_or_offset);
+		gchar **v;
+		gchar *n;
+		v = g_strsplit(dev, "/", 10);
+		n = g_strjoinv(".", v);
+		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s.%s.key",
+			 getenv("EZ_LOG"), n, addr_or_offset);
+		g_free(n);
+		g_strfreev(v);
+	}
+
+	fd = open(key_path, O_RDWR | O_CREAT, 00644);
+	if (fd == -1) {
+		fprintf(stderr, "unable to open SHMFILE %s.\n", key_path);
+		return FALSE;
+	}
+	hb_key = ftok(key_path, 0);
+	hb_shmid = shmget(hb_key, SHMSZ, IPC_CREAT | 0444);
+	if (hb_shmid < 0) {
+		fprintf(stderr, "shmget failed\n");
+		return FALSE;
+	}
+	hb_shm = shmat(hb_shmid, NULL, 0);
+	if (hb_shm == (char *) -1) {
+		fprintf(stderr, "shmat failed\n");
+		return FALSE;
+	}
+	memcpy(&to_ctrl, hb_shm, sizeof (to_ctrl));
+	if (to_ctrl.up == TRUE) {
+		tmp_time = (guint32) to_ctrl.elapsed;
+		memcpy(&TestTime, localtime(&tmp_time), sizeof(TestTime));
+		strftime(buff, sizeof(buff), fmt, &TestTime);
+		printf("%s pid %d status UP, updated at %s\n",
+			interface, (int) to_ctrl.pid, buff);
+	} else {
+		printf("%s status DOWN\n", interface);
+	}
+	return TRUE;
+}
+
+gboolean
+hb_status()
+{
+	gchar fpath[MAX_PATH_SIZE];
+	gchar *shm;
+	gint i, shmid;
+	GList *list_heart;
+	FILE * fds;
+	key_t key;
+	struct sendstruct tabinfo[MAX_HEARTBEAT];
+
+	fds = fopen(getenv("EZ_MONITOR"), "r");
+	if (fds == NULL) {
+		fprintf(stderr, "unable to open %s\n", getenv("EZ_MONITOR"));
 		return TRUE;
 	}
-	FILE_KEY = g_strconcat(getenv("EZ_LOG"), "/proc/nmond.key", NULL);
-	//FILE_KEY = g_strconcat("/usr/local/cluster/log/proc/nmond.key",NULL);
-	key = ftok(FILE_KEY, 0);
-	g_free(FILE_KEY);
+	snprintf(fpath, MAX_PATH_SIZE, "%s/proc/nmond.key", getenv("EZ_LOG"));
+	key = ftok(fpath, 0);
 
-	if ((shmid =
-	     shmget(key, sizeof (struct sendstruct) * MAX_HEARTBEAT,
-		    0444)) == -1) {
-		perror("shmget failed for nmond segment");
-		//exit(-1);
+	shmid = shmget(key, sizeof (struct sendstruct) * MAX_HEARTBEAT, 0444);
+	if (shmid == -1) {
+		fprintf(stderr, "shmget failed for nmond segment\n");
 		return FALSE;
 	}
-	if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-		perror("shmat failed for nmond segment");
-		//exit(-1);
+	shm = shmat(shmid, NULL, 0);
+	if (shm == (char *) -1) {
+		fprintf(stderr, "shmat failed for nmond segment\n");
 		return FALSE;
 	}
-	memcpy(tabinfo, shm, sizeof (tabinfo));
-	list_heart = get_liste_generic(File, LIST_NB_ITEM);
+	memcpy(tabinfo, shm, sizeof(tabinfo));
+	list_heart = get_liste_generic(fds, LIST_NB_ITEM);
+	fclose(fds);
+
 	for (i = 0; i < (g_list_length(list_heart) / 5); i++) {
-		node = g_malloc0(MAX_NODENAME_SIZE);
-		status = g_malloc0(8);
-		date = g_malloc0(32);
-		node = strncpy(node, g_list_nth_data(list_heart, (i * 5)), 80);
-		if (strcmp
-		    (g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1),
-		     "net") == 0) {
-			interface =
-			    g_strconcat(g_list_nth_data
-					(list_heart, (i * 5) + 2), ":",
-					g_list_nth_data(list_heart,
-							(i * 5) + 3), ":",
-					g_list_nth_data(list_heart,
-							(i * 5) + 4), NULL);
-			HB_KEY =
-			    g_strconcat(getenv("EZ_LOG"), "/proc/",
-					g_list_nth_data(list_heart,
-							(i * 5) + 3), "-",
-					g_list_nth_data(list_heart,
-							(i * 5) + 4), "-",
-					g_list_nth_data(list_heart,
-							(i * 5) + 2), ".key",
-					NULL);
-		} else {
-			gchar **NEW_KEY;
-			gchar *m, *n;
-			HB_KEY = g_malloc0(256);
-
-			interface =
-			    g_strconcat(g_list_nth_data
-					(list_heart, (i * 5) + 2), ":",
-					g_list_nth_data(list_heart,
-							(i * 5) + 3), NULL);
-			NEW_KEY =
-			    g_strsplit(g_list_nth_data
-				       (list_heart, (i * LIST_NB_ITEM) + 2),
-				       "/", 10);
-			n = g_strjoinv(".", NEW_KEY), m =
-			    g_strconcat(getenv("EZ_LOG"), "/proc/", n, ".",
-					g_list_nth_data(list_heart,
-							(i * LIST_NB_ITEM) + 3),
-					".key", NULL);
-			strcpy(HB_KEY, m);
-			g_free(m);
-			g_free(n);
-			g_strfreev(NEW_KEY);
-		}
-
-		if ((fd = open(HB_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
-			fprintf(stderr, "Error: unable to open SHMFILE %s.\n",
-				HB_KEY);
-			g_free(interface);
-			g_free(node);
-			g_free(status);
-			g_free(date);
-			g_free(HB_KEY);
+		if (! _hb_status(list_heart, i))
 			return FALSE;
-		}
-		hb_key = ftok(HB_KEY, 0);
-		if ((hb_shmid = shmget(hb_key, SHMSZ, IPC_CREAT | 0444)) < 0) {
-			g_free(interface);
-			g_free(node);
-			g_free(status);
-			g_free(date);
-			g_free(HB_KEY);
-			fprintf(stderr, "shmget failed\n");
-			return FALSE;
-		}
-		if ((hb_shm = shmat(hb_shmid, NULL, 0)) == (char *) -1) {
-			g_free(interface);
-			g_free(node);
-			g_free(status);
-			g_free(date);
-			g_free(HB_KEY);
-			fprintf(stderr, "shmat failed\n");
-			return FALSE;
-		}
-		memcpy(&to_ctrl, hb_shm, sizeof (to_ctrl));
-		if (to_ctrl.up == TRUE) {
-			strcpy(status, "UP");
-			tmp_time = (guint32) to_ctrl.elapsed;
-			memcpy(&TestTime, localtime(&tmp_time),
-			       sizeof (TestTime));
-			strftime(buff, sizeof (buff), fmt, &TestTime);
-			printf
-			    ("interface %s pid %d status %s, updated at %s \n",
-			     interface, (int) to_ctrl.pid, status, buff);
-		} else {
-			strcpy(status, "DOWN");
-			printf("interface %s status %s \n", interface, status);
-		}
-		g_free(interface);
-		g_free(node);
-		g_free(status);
-		g_free(date);
-		g_free(HB_KEY);
 	}
 	return TRUE;
 }
