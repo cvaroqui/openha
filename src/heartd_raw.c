@@ -31,7 +31,7 @@
 #include <sockhelp.h>
 
 #define BUFSIZE   sizeof(struct sendstruct)
-#define BLKSIZE 512
+#define TTL_VALUE 8
 
 struct sendstruct to_send;
 gint write_raw(FILE *, struct sendstruct, gchar *, gint);

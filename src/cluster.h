@@ -63,6 +63,7 @@
 #define LIST_NB_ITEM 5	/* nb colonne dans fichier services / nb item dans liste */
 #define SHMSZ sizeof(struct sendstruct) * MAX_SERVICES
 #define MAX_LOG_MSG_SIZE 1024
+#define BLKSIZE 512
 
 gchar *EZ;
 gchar *EZ_BIN;
