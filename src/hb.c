@@ -320,6 +320,8 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 gboolean
 _hb_status(GList * list_heart, gint i)
 {
+	gchar * node;
+	gchar * hb_role;
 	gchar * hb_type;
 	gchar * dev;
 	gchar * addr_or_offset;
@@ -335,19 +337,24 @@ _hb_status(GList * list_heart, gint i)
 	long tmp_time;
 	gchar *fmt = "%b %d %H:%M:%S", buff[256];
 
+	node = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM));
 	hb_type = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1);
 	dev = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 2);
 	addr_or_offset = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 3);
 	port = (gchar *) g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 4);
 
+	if (strcmp(nodename, node) == 0) {
+		hb_role = "sender";
+	} else {
+		hb_role = "listener";
+	}
+	snprintf(interface, MAX_PATH_SIZE, "%s %s %s:%s",
+		 hb_type, hb_role, dev, addr_or_offset);
+
 	if (strcmp(hb_type, "net") == 0) {
-		snprintf(interface, MAX_PATH_SIZE, "net %s:%s:%s",
-			 dev, addr_or_offset, port);
 		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s-%s-%s.key",
 			 getenv("EZ_LOG"), addr_or_offset, port, dev);
 	} else {
-		snprintf(interface, MAX_PATH_SIZE, "%s %s:%s",
-			 hb_type, dev, addr_or_offset);
 		gchar **v;
 		gchar *n;
 		v = g_strsplit(dev, "/", 10);
@@ -397,6 +404,8 @@ hb_status()
 	FILE * fds;
 	key_t key;
 	struct sendstruct tabinfo[MAX_HEARTBEAT];
+
+	get_nodename();
 
 	fds = fopen(getenv("EZ_MONITOR"), "r");
 	if (fds == NULL) {
