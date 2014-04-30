@@ -271,7 +271,7 @@ check_offset_overlap(void)
 	gchar * device;
 	gchar * offset;
 	GList * offsets;
-	GList * device_list;
+	GList * device_list = NULL;
 	gpointer p;
 	gint prev = -1;
 	gint current;
@@ -286,12 +286,12 @@ check_offset_overlap(void)
 			offsets = NULL;
 			offsets = g_list_append(offsets, offset);
 			g_hash_table_insert(devices, device, offsets);
+			device_list = g_list_append(device_list, device);
 		} else {
 			offsets = (GList *) p;
 			offsets = g_list_insert_sorted(offsets, offset, simple_cmp);
 		}
 	}
-	device_list = g_hash_table_get_keys(devices);
 	for (i = 0; i < g_list_length(device_list); i++) {
 		device = (gchar *) g_list_nth_data(device_list, i);
 		offsets = g_hash_table_lookup(devices, device);
