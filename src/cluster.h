@@ -166,5 +166,6 @@ int halog(int prio, const char * fmt, ...);
 gint get_node_service_status(struct sendstruct *, gchar *, guint);
 gint get_node_status(struct sendstruct *);
 gint create_state_tree(gchar *, gchar *, gchar *);
-
+gchar * get_shm_segment(gchar *);
+gchar * get_shm_nmon_ro_segment();
 #endif /* CLUSTER_H */

@@ -51,6 +51,7 @@ char *argv[];
 	gint state, ostate, pstate, sstate, ret;
 	gchar *service, *primary, *secondary, *action;
 	gpointer pointer;
+	gchar * shm;
 
 	//FILE *EZ_SERVICES;
 	gint i, list_size, svccount;
@@ -61,13 +62,17 @@ char *argv[];
 		exit_usage(argv[0]);
 	}
 
+	snprintf(progname, MAX_PROGNAME_SIZE, "service");
 	init_var();
+
+	shm = get_shm_nmon_ro_segment();
+	if (shm == NULL)
+		return 1;
+
 	get_nodename();
 	get_services_list();
 	list_size = g_list_length(GlobalList);
 	svccount = list_size / LIST_NB_ITEM;
-
-	snprintf(progname, MAX_PROGNAME_SIZE, "service");
 
 	if (GlobalList == NULL) {
 		//fprintf(stderr,"%s: no service defined, no action to take.\n",argv[0]);

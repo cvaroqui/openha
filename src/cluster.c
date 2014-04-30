@@ -1324,11 +1324,15 @@ halog(int prio, const char * fmt, ...)
 	vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
 	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
 	syslog(prio, "%s", buff);
-	if (isatty(0)
-	    && strlen(progname) >= 7
-	    && strncmp(progname, "service", 7) == 0
-	    && prio < LOG_DEBUG)
-		printf("%s\n", buff);
+	if (isatty(0) && (
+	    (strlen(progname) == 7 && strncmp(progname, "service", 7) == 0)
+	    || (strlen(progname) == 2 && strncmp(progname, "hb", 2) == 0)
+            ) && prio < LOG_DEBUG) {
+		if (prio <= LOG_ERR)
+			fprintf(stderr, "%s\n", buff);
+		else
+			printf("%s\n", buff);
+	}
 	return 0;
 }
 
@@ -1403,3 +1407,54 @@ get_node_status(struct sendstruct * to_send)
        return 0;
 }
 
+gchar *
+get_shm_segment(gchar * key_path)
+{
+	key_t key;
+	gint fd;
+	gint shmid;
+	gchar *shm;
+
+	fd = open(key_path, O_RDWR | O_CREAT, 00644);
+	if (fd == -1) {
+		halog(LOG_ERR, "unable to open SHMFILE %s", key_path);
+		return NULL;
+	}
+	close(fd);
+	key = ftok(key_path, 0);
+	shmid = shmget(key, SHMSZ, IPC_CREAT | 0444);
+	if (shmid < 0) {
+		halog(LOG_ERR, "shmget failed");
+		return NULL;
+	}
+	shm = shmat(shmid, NULL, 0);
+	if (shm == (char *) -1) {
+		halog(LOG_ERR, "shmat failed");
+		return NULL;
+	}
+	return shm;
+}
+
+gchar *
+get_shm_nmon_ro_segment()
+{
+	key_t key;
+	gint shmid;
+	gchar *shm;
+	gchar fpath[MAX_PATH_SIZE];
+
+	snprintf(fpath, MAX_PATH_SIZE, "%s/proc/nmond.key", getenv("EZ_LOG"));
+	key = ftok(fpath, 0);
+
+	shmid = shmget(key, sizeof(struct sendstruct) * MAX_HEARTBEAT, 0444);
+	if (shmid == -1) {
+		halog(LOG_ERR, "shmget failed for nmond segment");
+		return NULL;
+	}
+	shm = shmat(shmid, NULL, 0);
+	if (shm == (char *) -1) {
+		halog(LOG_ERR, "shmat failed for nmond segment");
+		return NULL;
+	}
+	return shm;
+}

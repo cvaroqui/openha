@@ -328,9 +328,6 @@ _hb_status(GList * list_heart, gint i)
 	gchar * port;
 	gchar interface[MAX_PATH_SIZE];
 	gchar key_path[MAX_PATH_SIZE];
-	key_t hb_key;
-	gint fd;
-	gint hb_shmid;
 	gchar *hb_shm;
 	struct sendstruct to_ctrl;
 	struct tm TestTime;
@@ -365,23 +362,11 @@ _hb_status(GList * list_heart, gint i)
 		g_strfreev(v);
 	}
 
-	fd = open(key_path, O_RDWR | O_CREAT, 00644);
-	if (fd == -1) {
-		fprintf(stderr, "unable to open SHMFILE %s.\n", key_path);
+	hb_shm = get_shm_segment(key_path);
+	if (hb_shm == NULL)
 		return FALSE;
-	}
-	hb_key = ftok(key_path, 0);
-	hb_shmid = shmget(hb_key, SHMSZ, IPC_CREAT | 0444);
-	if (hb_shmid < 0) {
-		fprintf(stderr, "shmget failed\n");
-		return FALSE;
-	}
-	hb_shm = shmat(hb_shmid, NULL, 0);
-	if (hb_shm == (char *) -1) {
-		fprintf(stderr, "shmat failed\n");
-		return FALSE;
-	}
-	memcpy(&to_ctrl, hb_shm, sizeof (to_ctrl));
+
+	memcpy(&to_ctrl, hb_shm, sizeof(to_ctrl));
 	if (to_ctrl.up == TRUE) {
 		tmp_time = (guint32) to_ctrl.elapsed;
 		memcpy(&TestTime, localtime(&tmp_time), sizeof(TestTime));
@@ -397,34 +382,24 @@ _hb_status(GList * list_heart, gint i)
 gboolean
 hb_status()
 {
-	gchar fpath[MAX_PATH_SIZE];
 	gchar *shm;
-	gint i, shmid;
-	GList *list_heart;
 	FILE * fds;
-	key_t key;
+	gint i;
+	GList *list_heart;
 	struct sendstruct tabinfo[MAX_HEARTBEAT];
 
 	get_nodename();
 
 	fds = fopen(getenv("EZ_MONITOR"), "r");
 	if (fds == NULL) {
-		fprintf(stderr, "unable to open %s\n", getenv("EZ_MONITOR"));
+		halog(LOG_ERR, "unable to open %s", getenv("EZ_MONITOR"));
 		return TRUE;
 	}
-	snprintf(fpath, MAX_PATH_SIZE, "%s/proc/nmond.key", getenv("EZ_LOG"));
-	key = ftok(fpath, 0);
 
-	shmid = shmget(key, sizeof (struct sendstruct) * MAX_HEARTBEAT, 0444);
-	if (shmid == -1) {
-		fprintf(stderr, "shmget failed for nmond segment\n");
+	shm = get_shm_nmon_ro_segment();
+	if (shm == NULL)
 		return FALSE;
-	}
-	shm = shmat(shmid, NULL, 0);
-	if (shm == (char *) -1) {
-		fprintf(stderr, "shmat failed for nmond segment\n");
-		return FALSE;
-	}
+
 	memcpy(tabinfo, shm, sizeof(tabinfo));
 	list_heart = get_liste_generic(fds, LIST_NB_ITEM);
 	fclose(fds);
