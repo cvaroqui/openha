@@ -1241,15 +1241,14 @@ set_mcast_if(gint sockfd, gchar * ifname)
 	memset(&mreq, 0, sizeof (mreq));
 	rc = if_getaddr(ifname, &mreq);
 	if (rc == -1) {
-		//halog(LOG_ERR, "if_getaddr: failed. Bad interface name ?");
-		perror("set_mcast_if");
-		return (-1);
+		halog(LOG_ERR, "[set_mcast_if] if_getaddr failed: %s", strerror(errno));
+		return -1;
 	}
 	i = setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_IF, (void *) &mreq,
 		       sizeof (mreq));
 	if (i < 0) {
-		halog(LOG_ERR, "heartc", "setsockopt\n");
-		return (-1);
+		halog(LOG_ERR, "[set_mcast_if] setsockopt returned %d", i);
+		return -1;
 	}
 	return i;
 }
