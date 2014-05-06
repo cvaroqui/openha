@@ -129,7 +129,7 @@ write_raw(FILE * f, struct sendstruct to_write, gchar * device, gint where)
         fseek(f, 0L, SEEK_SET);
         fseek(f, (where * 512), SEEK_SET);
         count = fwrite(&to_write, s, 1, f);
-	if (count != s) {
+	if (count != 1) {
 	    halog(LOG_ERR, "[write_raw] write failed: %s", strerror(errno));
 	    return -1;
 	}
