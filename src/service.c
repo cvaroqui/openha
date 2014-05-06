@@ -65,9 +65,11 @@ char *argv[];
 	snprintf(progname, MAX_PROGNAME_SIZE, "service");
 	init_var();
 
-	shm = get_shm_nmon_ro_segment();
-	if (shm == NULL)
-		return 1;
+	if (strncmp(argv[1], "-s", 2) == 0 || strncmp(argv[2], "-s", 2) == 0) {
+		shm = get_shm_nmon_ro_segment();
+		if (shm == NULL)
+			return 1;
+	}
 
 	get_nodename();
 	get_services_list();
