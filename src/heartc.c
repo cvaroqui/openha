@@ -183,6 +183,7 @@ gchar *argv[];
 	memcpy(shm, &to_recV, sizeof (to_recV));
 
 	while (TRUE) {
+		signal(SIGTERM, sigterm);
 		signal(SIGUSR1, signal_usr1_callback_handler);
 		signal(SIGUSR2, signal_usr2_callback_handler);
 		signal(SIGALRM, sighup);
