@@ -137,81 +137,80 @@ char *argv[];
 		service = argv[2];
 		action = argv[3];
 		pointer = g_hash_table_lookup(HT_SERV, (gchar *) service);
+		if (pointer == NULL) {
+			halog(LOG_ERR, "service %s not found", service);
+			exit(-1);
+		}
 		primary = ((struct srvstruct *) (pointer))->primary;
 		secondary = ((struct srvstruct *) (pointer))->secondary;
 		pstate = get_status(GlobalList, primary, service);
 		sstate = get_status(GlobalList, secondary, service);
 
-		if (pointer == NULL) {
-			printf("Error: service %s not found !\n", service);
-			exit(-1);
-		}
 		gchar *action_up;
 		action_up = g_ascii_strup(action, -1);
+		i = find_action(ACTION, action_up);
+		g_free(action_up);
 
-		if ((i = find_action(ACTION, action_up)) != -1) {
-			PRIMARY = is_primary(nodename, service);
-			SECONDARY = is_secondary(nodename, service);
-			if (PRIMARY) {
-				state = pstate;
-				ostate = sstate;
-			} else if (SECONDARY) {
-				state = sstate;
-				ostate = pstate;
-			} else {
-				printf("We are not Primary or secondary for service %s !\n", service);
-				g_free(action_up);
-				return -1;
-			}
-			g_free(action_up);
-
-			switch (i) {
-				//STOP
-			case 0:
-				//si on est STARTED|UNKNOWN 
-				return (change_status_stop
-					(state, ostate, service, HT_SERV));
-				break;
-
-				//START
-			case 1:
-				//si on est STOP|UNKNOWN et que l'autre est STOP|FROZEN_STOP|UNKOWN
-				return (change_status_start
-					(state, ostate, service, HT_SERV));
-				break;
-
-				//FREEZE_STOP
-			case 2:
-				return (change_status_freeze_stop
-					(state, ostate, service, HT_SERV));
-				break;
-
-				//FREEZE_START
-			case 3:
-				return (change_status_freeze_start
-					(state, ostate, service, HT_SERV));
-				break;
-
-				//UNFREEZE
-			case 4:
-				return (change_status_unfreeze
-					(state, service, HT_SERV));
-				break;
-				//FORCE_STOP
-			case 5:
-				return (change_status_force_stop
-					(state, ostate, service, HT_SERV));
-				break;
-				//FORCE_START
-			case 6:
-				return (change_status_force_start
-					(state, ostate, service, HT_SERV));
-				break;
-			}
-		} else {
-			printf("Error: action %s not found !\n", action_up);
-			g_free(action_up);
+		if (i == -1) {
+			halog(LOG_ERR, "action %s not found", action);
 			exit(-1);
+		}
+
+		PRIMARY = is_primary(nodename, service);
+		SECONDARY = is_secondary(nodename, service);
+		if (PRIMARY) {
+			state = pstate;
+			ostate = sstate;
+		} else if (SECONDARY) {
+			state = sstate;
+			ostate = pstate;
+		} else {
+			halog(LOG_ERR, "we are not primary nor secondary for service %s", service);
+			return -1;
+		}
+
+		switch (i) {
+		//STOP
+		case 0:
+			//si on est STARTED|UNKNOWN 
+			return (change_status_stop
+				(state, ostate, service, HT_SERV));
+			break;
+
+		//START
+		case 1:
+			//si on est STOP|UNKNOWN et que l'autre est STOP|FROZEN_STOP|UNKOWN
+			return (change_status_start
+				(state, ostate, service, HT_SERV));
+			break;
+
+		//FREEZE_STOP
+		case 2:
+			return (change_status_freeze_stop
+				(state, ostate, service, HT_SERV));
+			break;
+
+		//FREEZE_START
+		case 3:
+			return (change_status_freeze_start
+				(state, ostate, service, HT_SERV));
+			break;
+
+		//UNFREEZE
+		case 4:
+			return (change_status_unfreeze
+				(state, service, HT_SERV));
+			break;
+		//FORCE_STOP
+		case 5:
+			return (change_status_force_stop
+				(state, ostate, service, HT_SERV));
+			break;
+		//FORCE_START
+		case 6:
+			return (change_status_force_start
+				(state, ostate, service, HT_SERV));
+			break;
 		}
 	}
 	exit_usage(argv[0]);
