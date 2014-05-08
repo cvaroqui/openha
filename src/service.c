@@ -30,10 +30,21 @@
 #include <netdb.h>
 #include <cluster.h>
 #include <config.h>
+#include <pthread.h>
 
 void exit_usage(gchar *);
 
-gchar *ACTION[MAX_ACTION] = { "STOP",
+struct thread_info {
+	pthread_t thread_id;
+	gchar * service;
+	gchar * action;
+};
+
+struct thread_info *tinfo;
+
+GHashTable *HT_SERV = NULL;
+gchar *ACTION[MAX_ACTION] = {
+	"STOP",
 	"START",
 	"FREEZE-STOP",
 	"FREEZE-START",
@@ -43,20 +54,132 @@ gchar *ACTION[MAX_ACTION] = { "STOP",
 };
 
 int
+service_action(gchar * service, gchar * action)
+{
+	gint action_id, state, ostate, pstate, sstate;
+	gchar *primary, *secondary;
+	gpointer pointer;
+	gboolean PRIMARY, SECONDARY;
+
+	pointer = g_hash_table_lookup(HT_SERV, (gchar *) service);
+	if (pointer == NULL) {
+		halog(LOG_ERR, "service %s not found", service);
+		exit(-1);
+	}
+	primary = ((struct srvstruct *) (pointer))->primary;
+	secondary = ((struct srvstruct *) (pointer))->secondary;
+	pstate = get_status(GlobalList, primary, service);
+	sstate = get_status(GlobalList, secondary, service);
+
+	gchar *action_up;
+	action_up = g_ascii_strup(action, -1);
+	action_id = find_action(ACTION, action_up);
+	g_free(action_up);
+
+	if (action_id == -1) {
+		halog(LOG_ERR, "action %s not found", action);
+		exit(-1);
+	}
+
+	PRIMARY = is_primary(nodename, service);
+	SECONDARY = is_secondary(nodename, service);
+	if (PRIMARY) {
+		state = pstate;
+		ostate = sstate;
+	} else if (SECONDARY) {
+		state = sstate;
+		ostate = pstate;
+	} else {
+		halog(LOG_ERR, "we are not primary nor secondary for service %s", service);
+		return -1;
+	}
+
+	switch (action_id) {
+	//STOP
+	case 0:
+		//si on est STARTED|UNKNOWN 
+		return (change_status_stop(state, ostate, service, HT_SERV));
+		break;
+
+	//START
+	case 1:
+		//si on est STOP|UNKNOWN et que l'autre est STOP|FROZEN_STOP|UNKOWN
+		return (change_status_start(state, ostate, service, HT_SERV));
+		break;
+
+	//FREEZE_STOP
+	case 2:
+		return (change_status_freeze_stop(state, ostate, service, HT_SERV));
+		break;
+
+	//FREEZE_START
+	case 3:
+		return (change_status_freeze_start(state, ostate, service, HT_SERV));
+		break;
+
+	//UNFREEZE
+	case 4:
+		return (change_status_unfreeze(state, service, HT_SERV));
+		break;
+	//FORCE_STOP
+	case 5:
+		return (change_status_force_stop(state, ostate, service, HT_SERV));
+		break;
+	//FORCE_START
+	case 6:
+		return (change_status_force_start(state, ostate, service, HT_SERV));
+		break;
+	}
+	return -1;
+}
+
+static void *
+service_action_thread(void * arg)
+{
+	struct thread_info * ti = arg;
+	service_action(ti->service, ti->action);
+	return NULL;
+}
+
+int
+services_action(gchar * action)
+{
+	int i, rc;
+	struct thread_info * ti;
+
+	ti = calloc(g_list_length(GlobalList) / LIST_NB_ITEM, sizeof(struct thread_info));
+	for (i = 0; i < (g_list_length(GlobalList) / LIST_NB_ITEM); i++) {
+                halog(LOG_DEBUG, "[service] spawning thread [%d]", i);
+                ti[i].action = action;
+                ti[i].service = g_list_nth_data(GlobalList, i * LIST_NB_ITEM);
+                rc = pthread_create(&ti[i].thread_id, NULL, &service_action_thread, &ti[i]);
+                if (rc) {
+                        halog(LOG_ERR, "return code from pthread_create() is %d", rc);
+                        ti[i].thread_id = -1;
+                }
+        }
+	for (i = 0; i < (g_list_length(GlobalList) / LIST_NB_ITEM); i++) {
+                if (ti[i].thread_id < 0)
+                        continue;
+                halog(LOG_DEBUG, "[main] joining thread [%d]", i);
+                pthread_join(ti[i].thread_id, NULL);
+                ti[i].thread_id = -1;
+        }
+	free(ti);
+	return -1;
+}
+
+int
 main(argc, argv)
 int argc;
 char *argv[];
 {
-
-	gint state, ostate, pstate, sstate, ret;
-	gchar *service, *primary, *secondary, *action;
-	gpointer pointer;
+	gint ret;
+	gchar *action, *service;
 	gchar * shm;
 
 	//FILE *EZ_SERVICES;
-	gint i, list_size, svccount;
-	gboolean PRIMARY, SECONDARY;
-	GHashTable *HT_SERV = NULL;
+	gint list_size, svccount;
 
 	if ((argc < 2) || (argc > 7)) {
 		exit_usage(argv[0]);
@@ -136,82 +259,13 @@ char *argv[];
 	if ((strcmp(argv[1], "-A") == 0) && (argc == 4)) {
 		service = argv[2];
 		action = argv[3];
-		pointer = g_hash_table_lookup(HT_SERV, (gchar *) service);
-		if (pointer == NULL) {
-			halog(LOG_ERR, "service %s not found", service);
-			exit(-1);
-		}
-		primary = ((struct srvstruct *) (pointer))->primary;
-		secondary = ((struct srvstruct *) (pointer))->secondary;
-		pstate = get_status(GlobalList, primary, service);
-		sstate = get_status(GlobalList, secondary, service);
+		return (service_action(service, action));
+	}
 
-		gchar *action_up;
-		action_up = g_ascii_strup(action, -1);
-		i = find_action(ACTION, action_up);
-		g_free(action_up);
-
-		if (i == -1) {
-			halog(LOG_ERR, "action %s not found", action);
-			exit(-1);
-		}
-
-		PRIMARY = is_primary(nodename, service);
-		SECONDARY = is_secondary(nodename, service);
-		if (PRIMARY) {
-			state = pstate;
-			ostate = sstate;
-		} else if (SECONDARY) {
-			state = sstate;
-			ostate = pstate;
-		} else {
-			halog(LOG_ERR, "we are not primary nor secondary for service %s", service);
-			return -1;
-		}
-
-		switch (i) {
-		//STOP
-		case 0:
-			//si on est STARTED|UNKNOWN 
-			return (change_status_stop
-				(state, ostate, service, HT_SERV));
-			break;
-
-		//START
-		case 1:
-			//si on est STOP|UNKNOWN et que l'autre est STOP|FROZEN_STOP|UNKOWN
-			return (change_status_start
-				(state, ostate, service, HT_SERV));
-			break;
-
-		//FREEZE_STOP
-		case 2:
-			return (change_status_freeze_stop
-				(state, ostate, service, HT_SERV));
-			break;
-
-		//FREEZE_START
-		case 3:
-			return (change_status_freeze_start
-				(state, ostate, service, HT_SERV));
-			break;
-
-		//UNFREEZE
-		case 4:
-			return (change_status_unfreeze
-				(state, service, HT_SERV));
-			break;
-		//FORCE_STOP
-		case 5:
-			return (change_status_force_stop
-				(state, ostate, service, HT_SERV));
-			break;
-		//FORCE_START
-		case 6:
-			return (change_status_force_start
-				(state, ostate, service, HT_SERV));
-			break;
-		}
+	// ACTION on all services
+	if ((strcmp(argv[1], "-A") == 0) && (argc == 3)) {
+		action = argv[2];
+		return (services_action(action));
 	}
 	exit_usage(argv[0]);
 	return -1;

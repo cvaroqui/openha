@@ -90,11 +90,7 @@ case "$1" in
 	echo "Stopping EZ-HA node monitor" > /dev/console
 	pkill nmond 
 	echo "Stopping services if started" > /dev/console
-	cat $EZ_SERVICES | while read SERVICE DUMMY
-	do
-		STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
-		[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" stop
-	done
+	$EZ/bin/service -A stop
 	echo "Stopping EZ-HA heartbeat" > /dev/console
 	pkill heartc 
 	pkill heartd 
