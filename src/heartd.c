@@ -145,7 +145,11 @@ char *argv[];
 
 	/* join the multicast group. */
 	stMreq.imr_multiaddr.s_addr = inet_addr(argv[2]);
-	stMreq.imr_interface.s_addr = INADDR_ANY;
+        if (if_getaddr(argv[1], &stMreq.imr_interface) == -1 ) {
+		halog(LOG_ERR, "[heartd] if_getaddr failed: %s", strerror(errno));
+		exit(-1);
+        }
+
 	setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &stMreq,
 		   sizeof (stMreq));
 
