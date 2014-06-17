@@ -1,6 +1,6 @@
 Summary:    EASY high-availability software.
 Name:       openha
-Version:    0.3.6.osvc2
+Version:    0.4.0.osvc1
 Release:    0
 Epoch:      3
 License:    GPL
@@ -22,6 +22,10 @@ Group: Utilities
 
 %prep
 %setup -q
+aclocal --force
+autoheader --force
+autoconf --force
+automake --add-missing --copy --force-missing --foreign
 ./configure --prefix=/usr/local/cluster 
 
 %build
