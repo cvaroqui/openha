@@ -23,6 +23,9 @@ EZ=${MYBASEDIR}/usr/local/cluster
 export EZ
 . $EZ/env.sh
 [ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
+[ ! -d $EZ/conf ] && mkdir -p $EZ/conf
+[ ! -d $EZ/log/proc ] && mkdir -p $EZ/log/proc
+[ ! -d $EZ/services ] && mkdir -p $EZ/services
 
 ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc3.d/S99cluster
 ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc0.d/K01cluster
