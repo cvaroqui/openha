@@ -17,10 +17,7 @@ openhadoc_DATA = \
 	README\
 	COPYING\
 	AUTHORS\
-	ChangeLog\
-	INSTALL\
-	NEWS\
-	TODO
+	INSTALL
 
 openha_SCRIPTS = ezha
 openha_DATA = env.sh

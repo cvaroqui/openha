@@ -1,6 +1,6 @@
 Summary:    EASY high-availability software.
 Name:       openha
-Version:    0.4.0.osvc1
+Version:    0.4.1.osvc1
 Release:    0
 Epoch:      3
 License:    GPL
@@ -34,6 +34,9 @@ make
 
 %install
 make install "DESTDIR=$RPM_BUILD_ROOT"
+mkdir -p $RPM_BUILD_ROOT/usr/local/cluster/conf
+mkdir -p $RPM_BUILD_ROOT/usr/local/cluster/log/proc
+mkdir -p $RPM_BUILD_ROOT/usr/local/cluster/services
 
 %clean
 rm -rf %{buildroot}
@@ -41,10 +44,11 @@ rm -rf %{buildroot}
 %files
 %defattr(-, root, root)
 
-%doc NEWS COPYING AUTHORS README 
+%doc COPYING AUTHORS README 
 
 /usr/local/cluster/*
 
 %files devel
 
 %changelog
+
