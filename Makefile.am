@@ -19,7 +19,7 @@ openhadoc_DATA = \
 	AUTHORS\
 	INSTALL
 
-openha_SCRIPTS = ezha
+openha_SCRIPTS = ezha.init
 openha_DATA = env.sh
 openhaproc_DATA =  
 openhaconf_DATA =  

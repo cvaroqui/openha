@@ -2,6 +2,10 @@
 
 # OpenHA postinstall script
 
+log () {
+    printf "%b\n" "$(date +"%Y-%m-%d %H:%M:%S") $*"
+}
+
 BASEDIR=${BASEDIR:-/}
 
 if [ "X${BASEDIR}" = "X" ] ; then
@@ -21,14 +25,154 @@ LD_LIBRARY_PATH=${MYBASEDIR}/usr/local/lib; export LD_LIBRARY_PATH
 EZ=${MYBASEDIR}/usr/local/cluster
 
 export EZ
+log "Sourcing EZHA environment"
 . $EZ/env.sh
-[ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
-[ ! -d $EZ/conf ] && mkdir -p $EZ/conf
-[ ! -d $EZ/log/proc ] && mkdir -p $EZ/log/proc
-[ ! -d $EZ/services ] && mkdir -p $EZ/services
 
-ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc3.d/S99cluster
-ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc0.d/K01cluster
-ln -sf $EZ/ezha ${MYBASEDIR}/etc/rcS.d/K01cluster
+[ ! -d $EZ -o ! -d $EZ/bin ] && {
+    log "Aborting : EZHA install directories not found" 
+    exit 1
+}
+
+create_directories()
+{
+    log "Creating EZHA directories structure"
+    [ ! -d $EZ/conf ] && mkdir -p $EZ/conf
+    [ ! -d $EZ/log/proc ] && mkdir -p $EZ/log/proc
+    [ ! -d $EZ/services ] && mkdir -p $EZ/services
+}
+
+remove_old_symlinks()
+{
+    for symlink in ${MYBASEDIR}/etc/rc2.d/S99cluster ${MYBASEDIR}/etc/rc3.d/S99cluster ${MYBASEDIR}/etc/rc0.d/K01cluster ${MYBASEDIR}/etc/rcS.d/K01cluster
+    do
+        if test -h $symlink
+        then
+            log "remove_old_symlinks : removing $symlink"
+            rm -f $symlink
+        fi
+    done
+
+}
+
+is_systemd_mgmt()
+{
+    systemctl --version >> /dev/null 2>&1
+    ret=$?
+    if test $ret -eq 0
+    then
+        log "is_systemd_mgmt : detected systemd managed distribution"
+        return 1
+    else
+        return 0
+    fi
+}
+
+is_chkconfig_mgmt()
+{
+    chkconfig >> /dev/null 2>&1
+    ret=$?
+    if test $ret -eq 0
+    then
+        log "is_chkconfig_mgmt : detected chkconfig managed distribution"
+        return 1
+    else
+        return 0
+    fi
+}
+
+is_updatercd_mgmt()
+{
+    if test -f /usr/sbin/update-rc.d
+    then
+        log "is_updatercd_mgmt : detected update-rc.d managed distribution"
+        return 1
+    else
+        return 0
+    fi
+}
+
+systemd_launch()
+{
+    systemdsvc="opensvc-openha.service"
+    
+    log "systemd_launch : Copying systemd unit file to system"
+    cp -f $EZ/systemd.opensvc-openha.service /etc/systemd/system/$systemdsvc
+    
+    log "systemd_launch : setting perms on systemd unit file"
+    chmod 644 /etc/systemd/system/$systemdsvc
+    
+    log "systemd_launch : reloading systemd configuration"
+    systemctl -q daemon-reload
+    
+    log "systemd_launch : enabling opensvc-openha.service unit"
+    systemctl -q enable $systemdsvc
+}
+
+chkconfig_launch()
+{
+   if test -f /etc/init.d/ezha -o -h /etc/init.d/ezha
+   then
+       log "chkconfig_launch : removing existing /etc/init.d/ezha"
+       chkconfig --del ezha >> /dev/null 2>&1
+       rm -f /etc/init.d/ezha
+   fi
+
+   log "chkconfig_launch : copying launcher to /etc/init.d/ezha"
+   cp -f $EZ/ezha.init /etc/init.d/ezha
+   chmod 755 /etc/init.d/ezha
+
+   log "chkconfig_launch : enabling launcher /etc/init.d/ezha"
+   chkconfig --add ezha
+}
+
+updatercd_launch()
+{
+   if test -f /etc/init.d/ezha -o -h /etc/init.d/ezha
+   then
+       log "updatercd_launch : removing existing /etc/init.d/ezha"
+       update-rc.d -f ezha remove >> /dev/null 2>&1
+       rm -f /etc/init.d/ezha
+   fi
+
+   log "updatercd_launch : copying launcher to /etc/init.d/ezha"
+   cp -f $EZ/ezha.init /etc/init.d/ezha
+   chmod 755 /etc/init.d/ezha
+
+   log "updatercd_launch : enabling launcher /etc/init.d/ezha"
+   update-rc.d ezha defaults
+}
+
+legacy_launch()
+{
+    log "legacy_launch : creating symlinks"
+    cp -f $EZ/ezha.init $EZ/ezha
+    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc2.d/S99cluster
+    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc3.d/S99cluster
+    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc0.d/K01cluster
+    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rcS.d/K01cluster
+}
+
+# start
+create_directories
+remove_old_symlinks
+
+is_systemd_mgmt   ; reta=$?
+is_chkconfig_mgmt ; retb=$?
+is_updatercd_mgmt ; retc=$?
+
+log "main : reta=$reta  retb=$retb  retc=$retc"
+
+if test $reta -eq 1
+then
+    systemd_launch
+elif test $retb -eq 1
+then
+    chkconfig_launch
+elif test $retc -eq 1
+then
+    updatercd_launch
+else
+    legacy_launch
+fi
 
 exit 0

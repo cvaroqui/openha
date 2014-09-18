@@ -37,7 +37,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-, root, root)
 
-%doc NEWS COPYING AUTHORS README 
+%doc COPYING AUTHORS README 
 
 /usr/local/cluster/*
 

@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenHA - EASY high-availability software - Main
+Documentation=http://docs.opensvc.com/howto.ha.html http://open-ha-cluster.sourceforge.net
+
+[Service]
+Type=idle
+Environment="PATH=/usr/local/cluster:/usr/local/cluster/bin:/opt/opensvc/bin:/opt/opensvc/etc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/usr/local/cluster/ezha.init start
+ExecStop=/usr/local/cluster/ezha.init stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
