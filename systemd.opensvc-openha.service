@@ -1,5 +1,5 @@
 [Unit]
-Description=OpenHA - EASY high-availability software - Main
+Description=OpenHA - EASY high-availability software
 Documentation=http://docs.opensvc.com/howto.ha.html http://open-ha-cluster.sourceforge.net
 
 [Service]
