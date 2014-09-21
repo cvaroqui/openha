@@ -96,7 +96,7 @@ systemd_launch()
     systemdsvc="opensvc-openha.service"
     
     log "systemd_launch : Copying systemd unit file to system"
-    cp -f $EZ/systemd.opensvc-openha.service /etc/systemd/system/$systemdsvc
+    cp -f $EZ/.systemd.opensvc-openha.service /etc/systemd/system/$systemdsvc
     
     log "systemd_launch : setting perms on systemd unit file"
     chmod 644 /etc/systemd/system/$systemdsvc
