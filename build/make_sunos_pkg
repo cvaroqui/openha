@@ -1,0 +1,162 @@
+#!/bin/ksh -p
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(echo $0));pwd)"
+. $PATH_SCRIPT/make.lib.sun
+
+prepare_chroot || exit 1
+
+NAWK=nawk;
+PKGNAME=openha
+ARCH=${ARCH:-all}
+BASE=/usr/local/cluster
+IPSREV=$(echo $RELEASE|sed s/\.//)
+P=${PKGNAME}-$OPENHA_VERSION-$OPENHA_RELEASE.SunOS.$OPENHA_ARCH.pkg
+IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$OPENHA_VERSION.$IPSREV
+#IPSP=pkgname@osrev,osrev,version[:timestampiso8601]
+REPODIR=$(cd $(dirname $0);pwd)
+export REPODIR
+PATH=$PWD:$PATH:/opt/sfw/bin:/usr/sfw/bin
+
+TMPARCHIVE=/var/tmp/tmparchive$$
+TMPROOT=$TMPARCHIVE
+
+LANG=C
+export LANG
+
+function date_to_release {
+        date -d "$*" +%y%m%d.%H%M
+}
+
+
+function my_log {
+	echo $@
+}
+
+function question {
+	# usage: question default_value Comment 
+	typeset DEFAULT=$1
+	typeset READ
+	shift
+	read READ?"$* [${SGRAS}$DEFAULT${EGRAS}]:"
+	echo ${READ:-$DEFAULT}
+}
+
+function create_pkg {
+	typeset SGRAS="[1m"
+	typeset EGRAS="[0m"
+
+	typeset POSTINSTALL=""
+	typeset PREINSTALL=""
+	typeset PRE_REMOVE=""
+	typeset POST_REMOVE=""
+
+	while getopts hp:P:r:R: ARGS
+	do
+	  case $ARGS in
+	  h) usage
+	     return 1
+	     ;;
+	  p) PREINSTALL="$OPTARG"
+	     ;;
+	  P) POSTINSTALL="$OPTARG"
+	     ;;
+	  r) PRE_REMOVE="$OPTARG"
+	     ;;
+	  R) POST_REMOVE="$OPTARG"
+	     ;;
+	  ?) usage
+	     ;;
+	  esac
+	done
+	shift `expr $OPTIND - 1`
+
+	set -- $*
+	[ $# -lt 2 ] && usage
+	PROTOTYPE=/tmp/prototype.$$
+	PKGINFO=/tmp/pkginfo.$$
+	PKG_FILE_NAME=$1
+	shift
+	FILES=$*
+	if [ "$FILES" = "" ] ; then
+		my_log "no file names..."
+		usage
+	fi
+
+	[ -f $PROTOTYPE ] && my_log "deleting $PROTOTYPE" && rm $PROTOTYPE
+
+
+	PKG=`question $PKG_FILE_NAME "The name you have chosen for the pkg directory"`
+	NAME=`question $PKG "The program name"`
+	ARCH=`question sparc "The operating systeme version"`
+	VERSION=`question "1" "The version number for your program"`
+	CATEGORY=`question application "The program is an application"`
+	VENDOR=`question "$LOGNAME@$(uname -n)" "whoever wrote the software"`
+	EMAIL=`question "$VENDOR" "An email contact"`
+	PSTAMP=`question "$VENDOR" "The person who did the port perhaps"`
+	RULES=`question "$FILES=$FILES" "rules for source->dest ex: /usrlocalbin=/usr/local/bin /optlocal=/opt/local "`
+	CLASSES=`question "none" "Classe"`
+
+	my_log "creating prototype in $PROTOTYPE"
+	> $PROTOTYPE
+	[ "$PKGINFO" != "" ] && echo "i pkginfo=$PKGINFO" >> $PROTOTYPE
+	[ "$POSTINSTALL" != "" ] && echo "i postinstall=$POSTINSTALL" >> $PROTOTYPE
+	[ "$PREINSTALL" != "" ] && echo "i preinstall=$PREINSTALL" >> $PROTOTYPE
+	[ "$PRE_REMOVE" != "" ] && echo "i preremove=$PRE_REMOVE" >> $PROTOTYPE
+	[ "$POST_REMOVE" != "" ] && echo "i postremove=$POST_REMOVE" >> $PROTOTYPE
+	[ ! -s $PROTOTYPE ] && my_log "warning $PROTOTYPE size null" && return 1
+
+	pkgproto $RULES >> $PROTOTYPE
+
+	my_log "creating pkginfo file : $PKGINFO"
+	echo "PKG=$PKG\nNAME=$NAME\nARCH=$ARCH\nVERSION=$VERSION\nCATEGORY=$CATEGORY" > $PKGINFO
+	echo "VENDOR=$VENDOR\nEMAIL=$EMAIL\nPSTAMP=$PSTAMP\nCLASSES=$CLASSES" >> $PKGINFO
+
+	my_log "running pkgmk to create /var/spool/pkg/$PKG : pkgmk -o -f $PROTOTYPE"
+	pkgmk -o -f $PROTOTYPE
+
+	my_log "running pkgtrans to create /tmp/$PKG_FILE_NAME : pkgtrans -s /var/spool/pkg /tmp/$PKG_FILE_NAME $PKG"
+	pkgtrans -s /var/spool/pkg /tmp/$PKG_FILE_NAME $PKG
+	STATUS=$?
+
+	if [ $STATUS -eq 0 ] ; then
+		echo "Cleaning temp files: $PROTOTYPE $PKGINFO" 
+		rm $PKGINFO $PROTOTYPE
+		echo
+		echo "Package $PKG created successfully"
+		pkginfo -d /tmp/$PKG_FILE_NAME -l
+	else
+		echo
+		echo "Warning some errors in create_pkg"
+	fi
+	return $STATUS
+}
+
+if [ -d $TMPARCHIVE ] ; then
+	echo "Error $TMPARCHIVE already exists"
+	echo "It should be removed first"       
+	exit 1
+fi
+
+echo "----- Creating $PKGNAME build-$RELEASE ..."
+#create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
+create_pkg -P $PATH_SCRIPT/../postinstall -r $PATH_SCRIPT/../preremove $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
+
+openha - Open HA Cluster - Easy High Availability v${VERSION}-$RELEASE
+$OPENHA_ARCH
+$OPENHA_VERSION,REV=$OPENHA_RELEASE
+
+http://www.opensvc.com
+support@opensvc.com
+OPENHA-${OPENHA_VERSION},REV=${OPENHA_RELEASE}
+$CHROOT=$BASE
+
+EOF
+
+echo "----- Cleaning /var/spool/pkg/$PKGNAME $TMPARCHIVE"
+[ "$PKGNAME" != "" ] && [ -d /var/spool/pkg/$PKGNAME ] && rm -r /var/spool/pkg/$PKGNAME
+[ -d $CHROOT ] && rm -r $CHROOT
+
+echo "----- New package available into /tmp/$P"
+cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
+
+[ -x $REPODIR/release_pkg ] && $REPODIR/release_pkg /tmp/$P $IPSP

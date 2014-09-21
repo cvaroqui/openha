@@ -17,6 +17,7 @@ openhadoc_DATA = \
 	README\
 	COPYING\
 	AUTHORS\
+        NEWS\
 	INSTALL
 
 openha_SCRIPTS = ezha.init

@@ -18,7 +18,7 @@ endif
 
 service_SOURCES = service.c sockhelp.c cluster.c
 service_LDFLAGS =
-service_LDADD = $(glib_LIBS)
+service_LDADD = $(glib_LIBS) -lpthread
 
 heartc_SOURCES = heartc.c sockhelp.c cluster.c
 heartc_LDFLAGS = 
