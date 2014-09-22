@@ -24,6 +24,22 @@ export EZ
 . $EZ/env.sh
 [ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
 
+`which systemctl` && {
+    systemctl disable -q opensvc-openha.service
+    rm -f /etc/systemd/system/opensvc-openha.service
+    systemctl -q daemon-reload
+}
+
+`which update-rc.d` && {
+    update-rc.d -f ezha remove
+    rm -f /etc/init.d/ezha
+}
+
+`which chkconfig` && {
+    chkconfig --del ezha
+    rm -f /etc/init.d/ezha
+}
+
 [ -h ${MYBASEDIR}/etc/rc3.d/S99cluster ] && rm -f ${MYBASEDIR}/etc/rc3.d/S99cluster
 [ -h ${MYBASEDIR}/etc/rc0.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rc0.d/K01cluster
 [ -h ${MYBASEDIR}/etc/rcS.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rcS.d/K01cluster
