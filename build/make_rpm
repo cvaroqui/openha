@@ -1,0 +1,88 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+. $PATH_SCRIPT/make.lib
+
+#prepare_chroot || exit 1
+
+SPEC_D=$OPENHA/tmp/SPECS
+SPEC=$SPEC_D/openha.spec
+
+[ ! -d $SPEC_D ] && {
+	mkdir -p $SPEC_D || exit 1
+}
+
+[ ! -d $OPENHA/tmp/SOURCES ] && {
+        mkdir -p $OPENHA/tmp/SOURCES || exit 1
+}
+
+cd $OPENHA
+git archive --prefix=openha-${VERSION}/ HEAD > $OPENHA/tmp/SOURCES/${CHROOT_BN}.tar
+
+cat - <<-EOF >$SPEC
+Summary: EASY high-availability software
+Name: openha
+Version: $VERSION
+Release: $RELEASE
+License: GPL
+Group: Utilities
+URL:        http://open-ha-cluster.sourceforge.net/
+Packager:   %{packager}
+Source0:     ${CHROOT_BN}.tar
+BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+%package devel
+Summary: Development headers, documentation, and libraries for OpenHACluster.
+Group: Utilities
+
+%description
+
+%description devel
+
+%prep
+echo "BUILDROOT = %{buildroot}"
+echo "CHROOT = $CHROOT"
+echo $OPENHA/tmp/BUILD
+
+%setup -q
+aclocal
+autoconf
+automake --add-missing
+./configure --prefix=/usr/local/cluster
+
+%build
+make clean
+make
+
+%install
+rm -rf $CHROOT
+make install "DESTDIR=$CHROOT"
+mkdir -p $CHROOT/usr/local/cluster/log $CHROOT/usr/local/cluster/log/proc $CHROOT/usr/local/cluster/conf
+cp -f postinstall $CHROOT/usr/local/cluster/.postinstall
+cp -f preremove $CHROOT/usr/local/cluster/.preremove
+cp -f systemd.opensvc-openha.service $CHROOT/usr/local/cluster/.systemd.opensvc-openha.service
+
+%clean
+echo rm -rf %{buildroot}
+
+%files
+%defattr(-, root, root)
+%doc COPYING AUTHORS README
+/usr/local/cluster/.postinstall
+/usr/local/cluster/.preremove
+/usr/local/cluster/.systemd.opensvc-openha.service
+/usr/local/cluster/*
+
+%files devel
+
+%changelog
+
+%preun
+/usr/local/cluster/.preremove
+%post
+/usr/local/cluster/.postinstall
+EOF
+
+sudo rpmbuild --target=$ARCH --define "_topdir $OPENHA/tmp" --clean -bb $SPEC
+
+#[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm

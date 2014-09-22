@@ -1,0 +1,40 @@
+function changelog {
+        git log --pretty=format:"* %ad - %ae%n- %s" | sed -e "s/ [0-9]*:[0-9]*:[0-9]*//" -e "s/ +[0-9]* -/ -/"
+}
+
+function date_to_release {
+	/opt/opensvc/bin/python -c "import datetime ; print(datetime.datetime.fromtimestamp($1).strftime('%y%m%d.%H%M'))"
+}
+
+OFFSET=10000
+HEAD=$(git log -1 --pretty=format:%at || exit 1)
+VERSION=$(git describe --tags --abbrev=0)
+RELEASE=$(git describe --tags|cut -d- -f2)
+ARCH=$(uname -p)
+OS=$(uname)
+
+MASTER=0
+git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1
+if [ $MASTER -eq 1 ] ; then
+	let RELEASE=$RELEASE+$OFFSET
+else
+	RELEASE=$(git describe --tags|cut -d- -f2)
+        if [ "$RELEASE" = "$VERSION" ] ; then
+            RELEASE="0"
+        fi
+fi
+OPENHA=$PATH_SCRIPT/..
+CHROOT_BN=openha-$VERSION-$RELEASE.$ARCH
+CHROOT=$OPENHA/tmp/BUILDROOT/$CHROOT_BN
+
+if [ "$(uname)" == "SunOS" -a -x /usr/xpg4/bin/id ] ; then
+	ID_BIN="/usr/xpg4/bin/id"
+else
+	ID_BIN="id"
+fi
+
+if [ "$($ID_BIN -u)" == "0" ] ; then
+	SUDO=""
+else
+	SUDO="sudo"
+fi
