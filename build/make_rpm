@@ -40,9 +40,6 @@ Group: Utilities
 %description devel
 
 %prep
-echo "BUILDROOT = %{buildroot}"
-echo "CHROOT = $CHROOT"
-echo $OPENHA/tmp/BUILD
 
 %setup -q
 aclocal
@@ -63,7 +60,7 @@ cp -f preremove $CHROOT/usr/local/cluster/.preremove
 cp -f systemd.opensvc-openha.service $CHROOT/usr/local/cluster/.systemd.opensvc-openha.service
 
 %clean
-echo rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 %files
 %defattr(-, root, root)
