@@ -118,6 +118,5 @@ packagemenudir=${packagedatadir}
 AC_OUTPUT([
 Makefile
 src/Makefile
-openha.spec
 ])
 
