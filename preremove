@@ -24,19 +24,19 @@ export EZ
 . $EZ/env.sh
 [ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
 
-`which systemctl` && {
+which systemctl >> /dev/null 2>&1 && {
     systemctl disable -q opensvc-openha.service
     rm -f /etc/systemd/system/opensvc-openha.service
     systemctl -q daemon-reload
 }
 
-`which update-rc.d` && {
+which update-rc.d >> /dev/null 2>&1 && {
     update-rc.d -f ezha remove
     rm -f /etc/init.d/ezha
 }
 
-`which chkconfig` && {
-    chkconfig --del ezha
+which chkconfig >> /dev/null 2>&1 && {
+    chkconfig --del ezha >> /dev/null 2>&1
     rm -f /etc/init.d/ezha
 }
 
