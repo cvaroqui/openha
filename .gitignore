@@ -1,3 +1,4 @@
+tmp/
 aclocal.m4
 configure
 src/Makefile.in
