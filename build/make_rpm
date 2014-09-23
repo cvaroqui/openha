@@ -82,4 +82,4 @@ EOF
 
 sudo rpmbuild --target=$ARCH --define "_topdir $OPENHA/tmp" --clean -bb $SPEC
 
-#[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/noarch/opensvc-$VERSION-$RELEASE.noarch.rpm
+[ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OSVC/tmp/RPMS/$ARCH/openha-$VERSION-$RELEASE.$ARCH.rpm
