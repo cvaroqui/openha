@@ -3,7 +3,9 @@
 # OpenHA postinstall script
 
 log () {
-    printf "%b\n" "$(date +"%Y-%m-%d %H:%M:%S") $*"
+    [ -d $EZ/log ] && exec >> $EZ/log/postinstall.log 2>&1
+    DATE=`date +"%Y-%m-%d %H:%M:%S"`
+    printf "%b\n" "$DATE $*"
 }
 
 BASEDIR=${BASEDIR:-/}
@@ -56,7 +58,7 @@ remove_old_symlinks()
 
 is_systemd_mgmt()
 {
-    systemctl --version >> /dev/null 2>&1
+    type systemctl >> /dev/null 2>&1
     ret=$?
     if test $ret -eq 0
     then
@@ -69,7 +71,7 @@ is_systemd_mgmt()
 
 is_chkconfig_mgmt()
 {
-    chkconfig >> /dev/null 2>&1
+    type chkconfig >> /dev/null 2>&1
     ret=$?
     if test $ret -eq 0
     then
@@ -82,7 +84,9 @@ is_chkconfig_mgmt()
 
 is_updatercd_mgmt()
 {
-    if test -f /usr/sbin/update-rc.d
+    type update-rc.d >> /dev/null 2>&1
+    ret=$?
+    if test $ret -eq 0
     then
         log "is_updatercd_mgmt : detected update-rc.d managed distribution"
         return 1
@@ -146,10 +150,16 @@ legacy_launch()
 {
     log "legacy_launch : creating symlinks"
     cp -f $EZ/ezha.init $EZ/ezha
-    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc2.d/S99cluster
-    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc3.d/S99cluster
-    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rc0.d/K01cluster
-    ln -sf $EZ/ezha ${MYBASEDIR}/etc/rcS.d/K01cluster
+    for symlink in ${MYBASEDIR}/etc/rc2.d/S99cluster ${MYBASEDIR}/etc/rc3.d/S99cluster ${MYBASEDIR}/etc/rc0.d/K01cluster ${MYBASEDIR}/etc/rcS.d/K01cluster
+    do
+        ln -sf $EZ/ezha $symlink
+	if test $? -eq 0
+	then
+          log "legacy_launch : adding $symlink"
+        else
+          log "legacy_launch : error while adding $symlink"
+	fi
+    done
 }
 
 # start
