@@ -41,7 +41,6 @@ function question {
 }
 
 function create_pkg {
-	set -x
 	typeset SGRAS="[1m"
 	typeset EGRAS="[0m"
 
