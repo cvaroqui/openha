@@ -1,17 +1,15 @@
 #!/bin/ksh -p
 
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(echo $0));pwd)"
-. $PATH_SCRIPT/make.lib.sun
-
-prepare_chroot || exit 1
+. $PATH_SCRIPT/make.lib
 
 NAWK=nawk;
 PKGNAME=openha
 ARCH=${ARCH:-all}
 BASE=/usr/local/cluster
 IPSREV=$(echo $RELEASE|sed s/\.//)
-P=${PKGNAME}-$OPENHA_VERSION-$OPENHA_RELEASE.SunOS.$OPENHA_ARCH.pkg
-IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$OPENHA_VERSION.$IPSREV
+P=${PKGNAME}-$VERSION-$RELEASE.SunOS.$ARCH.pkg
+IPSP=${PKGNAME}@$(uname -r),$(uname -r)-$VERSION.$IPSREV
 #IPSP=pkgname@osrev,osrev,version[:timestampiso8601]
 REPODIR=$(cd $(dirname $0);pwd)
 export REPODIR
@@ -19,6 +17,7 @@ PATH=$PWD:$PATH:/opt/sfw/bin:/usr/sfw/bin
 
 TMPARCHIVE=/var/tmp/tmparchive$$
 TMPROOT=$TMPARCHIVE
+SRC=/var/tmp/builddir$$
 
 LANG=C
 export LANG
@@ -42,6 +41,7 @@ function question {
 }
 
 function create_pkg {
+	set -x
 	typeset SGRAS="[1m"
 	typeset EGRAS="[0m"
 
@@ -137,24 +137,47 @@ if [ -d $TMPARCHIVE ] ; then
 	exit 1
 fi
 
+if [ -d $SRC ] ; then
+	rm -rf $SRC
+fi
+
+cd $OPENHA
+git archive --prefix=openha-${VERSION}/ HEAD > /var/tmp/${CHROOT_BN}.tar
+mkdir -p $SRC
+cd $SRC && tar xf /var/tmp/${CHROOT_BN}.tar
+cd openha-${VERSION}
+aclocal
+autoconf
+automake --add-missing
+./configure --prefix=/usr/local/cluster
+make clean
+make
+make install "DESTDIR=$CHROOT"
+mkdir -p $CHROOT/usr/local/cluster/log $CHROOT/usr/local/cluster/log/proc $CHROOT/usr/local/cluster/conf $CHROOT/usr/local/cluster/services
+$SUDO chown -R 0:0 $CHROOT || return 1
+
+cd /var/tmp
+
 echo "----- Creating $PKGNAME build-$RELEASE ..."
 #create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
-create_pkg -P $PATH_SCRIPT/../postinstall -r $PATH_SCRIPT/../preremove $PKGNAME $CHROOT=$BASE 2> /dev/null <<EOF
+create_pkg -P $PATH_SCRIPT/../postinstall -r $PATH_SCRIPT/../preremove $PKGNAME ${CHROOT}${BASE}=$BASE 2> /dev/null <<EOF
 
 openha - Open HA Cluster - Easy High Availability v${VERSION}-$RELEASE
-$OPENHA_ARCH
-$OPENHA_VERSION,REV=$OPENHA_RELEASE
+$ARCH
+$VERSION,REV=$RELEASE
 
 http://www.opensvc.com
 support@opensvc.com
-OPENHA-${OPENHA_VERSION},REV=${OPENHA_RELEASE}
-$CHROOT=$BASE
+OPENHA-${VERSION},REV=${RELEASE}
+${CHROOT}${BASE}=$BASE
 
 EOF
 
 echo "----- Cleaning /var/spool/pkg/$PKGNAME $TMPARCHIVE"
 [ "$PKGNAME" != "" ] && [ -d /var/spool/pkg/$PKGNAME ] && rm -r /var/spool/pkg/$PKGNAME
 [ -d $CHROOT ] && rm -r $CHROOT
+[ -d $SRC ] && rm -r $SRC
+rm -f /var/tmp/${CHROOT_BN}.tar
 
 echo "----- New package available into /tmp/$P"
 cp /tmp/$PKGNAME /tmp/$P && rm /tmp/$PKGNAME
