@@ -80,6 +80,6 @@ rm -rf %{buildroot}
 /usr/local/cluster/.postinstall
 EOF
 
-sudo rpmbuild --target=$ARCH --define "_topdir $OPENHA/tmp" --clean -bb $SPEC
+sudo rpmbuild --buildroot=$CHROOT --target=$ARCH --define "_topdir $OPENHA/tmp" --clean -bb $SPEC
 
 [ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OPENHA/tmp/RPMS/$ARCH/openha-$VERSION-$RELEASE.$ARCH.rpm
