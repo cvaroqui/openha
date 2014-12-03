@@ -16,6 +16,14 @@ SPEC=$SPEC_D/openha.spec
         mkdir -p $OPENHA/tmp/SOURCES || exit 1
 }
 
+[ ! -d $OPENHA/tmp/BUILD ] && {
+        mkdir -p $OPENHA/tmp/BUILD || exit 1
+}
+
+[ ! -d $OPENHA/tmp/RPMS/$ARCH ] && {
+        mkdir -p $OPENHA/tmp/RPMS/$ARCH || exit 1
+}
+
 cd $OPENHA
 git archive --prefix=openha-${VERSION}/ HEAD > $OPENHA/tmp/SOURCES/${CHROOT_BN}.tar
 
