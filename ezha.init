@@ -46,12 +46,21 @@ export EZ
 
 PATH=$EZ_BIN:$PATH; export PATH
 
+# provides FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START
+[ -f /etc/default/openha ] && . /etc/default/openha
+[ -f /etc/sysconfig/openha ] && . /etc/sysconfig/openha
+
 case "$1" in
 'start')
 	if [ -f $EZ_SERVICES ]
 	then
-		cat $EZ_SERVICES | while read SERVICE DUMMY
+		cat $EZ_SERVICES | while read SERVICE SVCPATH PRIMARY DUMMY
 		do
+			[ "$FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START" = "yes" ] && \
+			[ "$NODE" != "$PRIMARY" ] && {
+				echo "set local secondary instance of service $SERVICE in FROZEN_STOP state"
+				echo -n $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
+			}
 			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
 			[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" force-stop
 		done
