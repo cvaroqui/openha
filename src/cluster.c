@@ -1289,6 +1289,9 @@ init_var()
 		printf("Error: variable EZ not defined\n");
 		return FALSE;
 	}
+        if ((EZ_DEBUG = getenv("EZ_DEBUG")) != NULL) {
+                signal_usr1_callback_handler();
+        }
 	return TRUE;
 }
 

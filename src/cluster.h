@@ -71,6 +71,7 @@ gchar *EZ_SERVICES;
 gchar *EZ_MONITOR;
 gchar *EZ_LOG;
 gchar *EZ_NODES;
+gchar *EZ_DEBUG;
 extern gchar progname[MAX_PROGNAME_SIZE];
 
 gchar *VAL[MAX_STATE];
