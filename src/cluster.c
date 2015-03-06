@@ -1049,7 +1049,7 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, "Ready to stop, partner node is %s we are %s",
 			VAL[ostate], VAL[state]);
 	} else {
-		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s",
+		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s)",
 			service, VAL[ostate],VAL[state]);
 		return -1;
 	}
