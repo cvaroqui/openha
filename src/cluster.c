@@ -562,7 +562,7 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 	}
 	if (old_state != ostate) {
 		halog(LOG_NOTICE, "service %s state has changed on partner node from %s to %s during the grace period", service, VAL[old_state], VAL[ostate]);
-		if (SECONDARY) {
+		if ( SECONDARY || (PRIMARY && (ostate == STATE_STARTING || ostate == STATE_STARTED))) {
 			halog(LOG_NOTICE, "rollback service %s state to STOPPED", service);
 			write_status(service, STATE_STOPPED, nodename);
 			return 0;
