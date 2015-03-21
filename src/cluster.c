@@ -1244,6 +1244,13 @@ set_mcast_if(gint sockfd, gchar * ifname)
 		halog(LOG_ERR, "[set_mcast_if] if_getaddr failed: %s", strerror(errno));
 		return -1;
 	}
+#ifdef __linux__
+	i = setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, ifname, strlen(ifname) + 1);
+	if (i < 0) {
+		halog(LOG_ERR, "[set_mcast_if] setsockopt SOL_SOCKET:SO_BINDTODEVICE:%s returned %d", ifname, i);
+		return -1;
+	}
+#endif
 	i = setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_IF, (void *) &mreq,
 		       sizeof (mreq));
 	if (i < 0) {
