@@ -107,7 +107,7 @@ case "$1" in
 	fi
 	# let's the heart process talk a bit ...
 	sleep 2
-	$EZ_BIN/nmond >> $EZ_LOG/nmond.log 2>&1 
+	$EZ_BIN/nmond >/dev/null 2>&1
 
 ;;
 'stop')
