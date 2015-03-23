@@ -59,6 +59,7 @@ case "$1" in
 			[ "$FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START" = "yes" ] && \
 			[ "$NODE" != "$PRIMARY" ] && {
 				echo "set local secondary instance of service $SERVICE in FROZEN_STOP state"
+				logger -p daemon.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				echo -n $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
 			}
 			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
