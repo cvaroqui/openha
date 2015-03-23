@@ -520,8 +520,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 
 	if ((state == STATE_STOPPED || state == STATE_UNKNOWN) &&
 	    (ostate == STATE_STOPPED || ostate == STATE_FROZEN_STOP || ostate == STATE_UNKNOWN)) {
-		halog(LOG_NOTICE, "Ready to start, partner node is %s , we are %s",
-			VAL[ostate], VAL[state]);
+		halog(LOG_NOTICE, "Ready to start %s: partner node is %s , we are %s",
+			service, VAL[ostate], VAL[state]);
 	} else {
 		halog(LOG_NOTICE, "Cannot start %s: service not in correct state (partner node is %s, we are %s)",
 			service, VAL[ostate], VAL[state]);
@@ -1046,8 +1046,8 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	gchar *arg[3];
 
 	if (state == STATE_STARTED || state == STATE_UNKNOWN) {
-		halog(LOG_NOTICE, "Ready to stop, partner node is %s we are %s",
-			VAL[ostate], VAL[state]);
+		halog(LOG_NOTICE, "Ready to stop %s: partner node is %s we are %s",
+			service, VAL[ostate], VAL[state]);
 	} else {
 		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s)",
 			service, VAL[ostate],VAL[state]);
@@ -1079,8 +1079,8 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_stop] enter");
 
-	halog(LOG_INFO, "Ready to force stop, partner node is %s, we are %s",
-		VAL[ostate], VAL[state]);
+	halog(LOG_INFO, "Ready to force stop %s: partner node is %s, we are %s",
+		service, VAL[ostate], VAL[state]);
 
 	write_status(service, STATE_STOPPED, nodename);
 	halog(LOG_INFO, "Service %s successfully stopped", service);
@@ -1093,8 +1093,8 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_start] enter");
 
-	halog(LOG_INFO, "Ready to force start, partner node is  %s, we are %s",
-		VAL[ostate], VAL[state]);
+	halog(LOG_INFO, "Ready to force start %s: partner node is  %s, we are %s",
+		service, VAL[ostate], VAL[state]);
 
 	halog(LOG_INFO, "Service %s forced to started", service);
 
@@ -1143,10 +1143,10 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 	halog(LOG_DEBUG, "[change_status_freeze_start] enter");
 
 	if (state == STATE_STOPPED || state == STATE_STARTED) {
-		printf("Ready to FREEZE, we are %s\n", VAL[state]);
+		printf("Ready to FREEZE %s: we are %s\n", service, VAL[state]);
 		if (state == STATE_STARTED) {
 			write_status(service, STATE_START_READY, nodename);
-			printf("Service %s FROZEN\n", service);
+			printf("Service %s FROZEN-START\n", service);
 			return 0;
 		}
 		if (state == STATE_STOPPED) {
@@ -1175,7 +1175,7 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 	halog(LOG_DEBUG, "[change_status_unfreeze] enter");
 
 	if (state == STATE_FROZEN_STOP || state == STATE_START_READY) {
-		halog(LOG_INFO, "Ready to UNFREEZE, we are (%s)", VAL[state]);
+		halog(LOG_INFO, "Ready to UNFREEZE %s: we are (%s)", service, VAL[state]);
 		if (state == STATE_FROZEN_STOP)
 			write_status(service, STATE_STOPPED, nodename);
 		if (state == STATE_START_READY)
