@@ -1,6 +1,10 @@
+#include <stdlib.h>
+#define SYSLOG_NAMES
+#include <syslog.h>
 #include <cluster.h>
 
 gint loglevel = LOG_INFO;
+gint logfacility = -1;
 gchar progname[MAX_PROGNAME_SIZE] = {};
 
 gchar *VAL[MAX_STATE] = {
@@ -1322,6 +1326,56 @@ daemonize(gchar * message)
 }
 
 int
+halog_facility()
+{
+	if (logfacility >= 0) {
+		return logfacility;
+	}
+	int i = 0;
+	struct _code c = facilitynames[0];
+        struct stat buf;
+	char s[10] = "\0";
+	char fpath[MAX_PATH_SIZE];
+	FILE *fds;
+
+        snprintf(fpath, MAX_PATH_SIZE, "%s/conf/logfacility",
+                 getenv("EZ"));
+
+        if (stat(fpath, &buf) < 0) {
+                //printf("Unable to stat file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+	}
+
+        fds = fopen(fpath, "r");
+        if (fds == NULL) {
+                //printf("Unable to open file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+        }
+	if (!fgets(s, 10, fds)) {
+		//printf("Unable to read line of file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+	}
+        fclose(fds);
+	char * ss = g_strstrip(s);
+
+	int n = strlen(ss);
+	while (c.c_name) {
+		if (strncmp(ss, c.c_name, n) == 0) {
+			logfacility = c.c_val;
+			return c.c_val;
+		}
+		i++;
+		c = facilitynames[i];
+	}
+	printf("unknown log facility defined in %s: %s. default to LOG_DAEMON\n", fpath, ss);
+	logfacility = LOG_DAEMON;
+	return LOG_DAEMON;
+}
+
+int
 halog(int prio, const char * fmt, ...)
 {
 	va_list ap;
@@ -1331,7 +1385,7 @@ halog(int prio, const char * fmt, ...)
 		return 0;
 	va_start(ap, fmt);
 	vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
-	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
+	openlog(progname, LOG_PID | LOG_CONS, halog_facility());
 	syslog(prio, "%s", buff);
 	if (isatty(0) && (
 	    (strlen(progname) == 7 && strncmp(progname, "service", 7) == 0)
