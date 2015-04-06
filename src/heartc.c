@@ -152,10 +152,6 @@ gchar *argv[];
 		perror("add_member");
 	}
 	/* assign our destination address */
-	//stTo.sin_family = AF_INET;
-	//stTo.sin_addr.s_addr = inet_addr(argv[2]);
-	//stTo.sin_port = htons(port);
-	//stTo.sin_port = port;
 	addr_size = sizeof (struct sockaddr_in);
 
 	/* assign interface */
@@ -166,7 +162,6 @@ gchar *argv[];
 	/* name the socket */
 	stLocal.sin_family = AF_INET;
 	stLocal.sin_addr.s_addr = htonl(INADDR_ANY);
-	stLocal.sin_port = htons(port);
 	stLocal.sin_port = port;
 	if (bind(s, (struct sockaddr *) &stLocal, sizeof (stLocal)) != 0) {
 		perror("bind");
