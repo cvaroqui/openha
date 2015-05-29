@@ -114,13 +114,13 @@ nmon_service_loop(void * arg)
 		if ((pstate == STATE_STOPPED
 		     || pstate == STATE_FROZEN_STOP
 		     || pstate == STATE_UNKNOWN)
-		    && pstate != STATE_STOPPING
+		    && sstate != STATE_STOPPING
 		    && sstate != STATE_STARTED
 		    && sstate != STATE_STARTING
 		    && sstate != STATE_START_FAILED
 		    && sstate != STATE_STOP_FAILED
 		    && sstate != STATE_FROZEN_STOP
-		    && sstate != STATE_START_READY
+		    && pstate != STATE_START_READY
 		    ) {
 			halog(LOG_NOTICE, "Changing state of service %s", service);
 			change_status_start(sstate, pstate, service, HT_SERV);
