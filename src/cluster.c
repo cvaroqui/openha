@@ -1,6 +1,37 @@
+#include <stdlib.h>
+#include <syslog.h>
+typedef struct _code {
+        char    *c_name;
+        int     c_val;
+} CODE;
+
+CODE facilitynames[] =
+  {
+    { "auth", LOG_AUTH },
+    { "cron", LOG_CRON },
+    { "daemon", LOG_DAEMON },
+    { "kern", LOG_KERN },
+    { "lpr", LOG_LPR },
+    { "mail", LOG_MAIL },
+    { "news", LOG_NEWS },
+    { "syslog", LOG_SYSLOG },
+    { "user", LOG_USER },
+    { "uucp", LOG_UUCP },
+    { "local0", LOG_LOCAL0 },
+    { "local1", LOG_LOCAL1 },
+    { "local2", LOG_LOCAL2 },
+    { "local3", LOG_LOCAL3 },
+    { "local4", LOG_LOCAL4 },
+    { "local5", LOG_LOCAL5 },
+    { "local6", LOG_LOCAL6 },
+    { "local7", LOG_LOCAL7 },
+    { NULL, -1 }
+  };
+
 #include <cluster.h>
 
 gint loglevel = LOG_INFO;
+gint logfacility = -1;
 gchar progname[MAX_PROGNAME_SIZE] = {};
 
 gchar *VAL[MAX_STATE] = {
@@ -520,8 +551,8 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 
 	if ((state == STATE_STOPPED || state == STATE_UNKNOWN) &&
 	    (ostate == STATE_STOPPED || ostate == STATE_FROZEN_STOP || ostate == STATE_UNKNOWN)) {
-		halog(LOG_NOTICE, "Ready to start, partner node is %s , we are %s",
-			VAL[ostate], VAL[state]);
+		halog(LOG_NOTICE, "Ready to start %s: partner node is %s , we are %s",
+			service, VAL[ostate], VAL[state]);
 	} else {
 		halog(LOG_NOTICE, "Cannot start %s: service not in correct state (partner node is %s, we are %s)",
 			service, VAL[ostate], VAL[state]);
@@ -1046,8 +1077,8 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 	gchar *arg[3];
 
 	if (state == STATE_STARTED || state == STATE_UNKNOWN) {
-		halog(LOG_NOTICE, "Ready to stop, partner node is %s we are %s",
-			VAL[ostate], VAL[state]);
+		halog(LOG_NOTICE, "Ready to stop %s: partner node is %s we are %s",
+			service, VAL[ostate], VAL[state]);
 	} else {
 		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s)",
 			service, VAL[ostate],VAL[state]);
@@ -1079,8 +1110,8 @@ change_status_force_stop(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_stop] enter");
 
-	halog(LOG_INFO, "Ready to force stop, partner node is %s, we are %s",
-		VAL[ostate], VAL[state]);
+	halog(LOG_INFO, "Ready to force stop %s: partner node is %s, we are %s",
+		service, VAL[ostate], VAL[state]);
 
 	write_status(service, STATE_STOPPED, nodename);
 	halog(LOG_INFO, "Service %s successfully stopped", service);
@@ -1093,8 +1124,8 @@ change_status_force_start(gint state, gint ostate, gchar * service,
 {
 	halog(LOG_DEBUG, "[change_status_force_start] enter");
 
-	halog(LOG_INFO, "Ready to force start, partner node is  %s, we are %s",
-		VAL[ostate], VAL[state]);
+	halog(LOG_INFO, "Ready to force start %s: partner node is  %s, we are %s",
+		service, VAL[ostate], VAL[state]);
 
 	halog(LOG_INFO, "Service %s forced to started", service);
 
@@ -1143,10 +1174,10 @@ change_status_freeze_start(gint state, gint ostate, gchar * service,
 	halog(LOG_DEBUG, "[change_status_freeze_start] enter");
 
 	if (state == STATE_STOPPED || state == STATE_STARTED) {
-		printf("Ready to FREEZE, we are %s\n", VAL[state]);
+		printf("Ready to FREEZE %s: we are %s\n", service, VAL[state]);
 		if (state == STATE_STARTED) {
 			write_status(service, STATE_START_READY, nodename);
-			printf("Service %s FROZEN\n", service);
+			printf("Service %s FROZEN-START\n", service);
 			return 0;
 		}
 		if (state == STATE_STOPPED) {
@@ -1175,7 +1206,7 @@ change_status_unfreeze(gint state, gchar * service, GHashTable * HT)
 	halog(LOG_DEBUG, "[change_status_unfreeze] enter");
 
 	if (state == STATE_FROZEN_STOP || state == STATE_START_READY) {
-		halog(LOG_INFO, "Ready to UNFREEZE, we are (%s)", VAL[state]);
+		halog(LOG_INFO, "Ready to UNFREEZE %s: we are (%s)", service, VAL[state]);
 		if (state == STATE_FROZEN_STOP)
 			write_status(service, STATE_STOPPED, nodename);
 		if (state == STATE_START_READY)
@@ -1322,6 +1353,56 @@ daemonize(gchar * message)
 }
 
 int
+halog_facility()
+{
+	if (logfacility >= 0) {
+		return logfacility;
+	}
+	int i = 0;
+	struct _code c = facilitynames[0];
+        struct stat buf;
+	char s[10] = "\0";
+	char fpath[MAX_PATH_SIZE];
+	FILE *fds;
+
+        snprintf(fpath, MAX_PATH_SIZE, "%s/conf/logfacility",
+                 getenv("EZ"));
+
+        if (stat(fpath, &buf) < 0) {
+                //printf("Unable to stat file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+	}
+
+        fds = fopen(fpath, "r");
+        if (fds == NULL) {
+                //printf("Unable to open file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+        }
+	if (!fgets(s, 10, fds)) {
+		//printf("Unable to read line of file %s: default to LOG_DAEMON\n", fpath);
+		logfacility = LOG_DAEMON;
+                return LOG_DAEMON;
+	}
+        fclose(fds);
+	char * ss = g_strstrip(s);
+
+	int n = strlen(ss);
+	while (c.c_name) {
+		if (strncmp(ss, c.c_name, n) == 0) {
+			logfacility = c.c_val;
+			return c.c_val;
+		}
+		i++;
+		c = facilitynames[i];
+	}
+	printf("unknown log facility defined in %s: %s. default to LOG_DAEMON\n", fpath, ss);
+	logfacility = LOG_DAEMON;
+	return LOG_DAEMON;
+}
+
+int
 halog(int prio, const char * fmt, ...)
 {
 	va_list ap;
@@ -1331,7 +1412,7 @@ halog(int prio, const char * fmt, ...)
 		return 0;
 	va_start(ap, fmt);
 	vsnprintf(buff, MAX_LOG_MSG_SIZE, fmt, ap);
-	openlog(progname, LOG_PID | LOG_CONS, LOG_DAEMON);
+	openlog(progname, LOG_PID | LOG_CONS, halog_facility());
 	syslog(prio, "%s", buff);
 	if (isatty(0) && (
 	    (strlen(progname) == 7 && strncmp(progname, "service", 7) == 0)

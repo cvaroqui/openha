@@ -134,7 +134,6 @@ char *argv[];
 	/* name the socket */
 	stLocal.sin_family = AF_INET;
 	stLocal.sin_addr.s_addr = htonl(INADDR_ANY);
-	stLocal.sin_port = htons(port);
 	stLocal.sin_port = port;
 	bind(s, (struct sockaddr *) &stLocal, sizeof (stLocal));
 
@@ -156,7 +155,6 @@ char *argv[];
 	/* assign our destination address */
 	stTo.sin_family = AF_INET;
 	stTo.sin_addr.s_addr = inet_addr(argv[2]);
-	stTo.sin_port = htons(port);
 	stTo.sin_port = port;
 
 	/* set TTL to traverse up to multiple routers */

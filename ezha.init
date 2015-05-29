@@ -50,6 +50,13 @@ PATH=$EZ_BIN:$PATH; export PATH
 [ -f /etc/default/openha ] && . /etc/default/openha
 [ -f /etc/sysconfig/openha ] && . /etc/sysconfig/openha
 
+function get_log_facility {
+	set -- $(cat $EZ/conf/logfacility 2>/dev/null)
+	[ -z $1 ] && echo daemon
+	echo $1
+}
+LOG_FACILITY=$(get_log_facility)
+
 case "$1" in
 'start')
 	if [ -f $EZ_SERVICES ]
@@ -59,6 +66,7 @@ case "$1" in
 			[ "$FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START" = "yes" ] && \
 			[ "$NODE" != "$PRIMARY" ] && {
 				echo "set local secondary instance of service $SERVICE in FROZEN_STOP state"
+				logger -p $LOG_FACILITY.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				echo -n $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
 			}
 			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
