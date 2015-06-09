@@ -186,7 +186,9 @@ char *argv[];
 	}
 
 	snprintf(progname, MAX_PROGNAME_SIZE, "service");
-	init_var();
+	if (!init_var()) {
+		return -1;
+	}
 
 	if (strncmp(argv[1], "-s", 2) == 0 || strncmp(argv[2], "-s", 2) == 0) {
 		shm = get_shm_nmon_ro_segment();
@@ -224,35 +226,35 @@ char *argv[];
 		service_info(GlobalList, HT_SERV, nodename, service);
 		return 0;
 	}
-	//SERVICE ADD RM
+	//SERVICE ADD
 	if ((strcmp(argv[1], "-a") == 0) && (argc == 7)) {
-		if (svccount < MAX_SERVICES) {
-			printf("Creating service %s :\n", argv[2]);
-			if (service_add
-			    (argv[2], argv[3], argv[4], argv[5], argv[6],
-			     HT_SERV) == 0)
-				printf("Done.\n");
-			else
-				printf("Failed.\n");
-			return 0;
-		} else {
-			printf
-			    ("Error : Your already have created max services count (%d)\n",
-			     svccount);
-			exit(-1);
+		if (svccount >= MAX_SERVICES) {
+			fprintf(stderr, "Error : Your already have created max services count (%d)\n", svccount);
+			return -1;
 		}
+		if (strlen(argv[2]) >= MAX_SERVICES_SIZE) {
+			fprintf(stderr, "Error : service name is too long. max %d\n", MAX_SERVICES_SIZE);
+			return -1;
+		}
+		printf("Creating service %s :\n", argv[2]);
+		if (service_add(argv[2], argv[3], argv[4], argv[5], argv[6], HT_SERV) == 0) {
+			printf("Done.\n");
+			return 0;
+		}
+		printf("Failed.\n");
+		return -1;
 	}
 
+	//SERVICE RM
 	if ((strcmp(argv[1], "-r") == 0) && (argc == 3)) {
 		//change_status_deleted("unknown",state, ostate, service,HT_SERV);
 		ret = service_rm(argv[2], HT_SERV);
 		if (ret == 0) {
-			printf("ok\n");
+			printf("Done.\n");
 			return 0;
-		} else {
-			printf("Failed to remove service\n");
-			return -1;
 		}
+		printf("Failed.\n");
+		return -1;
 		
 	}
 	//ACTION
