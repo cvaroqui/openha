@@ -357,7 +357,9 @@ char *argv[];
 		exit(0);
 	}
 
-	init_var();
+	if (!init_var()) {
+		exit(-1);
+	}
 	init();
 	if (sanity_checks() > 0)
 		exit(-1);
