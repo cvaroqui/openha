@@ -232,8 +232,8 @@ char *argv[];
 			fprintf(stderr, "Error : Your already have created max services count (%d)\n", svccount);
 			return -1;
 		}
-		if (strlen(argv[2]) >= MAX_SERVICES_SIZE) {
-			fprintf(stderr, "Error : service name is too long. max %d\n", MAX_SERVICES_SIZE);
+		if (strlen(argv[2]) > MAX_SERVICES_SIZE - 1) {
+			fprintf(stderr, "Error : service name is too long. %zu out of %d\n", strlen(argv[2]), MAX_SERVICES_SIZE - 1);
 			return -1;
 		}
 		printf("Creating service %s :\n", argv[2]);
