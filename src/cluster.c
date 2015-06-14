@@ -643,9 +643,10 @@ get_status(GList * liste, gchar * node, gchar * service)
 			continue;
 		}
 		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ, service, node);
-		if (create_state_tree(service, node, NULL) != 0)
+		if (create_state_tree(service, node, NULL) != 0) {
 			halog(LOG_ERR, "unable to create service %s status file tree for node %s. return UNKNOWN", service, node);
 			return STATE_UNKNOWN;
+		}
 		fds = fopen(fpath, "r");
 		if (fds == NULL) {
 			halog(LOG_ERR, "unable to open read-only %s. return UNKNOWN", fpath);
