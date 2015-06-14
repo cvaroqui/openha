@@ -212,21 +212,9 @@ write_status(gchar service[MAX_SERVICES_SIZE], gint state, gchar * node)
 	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
 		 getenv("EZ"), service, node);
 
-	fds = fopen(fpath, "r");
+	fds = fopen(fpath, "r+");
 	if (!fds) {
-		halog(LOG_ERR, "failed to open read-only %s", fpath);
-		return -1;
-	}
-	/*
-	if (read_lock(fileno(FILE_STATE)) == -1) {
-		halog(LOG_ERR, "failed to acquire write state lock");
-		fclose(fds);
-		return -1;
-	}
-	*/
-	fds = freopen(fpath, "r+", fds);
-	if (!fds) {
-		halog(LOG_ERR, "failed to open read+ %s", fpath);
+		halog(LOG_ERR, "failed to open %s in r+ mode", fpath);
 		return -1;
 	}
 	snprintf(to_copy, 2, "%i\n", state);
@@ -656,18 +644,23 @@ get_status(GList * liste, gchar * node, gchar * service)
 		}
 		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ, service, node);
 		if (create_state_tree(service, node, NULL) != 0)
-			continue;
+			halog(LOG_ERR, "unable to create service %s status file tree for node %s. return UNKNOWN", service, node);
+			return STATE_UNKNOWN;
 		fds = fopen(fpath, "r");
 		if (fds == NULL) {
-			halog(LOG_ERR, "unable to open read-only %s", fpath);
-			continue;
+			halog(LOG_ERR, "unable to open read-only %s. return UNKNOWN", fpath);
+			return STATE_UNKNOWN;
 		}
-		fread(buff, 1, 1, fds);
+		if (fread(buff, 1, 1, fds) != 1) {
+			halog(LOG_ERR, "unable to read state from opened %s. return UNKNOWN", fpath);
+			fclose(fds);
+			return STATE_UNKNOWN;
+		}
 		state = atoi(buff);
 		fclose(fds);
 		return state;
 	}
-	halog(LOG_ERR, "Unable to read service %s status for node %s. Return UNKNOWN", service, node);
+	halog(LOG_ERR, "unable to read service %s status for node %s. return UNKNOWN", service, node);
 	return STATE_UNKNOWN;
 }
 
@@ -818,6 +811,7 @@ create_file(gchar * name, gchar * node)
 		return -1;
 	}
 	fwrite(to_copy, 2, 1, fds);
+	fflush(fds);
 	fclose(fds);
 	halog(LOG_INFO, "State file %s created with initial state FROZEN_STOP", fpath);
 	return 0;
@@ -1439,28 +1433,31 @@ clean_tab(struct sendstruct * to_send)
 gint
 get_node_service_status(struct sendstruct * to_send, gchar * service, guint j)
 {
-       FILE *fds;
-       char fpath[MAX_PATH_SIZE];
-       gint state;
-       gchar buff[1];
-       gchar *nodename = to_send->nodename;
+	FILE *fds;
+	char fpath[MAX_PATH_SIZE];
+	gint state;
+	gchar buff[1];
+	gchar *nodename = to_send->nodename;
 
-       snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
-		getenv("EZ"), service, nodename);
-       fds = fopen(fpath, "r");
-       if (fds == NULL) {
-	       halog(LOG_ERR, "Unable to open read-only %s. send UNKNOWN state", fpath);
-	       state = STATE_UNKNOWN;
-       } else {
-	       fread(buff, 1, 1, fds);
-	       state = atoi(buff);
-	       halog(LOG_DEBUG, "read state %d from %s", state, fpath);
-	       fclose(fds);
-       }
-       strcpy(to_send->service_name[j], service);
-       to_send->service_state[j] = state;
-       to_send->up = TRUE;
-       return 0;
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
+		 getenv("EZ"), service, nodename);
+	fds = fopen(fpath, "r");
+	if (fds == NULL) {
+		state = STATE_UNKNOWN;
+		halog(LOG_ERR, "unable to open %s in read-only mode. send UNKNOWN state", fpath);
+	} else if (fread(buff, 1, 1, fds) == 1) {
+		state = atoi(buff);
+		halog(LOG_DEBUG, "read state %d from %s", state, fpath);
+		fclose(fds);
+	} else {
+		state = STATE_UNKNOWN;
+		halog(LOG_ERR, "unable to read opened %s. send UNKNOWN state", fpath);
+		fclose(fds);
+	}
+	strcpy(to_send->service_name[j], service);
+	to_send->service_state[j] = state;
+	to_send->up = TRUE;
+	return 0;
 }
 
 gint
