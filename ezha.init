@@ -36,9 +36,6 @@ AWK=/bin/awk
 NODE=`uname -n`
 FROZEN_STOP=6
 
-ECHO=echo
-[ -x /usr/ucb/echo ] && ECHO=/usr/ucb/echo
-
 export AWK
 export EZ
 . $EZ/env.sh
@@ -70,7 +67,7 @@ case "$1" in
 			[ "$NODE" != "$PRIMARY" ] && {
 				echo "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				logger -p $LOG_FACILITY.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
-				$ECHO -n $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
+				echo $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
 			}
 			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
 			[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" force-stop
