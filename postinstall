@@ -150,7 +150,12 @@ legacy_launch()
 {
     log "legacy_launch : creating symlinks"
     cp -f $EZ/ezha.init $EZ/ezha
-    for symlink in ${MYBASEDIR}/etc/rc2.d/S99cluster ${MYBASEDIR}/etc/rc3.d/S99cluster ${MYBASEDIR}/etc/rc0.d/K01cluster ${MYBASEDIR}/etc/rcS.d/K01cluster
+    sls="${MYBASEDIR}/etc/rc2.d/S99cluster ${MYBASEDIR}/etc/rc0.d/K01cluster ${MYBASEDIR}/etc/rcS.d/K01cluster"
+    if [ `uname -s` = "Linux" ]
+    then
+        sls="$sls ${MYBASEDIR}/etc/rc3.d/S99cluster"
+    fi
+    for symlink in $sls
     do
         ln -sf $EZ/ezha $symlink
 	if test $? -eq 0
