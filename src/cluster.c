@@ -488,7 +488,12 @@ Cmd(char *prg, gchar * argsin[2])
 		halog(LOG_WARNING, "Error: fork error in Cmd(): %s", strerror(errno));
 		return -1;
 	default:
-		wait(&status);
+		/*
+		 * Solaris acts weirdly when a signal is given to the parent process.
+		 * Therefore we place the wait() inside a while loop so that wait()
+		 * will not return before the child has died.
+		 */
+		while ((wait(&status) == -1) && (errno == EINTR)) {}
 		if (WIFEXITED(status)) {
 			status = WEXITSTATUS(status);
 			if (status == 0)
