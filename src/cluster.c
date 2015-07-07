@@ -467,7 +467,7 @@ gint
 Cmd(char *prg, gchar * argsin[2])
 {
 	halog(LOG_DEBUG, "[Cmd] enter");
-	gint pid, status, retval = -1;
+	gint pid, status;
 	//gint  del, fs;
 
 	signal(SIGTERM, SIG_IGN);
@@ -481,33 +481,33 @@ Cmd(char *prg, gchar * argsin[2])
 		//signal(SIGINT, del);
 		//signal(SIGQUIT, fs);
 		//Mettre un fstat sur le prg a executer
-		retval = execv(prg, argsin);
+		execv(prg, argsin);
 		halog(LOG_WARNING, "Error: exec failed: %s", strerror(errno));
 		exit(-1);
 	case (-1):
 		halog(LOG_WARNING, "Error: fork error in Cmd(): %s", strerror(errno));
 		return -1;
 	default:
-		/*
-		 * Solaris acts weirdly when a signal is given to the parent process.
-		 * Therefore we place the wait() inside a while loop so that wait()
-		 * will not return before the child has died.
-		 */
-		while ((wait(&status) == -1) && (errno == EINTR)) {}
+		if (waitpid(pid, &status, 0) < 0) {
+			halog(0, "waitpid on %s terminated abnormally", prg);
+			return -1;
+		}
 		if (WIFEXITED(status)) {
 			status = WEXITSTATUS(status);
-			if (status == 0)
-				retval = 0;
-			else
-				halog(0, "%s exitted with %d", prg, status);
+			if (status == 0) {
+				return 0;
+			}
+			halog(0, "%s exitted with %d", prg, status);
+			return -1;
 		}
-		else if (WIFSIGNALED(status))
+		if (WIFSIGNALED(status)) {
 			halog(0, "%s was terminated by signal %d", prg, WTERMSIG(status));
-		else
-			halog(0, "%s terminated abnormally", prg);
+			return -1;
+		}
+		halog(0, "%s terminated abnormally", prg);
 
 	}
-	return retval;
+	return -1;
 }
 
 gint
