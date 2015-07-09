@@ -1,5 +1,5 @@
 #AC_INIT(configure.in)
-AC_INIT(openha, 0.4.3.osvc1)
+AC_INIT(openha, 0.4.4.osvc1)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST

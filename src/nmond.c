@@ -82,7 +82,7 @@ nmon_service_loop(void * arg)
 	gchar *primary, *secondary;
 	gint pstate, sstate;
 
-	strncpy(service, SERVICE[i], 16);
+	strncpy(service, SERVICE[i], MAX_SERVICES_SIZE);
 	pointer = g_hash_table_lookup(HT_SERV, service);
 	primary = ((struct srvstruct *) (pointer))->primary;
 	secondary = ((struct srvstruct *) (pointer))->secondary;
