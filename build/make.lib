@@ -12,6 +12,7 @@ VERSION=$(git describe --tags --abbrev=0)
 RELEASE=$(git describe --tags|cut -d- -f2)
 ARCH=$(uname -p)
 OS=$(uname)
+YEAR=$(date +%Y)
 
 MASTER=0
 git branch | grep "\* master" >/dev/null 2>&1 && MASTER=1
@@ -25,6 +26,7 @@ else
 fi
 OPENHA=$PATH_SCRIPT/..
 CHROOT_BN=openha-$VERSION-$RELEASE.$ARCH
+CHROOT_BN_DEB=openha_$VERSION-$RELEASE
 CHROOT=$OPENHA/tmp/BUILDROOT/$CHROOT_BN
 
 if [ "$(uname)" == "SunOS" -a -x /usr/xpg4/bin/id ] ; then

@@ -1,0 +1,103 @@
+#!/bin/bash
+
+PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
+. $PATH_SCRIPT/make.lib
+
+BUILD_D=$OPENHA/tmp/debian
+rm -rf $BUILD_D
+
+[ ! -d $BUILD_D ] && {
+	mkdir -p $BUILD_D || exit 1
+}
+
+cd $OPENHA
+git archive --prefix=openha-${VERSION}/ HEAD > $BUILD_D/${CHROOT_BN_DEB}.orig.tar
+gzip $BUILD_D/${CHROOT_BN_DEB}.orig.tar
+
+cd $BUILD_D
+tar xzf *.tar.gz
+cd openha*
+
+dh_make --copyright gpl2 --email support@opensvc.com --single --packagename ${CHROOT_BN_DEB} --yes
+cd debian && rm -f *ex *EX README* 
+
+cp changelog changelog.tmp
+cat changelog.tmp | sed -e "s/unstable/stable/;s/Initial release.*/Initial release/" > changelog
+rm -f changelog.tmp
+
+cp copyright copyright.tmp
+cat copyright.tmp | sed -e "s@^Source.*@Source: http://git.opensvc.com/?p=openha/.git;a=summary@" > copyright ; cp copyright copyright.tmp
+cat copyright.tmp | sed -e "s@<years>@$YEAR@;s/<put author's name and email here>/OpenSVC <support@opensvc.com>/" | grep -Ev "^#|likewise for another author" > copyright
+rm -f copyright.tmp
+
+echo "README" > docs
+
+cp control control.tmp
+cat control.tmp | sed -e "s@^Section.*@Section: utils@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@^Build-Depends.*@Build-Depends: debhelper (>= 8.0.0), autotools-dev, automake, git, make, autoconf, gcc@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@^Homepage.*@Homepage: http://open-ha-cluster.sourceforge.net@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@^#Vcs-Git.*@Vcs-Git: git://git.opensvc.com/openha@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@^#Vcs-Browser.*@Vcs-Browser: http://git.opensvc.com/?p=openha/.git;a=summary@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@<insert up to 60 chars description>@Open HA Cluster - Easy High Availability Software@" | grep -v "insert long description" > control ; cp control control.tmp
+rm -f control.tmp
+
+cat - <<-EOF >> control
+ OpenHA heartbeat branch maintained by OpenSVC. Upstream on sf.net
+ upstream doc : http://open-ha-cluster.sourceforge.net
+ OpenSVC documentation : http://docs.opensvc.com/howto.ha.html  http://docs.opensvc.com/howto.getting.started.html#openha-integration
+EOF
+
+TAB="$(printf '\t')"
+
+cat - <<-EOF > rules
+#!/usr/bin/make -f
+# use tab for indent
+#export DH_VERBOSE=1
+
+build:
+${TAB}aclocal
+${TAB}autoconf
+${TAB}automake --add-missing
+
+binary:
+${TAB}dh_testdir
+${TAB}dh_auto_configure -- --prefix=/usr/local/cluster
+${TAB}dh_auto_build
+${TAB}dh_testroot
+${TAB}dh_prep
+${TAB}dh_installdirs
+${TAB}dh_auto_install
+${TAB}dh_install --sourcedir=$BUILD_D/openha-${VERSION}
+${TAB}cp $BUILD_D/openha-${VERSION}/postinstall debian/openha/usr/local/cluster/.postinstall
+${TAB}cp $BUILD_D/openha-${VERSION}/preremove debian/openha/usr/local/cluster/.premove
+${TAB}cp $BUILD_D/openha-${VERSION}/systemd.opensvc-openha.service debian/openha/usr/local/cluster/.systemd.opensvc-openha.service
+${TAB}dh_installdocs
+${TAB}dh_installchangelogs
+${TAB}dh_installdebconf
+${TAB}dh_lintian
+${TAB}dh_compress
+${TAB}dh_fixperms
+${TAB}dh_strip
+${TAB}dh_installdeb
+${TAB}dh_gencontrol
+${TAB}dh_md5sums
+${TAB}dh_builddeb
+
+override_dh_auto_configure:
+${TAB}dh_auto_configure -- --prefix=/usr/local/cluster
+
+%:
+${TAB}dh \$@
+
+.PHONY: build binary override_dh_auto_configure
+EOF
+
+cp $BUILD_D/openha-${VERSION}/postinstall postinst && chmod 755 postinst
+cp $BUILD_D/openha-${VERSION}/preremove prerm && chmod 755 prerm
+
+cd $BUILD_D/openha*
+dpkg-buildpackage -us -uc
+
+cd $BUILD_D && ls -lart 
+
+[ -x $PATH_SCRIPT/release_deb ] && $PATH_SCRIPT/release_deb openha-${VERSION}*deb
