@@ -30,7 +30,6 @@
 #	* Remove env.sh (dirty) and $EZ (this goes together).
 #	* Remove "sleep x". If this does depends on time, it does not work.
 #	  -> one day, we will semaphore for this stuff (sam)
-LD_LIBRARY_PATH=/usr/local/lib; export LD_LIBRARY_PATH
 EZ=/usr/local/cluster
 AWK=/bin/awk
 NODE=`uname -n`
