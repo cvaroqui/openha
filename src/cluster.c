@@ -547,8 +547,11 @@ change_status_start(gint state, gint ostate, gchar * service, GHashTable * HT)
 		halog(LOG_NOTICE, "Ready to start %s: partner node is %s , we are %s",
 			service, VAL[ostate], VAL[state]);
 	} else {
-		halog(LOG_NOTICE, "Cannot start %s: service not in correct state (partner node is %s, we are %s)",
-			service, VAL[ostate], VAL[state]);
+		if (!(state == STATE_START_READY)) {
+			// don't log every 2 secs when in maintenance mode
+			halog(LOG_NOTICE, "Cannot start %s: service not in correct state (partner node is %s, we are %s)",
+				service, VAL[ostate], VAL[state]);
+		}
 		return -1;
 	}
 
