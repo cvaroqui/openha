@@ -104,7 +104,6 @@ nmon_service_loop(void * arg)
 		    && pstate != STATE_FROZEN_STOP
 		    && sstate != STATE_START_READY
 		    ) {
-			halog(LOG_NOTICE, "Changing state of service %s", service);
 			change_status_start(pstate, sstate, service, HT_SERV);
 		}
 	}
@@ -122,7 +121,6 @@ nmon_service_loop(void * arg)
 		    && sstate != STATE_FROZEN_STOP
 		    && pstate != STATE_START_READY
 		    ) {
-			halog(LOG_NOTICE, "Changing state of service %s", service);
 			change_status_start(sstate, pstate, service, HT_SERV);
 		}
 	}
