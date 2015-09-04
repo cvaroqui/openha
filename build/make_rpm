@@ -31,7 +31,7 @@ cat - <<-EOF >$SPEC
 Summary: EASY high-availability software
 Name: openha
 Version: $VERSION
-Release: $RELEASE
+Release: $RELEASE%{?dist}
 License: GPL
 Group: Utilities
 URL:        http://open-ha-cluster.sourceforge.net/
