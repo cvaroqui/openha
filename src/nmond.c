@@ -602,8 +602,8 @@ get_seg(gint i, struct shmtab_struct * S)
 	strcpy(SHM_KEY, getenv("EZ_LOG"));
 	strcat(SHM_KEY, "/proc/");
 
-	if (strcmp(g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1), "net")
-	    == 0) {
+	if ((strcmp(g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1), "net") == 0) ||
+	    (strcmp(g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1), "unicast") == 0)) {
 		m = g_strconcat(SHM_KEY,
 				g_list_nth_data(list_heart,
 						(i * LIST_NB_ITEM) + 3), "-",

@@ -31,15 +31,12 @@
 #	* Remove "sleep x". If this does depends on time, it does not work.
 #	  -> one day, we will semaphore for this stuff (sam)
 EZ=/usr/local/cluster
-AWK=/bin/awk
 NODE=`uname -n`
 FROZEN_STOP=6
 
-export AWK
 export EZ
 . $EZ/env.sh
 [ ! -d $EZ/bin ] && exit 1
-[ ! -x $AWK ] && exit 1
 [ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
 [ ! -f $EZ_NODES -o ! -f $EZ_MONITOR ] && exit 1
 
@@ -83,6 +80,9 @@ case "$1" in
 				net)
 					$EZ_BIN/heartd $ARG1 $ARG2 $ARG3
 					;;
+				unicast)
+					$EZ_BIN/heartd_unicast $ARG1 $ARG2 $ARG3
+					;;
 				disk)
 					$EZ_BIN/heartd_raw $ARG1 $ARG2
 					;;
@@ -97,6 +97,9 @@ case "$1" in
 				case "$TYPE" in
 				net)
 					$EZ_BIN/heartc $ARG1 $ARG2 $ARG3 $ARG4
+					;;
+				unicast)
+					$EZ_BIN/heartc_unicast $ARG1 $ARG2 $ARG3 $ARG4
 					;;
 				disk)
 					$EZ_BIN/heartc_raw $ARG1 $ARG2 $ARG3
@@ -125,6 +128,8 @@ case "$1" in
 	echo "Stopping EZ-HA heartbeat" > /dev/console
 	pkill heartc 
 	pkill heartd 
+	pkill heartc_unicast
+	pkill heartd_unicast
 	pkill heartc_raw 
 	pkill heartd_raw 
 	pkill heartc_dio 
@@ -136,6 +141,8 @@ case "$1" in
 	pkill nmond
 	pkill heartc 
 	pkill heartd 
+	pkill heartc_unicast
+	pkill heartd_unicast
 	pkill heartc_raw 
 	pkill heartd_raw 
 	pkill heartc_dio 
@@ -146,12 +153,12 @@ case "$1" in
 	echo "Stopping EZ-HA daemons"
 	pkill nmond
 	pkill heartc
+	pkill heartd
+	pkill heartc_unicast
+	pkill heartd_unicast
 	pkill heartc_raw
-	pkill heartd
 	pkill heartd_raw
-	pkill heartc
 	pkill heartc_dio 
-	pkill heartd
 	pkill heartd_dio 
 	sleep 5
 	echo "Starting EZ-HA daemons"
@@ -164,6 +171,9 @@ case "$1" in
 				case "$TYPE" in
 				net)
 					$EZ_BIN/heartd $ARG1 $ARG2 $ARG3
+					;;
+				unicast)
+					$EZ_BIN/heartd_unicast $ARG1 $ARG2 $ARG3
 					;;
 				disk)
 					$EZ_BIN/heartd_raw $ARG1 $ARG2
@@ -179,6 +189,9 @@ case "$1" in
 				case "$TYPE" in
 				net)
 					$EZ_BIN/heartc $ARG1 $ARG2 $ARG3 $ARG4
+					;;
+				unicast)
+					$EZ_BIN/heartc_unicast $ARG1 $ARG2 $ARG3 $ARG4
 					;;
 				disk)
 					$EZ_BIN/heartc_raw $ARG1 $ARG2 $ARG3

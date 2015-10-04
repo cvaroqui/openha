@@ -72,12 +72,13 @@ hb_exists(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 		       (File, "%s %s %s %s %s", lu[0], lu[1], lu[2], lu[3],
 			lu[4]) == 5) {
 			node[i] = g_malloc0(MAX_NODENAME_SIZE);
-			type[i] = g_malloc0(5);
+			type[i] = g_malloc0(8);
 			interface[i] = g_malloc0(16);
 			addr[i] = g_malloc0(16);
 			port[i] = g_malloc0(5);
 			timeout[i] = g_malloc0(5);
-			if (strcmp("net", lu[1]) == 0) {
+			if ((strcmp("net", lu[1]) == 0)
+			    || (strcmp("unicast", lu[1]) == 0)) {
 				n = fscanf(File, "%s", lu[5]);
 				if (n != 1) {
 					fprintf(stderr,
@@ -104,7 +105,8 @@ hb_exists(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 		fclose(File);
 	}
 	for (i = 0; i < j; i++) {
-		if (strcmp("net", Type) == 0) {
+		if ((strcmp("net", Type) == 0)
+		    || (strcmp("unicast", Type) == 0)) {
 			if ((strcmp(Node, node[i]) == 0) &&
 			    (strcmp(Interface, interface[i]) == 0) &&
 			    (strcmp(Addr, addr[i]) == 0) &&
@@ -149,12 +151,13 @@ hb_add(gchar * Node, gchar * Type, gchar * Interface,
 		       (File, "%s %s %s %s %s", lu[0], lu[1], lu[2], lu[3],
 			lu[4]) == 5) {
 			node[i] = g_malloc0(MAX_NODENAME_SIZE);
-			type[i] = g_malloc0(5);
+			type[i] = g_malloc0(8);
 			interface[i] = g_malloc0(16);
 			addr[i] = g_malloc0(16);
 			port[i] = g_malloc0(5);
 			timeout[i] = g_malloc0(5);
-			if (strcmp("net", lu[1]) == 0) {
+			if ((strcmp("net", lu[1]) == 0)
+			    || (strcmp("unicast", lu[1]) == 0)) {
 				n = fscanf(File, "%s", lu[5]);
 				if (n != 1) {
 					printf
@@ -183,7 +186,8 @@ hb_add(gchar * Node, gchar * Type, gchar * Interface,
 	/******************/
 	j = i;
 	for (i = 0; i < j; i++) {
-		if (strcmp("net", Type) == 0) {
+		if ((strcmp("net", Type) == 0)
+		    || (strcmp("unicast", Type) == 0)) {
 			if ((strcmp(Node, node[i]) == 0) &&
 			    (strcmp(Interface, interface[i]) == 0) &&
 			    (strcmp(Addr, addr[i]) == 0) &&
@@ -203,7 +207,8 @@ hb_add(gchar * Node, gchar * Type, gchar * Interface,
 		}
 	}
 	if (Timeout != NULL) {
-		if (strcmp("net", Type) == 0) {
+		if ((strcmp("net", Type) == 0)
+		    || (strcmp("unicast", Type) == 0)) {
 			fprintf(File, "%s\t%s\t%s\t%s\t%s\t%s\n", Node, Type,
 				Interface, Addr, Port, Timeout);
 		} else {
@@ -211,7 +216,8 @@ hb_add(gchar * Node, gchar * Type, gchar * Interface,
 				Interface, Addr, Timeout);
 		}
 	} else {
-		if (strcmp("net", Type) == 0) {
+		if ((strcmp("net", Type) == 0)
+		    || (strcmp("unicast", Type) == 0)) {
 			fprintf(File, "%s\t%s\t%s\t%s\t%s\n", Node, Type,
 				Interface, Addr, Port);
 		} else {
@@ -256,7 +262,8 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 			while (fscanf
 			       (File, "%s %s %s %s %s", node, type, interface,
 				addr, port) == 5) {
-				if (strcmp("net", type) == 0) {
+				if ((strcmp("net", type) == 0)
+				    || (strcmp("unicast", type) == 0)) {
 					n = fscanf(File, "%s", timeout);
 					if (n != 1) {
 						printf
@@ -348,7 +355,8 @@ _hb_status(GList * list_heart, gint i)
 	snprintf(interface, MAX_PATH_SIZE, "%s %s %s:%s",
 		 hb_type, hb_role, dev, addr_or_offset);
 
-	if (strcmp(hb_type, "net") == 0) {
+	if ((strcmp(hb_type, "net") == 0)
+	    || (strcmp(hb_type, "unicast") == 0)) {
 		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s-%s-%s.key",
 			 getenv("EZ_LOG"), addr_or_offset, port, dev);
 	} else {
@@ -481,18 +489,22 @@ gchar *argv[];
 	}
 	if (aflag == 1) {
 		if (!check_node(nvalue)) {
+		        fprintf(stderr, "node validation error.\n");
 			usage();
 			return 1;
 		}
 		if (!check_type(tvalue)) {
+		        fprintf(stderr, "type validation error.\n");
 			usage();
 			return 2;
 		}
 		if (!check_interface(tvalue, ivalue, dvalue, pvalue)) {
+		        fprintf(stderr, "interface validation error.\n");
 			usage();
 			return 3;
 		}
 		if (!check_timeout(Tvalue)) {
+		        fprintf(stderr, "timeout validation error.\n");
 			usage();
 			return 4;
 		}
@@ -502,21 +514,21 @@ gchar *argv[];
 		     nvalue, tvalue, ivalue, dvalue, pvalue, Tvalue);
 #endif
 		if (!hb_add(nvalue, tvalue, ivalue, dvalue, pvalue, Tvalue)) {
-			fprintf(stderr, "Add heartbeat failed.\n");
+			fprintf(stderr, "heartbeat add failed.\n");
 			usage();
 			return 1;
 		} else {
-			printf("Add heartbeat done.\n");
+			printf("heartbeat added.\n");
 			return 0;
 		}
 	}
 	if (rflag == 1) {
 		if (!hb_remove(nvalue, tvalue, ivalue, dvalue, pvalue, Tvalue)) {
-			fprintf(stderr, "Remove heartbeat failed.\n");
+			fprintf(stderr, "heartbeat remove failed.\n");
 			usage();
 			return 1;
 		} else {
-			printf("Remove heartbeat done.\n");
+			printf("heartbeat removed.\n");
 			return 0;
 		}
 	}

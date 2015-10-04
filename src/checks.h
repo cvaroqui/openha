@@ -50,6 +50,7 @@ check_type(gchar * type)
 {
 
 	if ((g_ascii_strcasecmp(type, "net") == 0)
+	    || (g_ascii_strcasecmp(type, "unicast") == 0)
 	    || (g_ascii_strcasecmp(type, "disk") == 0)
 	    || (g_ascii_strcasecmp(type, "dio") == 0)) {
 #ifdef DEBUG
@@ -58,7 +59,7 @@ check_type(gchar * type)
 		return TRUE;
 	} else {
 		fprintf(stderr,
-			"Type %s not valid (must be disk, dio or net).\n",
+			"Type %s not valid (must be disk, dio, unicast or net).\n",
 			type);
 		return FALSE;
 	}
@@ -114,7 +115,48 @@ check_interface(gchar * type, gchar * interface, gchar * address, gchar * port)
 			}
 		}
 	}
-	if (g_ascii_strcasecmp(type, "disk") == 0 || g_ascii_strcasecmp(type, "dio") == 0) {
+	else if (g_ascii_strcasecmp(type, "unicast") == 0) {
+		if ((interface == NULL) || (address == NULL) || (port == NULL)) {
+			fprintf(stderr, "Need interface address and port.\n");
+			return FALSE;
+		}
+		memset(&mreq, 0, sizeof (mreq));
+		rc = if_getaddr(interface, &mreq);
+		if (rc == -1) {
+			//halog(LOG_ERR,"if_getaddr failed. Bad interface name ?");
+			perror("set_mcast_if failed ");
+			fprintf(stderr, "Bad interface name ?\n");
+			return FALSE;
+		} else {
+#ifdef DEBUG
+			printf("addr: %s\n", address);
+#endif
+			sscanf(address, "%d.%d.%d.%d", &content[0], &content[1],
+			       &content[2], &content[3]);
+			if ((((content[1] >= 0) && (content[0] < 224)) || ((content[0] >= 240) && (content[1] < 256)))
+			    && ((content[1] >= 0) && (content[1] < 256))
+			    && ((content[2] >= 0) && (content[2] < 256))
+			    && ((content[3] >= 0) && (content[3] < 255))) {
+#ifdef DEBUG
+				printf("OK, valid unicast address.\n");
+#endif
+				sscanf(port, "%d", &port_value);
+				if (check_port(port_value)) {
+#ifdef DEBUG
+					printf("OK, port value.\n");
+#endif
+					return TRUE;
+				} else {
+					fprintf(stderr, "BAD port value.\n");
+					return FALSE;
+				}
+			} else {
+				printf("BAD Multicast address.\n");
+				return FALSE;
+			}
+		}
+	}
+	else if (g_ascii_strcasecmp(type, "disk") == 0 || g_ascii_strcasecmp(type, "dio") == 0) {
 		if ((interface == NULL) || (address == NULL) || (port != NULL)) {
 			fprintf(stderr, "Need interface and address.\n");
 			return FALSE;
