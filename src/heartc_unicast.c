@@ -55,6 +55,7 @@ gchar *argv[];
 {
 
 	struct sockaddr_in stLocal, stFrom;
+	struct ifreq ifr;
 	//struct sockaddr_in stTo;
 	gint fd, s, timeout, i, j, port = -1;
 	socklen_t addr_size;
@@ -138,6 +139,14 @@ gchar *argv[];
 	if (setsockopt
 	    (s, SOL_SOCKET, SO_REUSEADDR, (void *) &iTmp, sizeof (iTmp)) < 0) {
 		halog(LOG_ERR, "Error setsockopt(SO_REUSEADDR)");
+		exit(-1);
+	}
+
+
+	memset(&ifr, 0, sizeof(ifr));
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", argv[1]);
+	if (setsockopt(s, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
+		halog(LOG_ERR, "Error setsockopt(SO_BINDTODEVICE)");
 		exit(-1);
 	}
 
