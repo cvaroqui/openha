@@ -1028,6 +1028,26 @@ service_info(GList * liste, GHashTable * HT, gchar * name, gchar * service)
 	return;
 }
 
+gboolean
+is_service(GList * liste, gchar * service)
+{
+	halog(LOG_DEBUG, "[is_service] enter");
+	gint i, list_size;
+	gchar *service_to_cmp;
+
+	list_size = g_list_length(liste) / LIST_NB_ITEM;
+	for (i = 0; i < list_size; i++) {
+		service_to_cmp = g_list_nth_data(liste, i * LIST_NB_ITEM);
+	    if (strncmp(service_to_cmp, service, MAX_SERVICES_SIZE) == 0) {
+			halog(LOG_DEBUG, "[is_service] found service %s",service);
+			return TRUE;
+		}
+	}
+	halog(LOG_DEBUG, "[is_service] service %s does not exist",service);
+	return FALSE;
+}
+
+
 void
 service_status(GList * liste, GHashTable * HT)
 {

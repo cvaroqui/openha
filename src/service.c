@@ -223,6 +223,10 @@ char *argv[];
 	//INFO
 	if ((strcmp(argv[1], "-i") == 0) && (argc == 3)) {
 		service = argv[2];
+		if(!is_service(GlobalList,service)) {
+			fprintf(stderr, "Error : service %s does not exist\n", service);
+			return -1;
+		}
 		service_info(GlobalList, HT_SERV, nodename, service);
 		return 0;
 	}
