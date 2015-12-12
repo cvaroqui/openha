@@ -145,10 +145,13 @@ gchar *argv[];
 
 	memset(&ifr, 0, sizeof(ifr));
 	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", argv[1]);
+
+	#ifdef __linux__
 	if (setsockopt(s, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
 		halog(LOG_ERR, "Error setsockopt(SO_BINDTODEVICE)");
 		exit(-1);
 	}
+	#endif
 
 	/* assign our destination address */
 	addr_size = sizeof (struct sockaddr_in);
