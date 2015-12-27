@@ -285,9 +285,11 @@ check_offset_overlap(void)
 			offsets = g_list_append(offsets, offset);
 			g_hash_table_insert(devices, device, offsets);
 			device_list = g_list_append(device_list, device);
+                        halog(LOG_DEBUG, "[check_offset_overlap] i[%d] adding dev[%s] with offset[%s]", i, device, offset);
 		} else {
 			offsets = (GList *) p;
 			offsets = g_list_insert_sorted(offsets, offset, simple_cmp);
+                        halog(LOG_DEBUG, "[check_offset_overlap] i[%d] dev[%s] found. adding offset[%s]", i, device, offset);
 		}
 	}
 	for (i = 0; i < g_list_length(device_list); i++) {
@@ -296,13 +298,13 @@ check_offset_overlap(void)
 		for (j = 0; j < g_list_length(offsets); j++) {
 			offset = (gchar *) g_list_nth_data(offsets, j);
 			current = atoi(offset) * BLKSIZE;
-			printf("prev=%d prev+s=%d current=%d\n", prev, prev+s, current);
+                        halog(LOG_DEBUG, "[check_offset_overlap] i[%d] j[%d] dev[%s] prev[%d] prev+s[%d] current[%d]", i, j, device, prev, prev+s, current);
 			if (prev >= 0 && current > 0 && prev + s > current) {
 				halog(LOG_ERR, "disk heartbeat offset overlap (min spacing must be >%d bytes)", s);
 				err += 1;
 			}
 			prev = current;
-			printf("err=%d\n", err);
+                        halog(LOG_DEBUG, "[check_offset_overlap] err[%d]", err);
 		}
 	}
 	return err;
