@@ -275,7 +275,8 @@ check_offset_overlap(void)
 	gint current;
 
 	for (i = 0; i < list_size; i++) {
-		if (strcmp("net", g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1)) == 0)
+		if ((strcmp("dio", g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1)) != 0) && \
+                    (strcmp("disk", g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1)) != 0))
 			continue;
 		device = g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 2);
 		offset = g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 3);
