@@ -271,7 +271,7 @@ check_offset_overlap(void)
 	GList * offsets;
 	GList * device_list = NULL;
 	gpointer p;
-	gint prev = -1;
+	gint prev;
 	gint current;
 
 	for (i = 0; i < list_size; i++) {
@@ -293,6 +293,7 @@ check_offset_overlap(void)
 		}
 	}
 	for (i = 0; i < g_list_length(device_list); i++) {
+                prev = -1;
 		device = (gchar *) g_list_nth_data(device_list, i);
 		offsets = g_hash_table_lookup(devices, device);
 		for (j = 0; j < g_list_length(offsets); j++) {
