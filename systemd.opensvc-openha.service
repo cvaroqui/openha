@@ -1,7 +1,7 @@
 [Unit]
 Description=OpenHA - EASY high-availability software
 Documentation=http://docs.opensvc.com/howto.ha.html http://open-ha-cluster.sourceforge.net
-After=network.target
+After=network.target network-online.target time-sync.target
 
 [Service]
 Type=idle
