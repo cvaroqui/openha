@@ -41,8 +41,10 @@ export EZ
 [ ! -f $EZ_NODES -o ! -f $EZ_MONITOR ] && exit 1
 
 PATH=$EZ_BIN:$PATH; export PATH
+HEARTBEAT_TALK_DELAY_ON_START=2
 
 # provides FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START
+# provides HEARTBEAT_TALK_DELAY_ON_START
 [ -f /etc/default/openha ] && . /etc/default/openha
 [ -f /etc/sysconfig/openha ] && . /etc/sysconfig/openha
 
@@ -116,7 +118,9 @@ case "$1" in
 		done
 	fi
 	# let's the heart process talk a bit ...
-	sleep 2
+	echo "waiting $HEARTBEAT_TALK_DELAY_ON_START seconds for heartbeat to converge"
+	logger -p $LOG_FACILITY.debug -t openha "waiting $HEARTBEAT_TALK_DELAY_ON_START seconds for heartbeat to converge"
+	sleep $HEARTBEAT_TALK_DELAY_ON_START
 	$EZ_BIN/nmond >/dev/null 2>&1
 
 ;;
@@ -206,7 +210,9 @@ case "$1" in
 			
 			fi
 		done
-		sleep 2
+	        echo "waiting $HEARTBEAT_TALK_DELAY_ON_START seconds for heartbeat to converge"
+	        logger -p $LOG_FACILITY.debug -t openha "waiting $HEARTBEAT_TALK_DELAY_ON_START seconds for heartbeat to converge"
+		sleep $HEARTBEAT_TALK_DELAY_ON_START
 		$EZ_BIN/nmond >> $EZ_LOG/nmond.log 2>&1 
 	fi
 	;;
