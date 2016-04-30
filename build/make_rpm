@@ -3,8 +3,6 @@
 PATH_SCRIPT="$(cd $(/usr/bin/dirname $(type -p -- $0 || echo $0));pwd)"
 . $PATH_SCRIPT/make.lib
 
-#prepare_chroot || exit 1
-
 SPEC_D=$OPENHA/tmp/SPECS
 SPEC=$SPEC_D/openha.spec
 
@@ -87,7 +85,10 @@ rm -rf %{buildroot}
 %changelog
 
 %preun
+if [ "$1" = 0 ] ; then
 /usr/local/cluster/.preremove
+fi
+
 %post
 /usr/local/cluster/.postinstall
 EOF
