@@ -482,12 +482,12 @@ init()
 
 	get_nodename();
 
-	if (getenv("EZ_LOG") == NULL) {
-		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
-		perror("Error: environment variable EZ_LOG not defined ...\n");
+	if (getenv("EZ_VAR") == NULL) {
+		halog(LOG_ERR, "environment variable EZ_VAR not defined ...");
+		perror("Error: environment variable EZ_VAR not defined ...\n");
 		exit(-1);
 	}
-	FILE_KEY = g_strconcat(getenv("EZ_LOG"), "/proc/nmond.key", NULL);
+	FILE_KEY = g_strconcat(getenv("EZ_VAR"), "/proc/nmond.key", NULL);
 	if ((fd = open(FILE_KEY, O_RDWR | O_CREAT, 00644)) == -1) {
 		halog(LOG_ERR, "unable to open key file");
 		perror("Error: unable to open key file");
@@ -603,7 +603,7 @@ get_seg(gint i, struct shmtab_struct * S)
 	gchar *m, *n;
 
 	strcpy(nodename, g_list_nth_data(list_heart, (i * LIST_NB_ITEM)));
-	strcpy(SHM_KEY, getenv("EZ_LOG"));
+	strcpy(SHM_KEY, getenv("EZ_VAR"));
 	strcat(SHM_KEY, "/proc/");
 
 	if ((strcmp(g_list_nth_data(list_heart, (i * LIST_NB_ITEM) + 1), "net") == 0) ||

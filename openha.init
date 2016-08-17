@@ -22,36 +22,58 @@
 #	* Cleanup.
 #
 # TODO (br)
-#	* Remove $EZ dependency. We should not care.
 #	* No need for nohup. Should be handled by daemons (if they are).
 #	* Maybe a /var/run/something instead of pkill (not portable)? (not sure).
 #	* Start does a forced-stop first. Should be a check instead: Status to be
 #	  added to avoid this.
-#	* Remove env.sh (dirty) and $EZ (this goes together).
 #	* Remove "sleep x". If this does depends on time, it does not work.
 #	  -> one day, we will semaphore for this stuff (sam)
-EZ=/usr/local/cluster
+#
+EZ_BIN=/usr/lib/openha/bin
+EZ_VAR=/var/lib/openha
+EZ_CONF=/etc/openha
+EZ_SERVICES=$EZ_CONF/services
+EZ_NODES=$EZ_CONF/nodes
+EZ_MONITOR=$EZ_CONF/monitor
+
+export EZ_BIN EZ_VAR EZ_SERVICES EZ_NODES EZ_MONITOR
+
+#
+# Defaults sourcing provides:
+#  FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START
+#  HEARTBEAT_TALK_DELAY_ON_START
+#  non-standard install paths
+#
+if test -f "/etc/defaults/openha"
+then
+        # FreeBSD, Darwin
+        . "/etc/defaults/openha"
+elif test -f "/etc/default/openha"
+then
+        # Debian-like, Tru64, SunOS and HP-UX
+        . "/etc/default/openha"
+elif test -f "/etc/sysconfig/openha"
+then
+        # Red Hat-like
+        . "/etc/sysconfig/openha"
+elif test -f "/etc/rc.config.d/openha"
+then
+        # AIX
+        . "/etc/rc.config.d/openha"
+fi
+
 NODE=`uname -n`
 FROZEN_STOP=6
 
-export EZ
-. $EZ/env.sh
-[ ! -d $EZ/bin ] && exit 1
-[ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
 [ ! -f $EZ_NODES -o ! -f $EZ_MONITOR ] && exit 1
 
-PATH=$EZ_BIN:$PATH; export PATH
 HEARTBEAT_TALK_DELAY_ON_START=2
 
-# provides FREEZE_SERVICE_SECONDARY_INSTANCE_ON_START
-# provides HEARTBEAT_TALK_DELAY_ON_START
-[ -f /etc/default/openha ] && . /etc/default/openha
-[ -f /etc/sysconfig/openha ] && . /etc/sysconfig/openha
 
 LOG_FACILITY=""
-if [ -f $EZ/conf/logfacility ]
+if [ -f $EZ_CONF/logfacility ]
 then
-	LOG_FACILITY=`cat $EZ/conf/logfacility `
+	LOG_FACILITY=`cat $EZ_CONF/logfacility `
 fi
 [ -z "$LOG_FACILITY" ] && LOG_FACILITY="daemon"
 
@@ -65,13 +87,13 @@ case "$1" in
 			[ "$NODE" != "$PRIMARY" ] && {
 				echo "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				logger -p $LOG_FACILITY.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
-				echo $FROZEN_STOP >$EZ/services/$SERVICE/STATE.$NODE
+				echo $FROZEN_STOP >$EZ_VAR/services/$SERVICE/STATE.$NODE
 			}
 			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
-			[ "$STATE" != "$FROZEN_STOP" ] && $EZ/bin/service -A "$SERVICE" force-stop
+			[ "$STATE" != "$FROZEN_STOP" ] && $EZ_BIN/service -A "$SERVICE" force-stop
 		done
 	fi
-	echo "Starting EZ-HA heartbeat process" > /dev/console
+	echo "Starting OpenHA heartbeat process" > /dev/console
 	if [ -f $EZ_MONITOR ] ; then
 		cat $EZ_MONITOR |
 		while read HOST TYPE ARG1 ARG2 ARG3 ARG4 DUMMY
@@ -125,47 +147,47 @@ case "$1" in
 
 ;;
 'stop')
-	echo "Stopping EZ-HA node monitor" > /dev/console
+	echo "Stopping OpenHA node monitor" > /dev/console
 	pkill nmond 
 	echo "Stopping services if started" > /dev/console
-	$EZ/bin/service -A stop
-	echo "Stopping EZ-HA heartbeat" > /dev/console
-	pkill heartc 
-	pkill heartd 
-	pkill heartc_unicast
-	pkill heartd_unicast
-	pkill heartc_raw 
-	pkill heartd_raw 
-	pkill heartc_dio 
-	pkill heartd_dio 
+	$EZ_BIN/service -A stop
+	echo "Stopping OpenHA heartbeat" > /dev/console
+	pkill -f $EZ_BIN/heartc 
+	pkill -f $EZ_BIN/heartd 
+	pkill -f $EZ_BIN/heartc_unicast
+	pkill -f $EZ_BIN/heartd_unicast
+	pkill -f $EZ_BIN/heartc_raw 
+	pkill -f $EZ_BIN/heartd_raw 
+	pkill -f $EZ_BIN/heartc_dio 
+	pkill -f $EZ_BIN/heartd_dio 
 
 ;;
 'kill')
-	echo "Stopping EZ-HA daemons"
-	pkill nmond
-	pkill heartc 
-	pkill heartd 
-	pkill heartc_unicast
-	pkill heartd_unicast
-	pkill heartc_raw 
-	pkill heartd_raw 
-	pkill heartc_dio 
-	pkill heartd_dio 
+	echo "Killing OpenHA daemons"
+	pkill -f $EZ_BIN/nmond
+	pkill -f $EZ_BIN/heartc 
+	pkill -f $EZ_BIN/heartd 
+	pkill -f $EZ_BIN/heartc_unicast
+	pkill -f $EZ_BIN/heartd_unicast
+	pkill -f $EZ_BIN/heartc_raw 
+	pkill -f $EZ_BIN/heartd_raw 
+	pkill -f $EZ_BIN/heartc_dio 
+	pkill -f $EZ_BIN/heartd_dio 
 
 ;;
 'restart')
-	echo "Stopping EZ-HA daemons"
-	pkill nmond
-	pkill heartc
-	pkill heartd
-	pkill heartc_unicast
-	pkill heartd_unicast
-	pkill heartc_raw
-	pkill heartd_raw
-	pkill heartc_dio 
-	pkill heartd_dio 
+	echo "Stopping OpenHA daemons"
+	pkill -f $EZ_BIN/nmond
+	pkill -f $EZ_BIN/heartc
+	pkill -f $EZ_BIN/heartd
+	pkill -f $EZ_BIN/heartc_unicast
+	pkill -f $EZ_BIN/heartd_unicast
+	pkill -f $EZ_BIN/heartc_raw
+	pkill -f $EZ_BIN/heartd_raw
+	pkill -f $EZ_BIN/heartc_dio 
+	pkill -f $EZ_BIN/heartd_dio 
 	sleep 5
-	echo "Starting EZ-HA daemons"
+	echo "Starting OpenHA daemons"
 	if [ -f $EZ_MONITOR ] ; then
 		cat $EZ_MONITOR |
 		while read HOST TYPE ARG1 ARG2 ARG3 ARG4 DUMMY

@@ -148,11 +148,10 @@ cd openha-${VERSION}
 aclocal
 autoconf
 automake --add-missing
-./configure --prefix=/usr/local/cluster
+./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 make clean
 make
 make install "DESTDIR=$CHROOT"
-mkdir -p $CHROOT/usr/local/cluster/log $CHROOT/usr/local/cluster/log/proc $CHROOT/usr/local/cluster/conf $CHROOT/usr/local/cluster/services
 $SUDO chown -R 0:0 $CHROOT || return 1
 
 cd /var/tmp
@@ -161,11 +160,11 @@ echo "----- Creating $PKGNAME build-$RELEASE ..."
 #create_pkg -P $REPODIR/postinstall $PKGNAME $TMPROOT=$BASE 2> /dev/null <<EOF
 create_pkg -P $PATH_SCRIPT/../postinstall -r $PATH_SCRIPT/../preremove $PKGNAME ${CHROOT}${BASE}=$BASE 2> /dev/null <<EOF
 
-openha - Open HA Cluster - Easy High Availability v${VERSION}-$RELEASE
+openha - OpenHA daemon - Easy heartbeat daemon v${VERSION}-$RELEASE
 $ARCH
 $VERSION,REV=$RELEASE
 
-http://www.opensvc.com
+http://git.opensvc.com/?p=openha/.git
 support@opensvc.com
 OPENHA-${VERSION},REV=${RELEASE}
 ${CHROOT}${BASE}=$BASE

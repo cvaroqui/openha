@@ -210,7 +210,7 @@ write_status(gchar service[MAX_SERVICES_SIZE], gint state, gchar * node)
 	gchar to_copy[2];
 
 	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
-		 getenv("EZ"), service, node);
+		 getenv("EZ_VAR"), service, node);
 
 	fds = fopen(fpath, "r+");
 	if (!fds) {
@@ -650,7 +650,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 			// node is not pri nor sec
 			continue;
 		}
-		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ, service, node);
+		snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s", EZ_VAR, service, node);
 		if (create_state_tree(service, node, NULL) != 0) {
 			halog(LOG_ERR, "unable to create service %s status file tree for node %s. return UNKNOWN", service, node);
 			return STATE_UNKNOWN;
@@ -687,7 +687,7 @@ service_rm(gchar * name, GHashTable * HT)
 	file1 = g_malloc0(300);
 	file2 = g_malloc0(300);
 
-	dir = getenv("EZ");
+	dir = getenv("EZ_VAR");
 	strcpy(envdir, dir);
 	strcat(envdir, "/services/");
 	strcat(envdir, name);
@@ -703,7 +703,7 @@ service_rm(gchar * name, GHashTable * HT)
 	primary = ((struct srvstruct *) (pointer))->primary;
 	secondary = ((struct srvstruct *) (pointer))->secondary;
 	if (dir == NULL) {
-		fprintf(stderr, "Variable $EZ not defined.\n");
+		fprintf(stderr, "Variable $EZ_SERVICES not defined.\n");
 		return -1;
 	}
 	/*
@@ -749,7 +749,7 @@ service_mod(gchar * name)
 
 	tmp = g_malloc0(300);
 	services = g_malloc0(300);
-	tmp = getenv("EZ");
+	tmp = getenv("EZ_VAR");
 	services = getenv("EZ_SERVICES");
 
 	if (getenv("EZ_SERVICES") == 0) {
@@ -765,7 +765,7 @@ service_mod(gchar * name)
 	strcat(tmp, ".services.tmp");
 
 	if ((TMP = fopen(tmp, "w")) == NULL) {
-		perror("Error: unable to open $EZ/.services.tmp");
+		perror("Error: unable to open $EZ_VAR/.services.tmp");
 		fclose(EZ_SERVICES);
 		exit(-1);
 	}
@@ -804,12 +804,12 @@ create_file(gchar * name, gchar * node)
 	// When a service is created, its initial state is FROZEN_STOP
 	snprintf(to_copy, 2, "%i\n", STATE_FROZEN_STOP);
 
-	if (getenv("EZ") == NULL) {
-		fprintf(stderr, "Variable $EZ not defined.\n");
+	if (getenv("EZ_VAR") == NULL) {
+		fprintf(stderr, "Variable $EZ_VAR not defined.\n");
 		return -1;
 	}
 	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
-		 getenv("EZ"), name, node);
+		 getenv("EZ_VAR"), name, node);
 
 	if (stat(fpath, &buf) == 0)
 		return 0;
@@ -833,11 +833,11 @@ create_dir(gchar * name)
 	gchar fpath[MAX_PATH_SIZE];
 	struct stat buf;
 
-	if (getenv("EZ") == NULL) {
-		halog(LOG_ERR, "Variable $EZ not defined");
+	if (getenv("EZ_VAR") == NULL) {
+		halog(LOG_ERR, "Variable $EZ_VAR not defined");
 		return -1;
 	}
-	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s", getenv("EZ"), name);
+	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s", getenv("EZ_VAR"), name);
 
 	if (stat(fpath, &buf) == 0)
 		return 0;
@@ -1330,6 +1330,10 @@ init_var()
 		printf("Error: variable EZ_BIN not defined\n");
 		return FALSE;
 	}
+	if ((EZ_VAR = getenv("EZ_VAR")) == NULL) {
+		printf("Error: variable EZ_VAR not defined\n");
+		return FALSE;
+	}
 	if ((EZ_MONITOR = getenv("EZ_MONITOR")) == NULL) {
 		printf("Error: variable EZ_MONITOR not defined\n");
 		return FALSE;
@@ -1338,16 +1342,8 @@ init_var()
 		printf("Error: variable EZ_SERVICES not defined\n");
 		return FALSE;
 	}
-	if ((EZ_LOG = getenv("EZ_LOG")) == NULL) {
-		printf("Error: variable EZ_LOG not defined\n");
-		return FALSE;
-	}
 	if ((EZ_NODES = getenv("EZ_NODES")) == NULL) {
 		printf("Error: variable EZ_NODES not defined\n");
-		return FALSE;
-	}
-	if ((EZ = getenv("EZ")) == NULL) {
-		printf("Error: variable EZ not defined\n");
 		return FALSE;
 	}
         if ((EZ_DEBUG = getenv("EZ_DEBUG")) != NULL) {
@@ -1389,7 +1385,7 @@ halog_facility()
 	FILE *fds;
 
         snprintf(fpath, MAX_PATH_SIZE, "%s/conf/logfacility",
-                 getenv("EZ"));
+                 getenv("EZ_CONF"));
 
         if (stat(fpath, &buf) < 0) {
                 //printf("Unable to stat file %s: default to LOG_DAEMON\n", fpath);
@@ -1469,7 +1465,7 @@ get_node_service_status(struct sendstruct * to_send, gchar * service, guint j)
 	gchar *nodename = to_send->nodename;
 
 	snprintf(fpath, MAX_PATH_SIZE, "%s/services/%s/STATE.%s",
-		 getenv("EZ"), service, nodename);
+		 getenv("EZ_VAR"), service, nodename);
 	fds = fopen(fpath, "r");
 	if (fds == NULL) {
 		state = STATE_UNKNOWN;
@@ -1559,7 +1555,7 @@ get_shm_nmon_ro_segment()
 	gchar *shm;
 	gchar fpath[MAX_PATH_SIZE];
 
-	snprintf(fpath, MAX_PATH_SIZE, "%s/proc/nmond.key", getenv("EZ_LOG"));
+	snprintf(fpath, MAX_PATH_SIZE, "%s/proc/nmond.key", getenv("EZ_VAR"));
 	key = ftok(fpath, 0);
 
 	shmid = shmget(key, sizeof(struct sendstruct) * MAX_HEARTBEAT, 0444);

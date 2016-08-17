@@ -35,7 +35,7 @@ echo "README" > docs
 cp control control.tmp
 cat control.tmp | sed -e "s@^Section.*@Section: utils@" > control ; cp control control.tmp
 cat control.tmp | sed -e "s@^Build-Depends.*@Build-Depends: debhelper (>= 8.0.0), autotools-dev, automake, git, make, autoconf, gcc@" > control ; cp control control.tmp
-cat control.tmp | sed -e "s@^Homepage.*@Homepage: http://open-ha-cluster.sourceforge.net@" > control ; cp control control.tmp
+cat control.tmp | sed -e "s@^Homepage.*@Homepage: http://www.opensvc.com@" > control ; cp control control.tmp
 cat control.tmp | sed -e "s@^#Vcs-Git.*@Vcs-Git: git://git.opensvc.com/openha@" > control ; cp control control.tmp
 cat control.tmp | sed -e "s@^#Vcs-Browser.*@Vcs-Browser: http://git.opensvc.com/?p=openha/.git;a=summary@" > control ; cp control control.tmp
 cat control.tmp | sed -e "s@<insert up to 60 chars description>@Open HA Cluster - Easy High Availability Software@" | grep -v "insert long description" > control ; cp control control.tmp
@@ -43,7 +43,6 @@ rm -f control.tmp
 
 cat - <<-EOF >> control
  OpenHA heartbeat branch maintained by OpenSVC. Upstream on sf.net
- upstream doc : http://open-ha-cluster.sourceforge.net
  OpenSVC documentation : http://docs.opensvc.com/howto.ha.html  http://docs.opensvc.com/howto.getting.started.html#openha-integration
 EOF
 
@@ -61,16 +60,16 @@ ${TAB}automake --add-missing
 
 binary:
 ${TAB}dh_testdir
-${TAB}dh_auto_configure -- --prefix=/usr/local/cluster
+${TAB}dh_auto_configure -- --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 ${TAB}dh_auto_build
 ${TAB}dh_testroot
 ${TAB}dh_prep
 ${TAB}dh_installdirs
 ${TAB}dh_auto_install
 ${TAB}dh_install --sourcedir=$BUILD_D/openha-${VERSION}
-${TAB}cp $BUILD_D/openha-${VERSION}/postinstall debian/openha/usr/local/cluster/.postinstall
-${TAB}cp $BUILD_D/openha-${VERSION}/preremove debian/openha/usr/local/cluster/.premove
-${TAB}cp $BUILD_D/openha-${VERSION}/systemd.opensvc-openha.service debian/openha/usr/local/cluster/.systemd.opensvc-openha.service
+${TAB}cp $BUILD_D/openha-${VERSION}/postinstall debian/openha/usr/share/openha/postinstall
+${TAB}cp $BUILD_D/openha-${VERSION}/preremove debian/openha/usr/share/openha/preremove
+${TAB}cp $BUILD_D/openha-${VERSION}/systemd.opensvc-openha.service debian/openha/usr/share/openha/systemd.opensvc-openha.service
 ${TAB}dh_installdocs
 ${TAB}dh_installchangelogs
 ${TAB}dh_installdebconf
@@ -84,7 +83,7 @@ ${TAB}dh_md5sums
 ${TAB}dh_builddeb
 
 override_dh_auto_configure:
-${TAB}dh_auto_configure -- --prefix=/usr/local/cluster
+${TAB}dh_auto_configure -- --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 
 %:
 ${TAB}dh \$@

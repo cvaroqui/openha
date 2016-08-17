@@ -6,8 +6,8 @@ After=network.target network-online.target time-sync.target
 [Service]
 Type=idle
 Environment="PATH=/usr/local/cluster:/usr/local/cluster/bin:/opt/opensvc/bin:/opt/opensvc/etc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=/usr/local/cluster/ezha.init start
-ExecStop=/usr/local/cluster/ezha.init stop
+ExecStart=/usr/local/cluster/openha.init start
+ExecStop=/usr/local/cluster/openha.init stop
 RemainAfterExit=yes
 
 [Install]

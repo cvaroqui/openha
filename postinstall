@@ -2,18 +2,22 @@
 
 # OpenHA postinstall script
 
+LOG_D=/var/log/openha
+CONF_D=/etc/openha
+VAR_D=/var/lib/openha
+SHARE_D=/usr/share/openha
+PROC_D=$LOG_D/proc
+SVC_D=$VAR_D/services
+
+[ ! -d $LOG_D ] && mkdir $LOD_D
+
 log () {
-    [ -d $EZ/log ] && exec >> $EZ/log/postinstall.log 2>&1
+    exec >> $LOG_D/postinstall.log 2>&1
     DATE=`date +"%Y-%m-%d %H:%M:%S"`
     printf "%b\n" "$DATE $*"
 }
 
 BASEDIR=${BASEDIR:-/}
-
-if [ "X${BASEDIR}" = "X" ] ; then
-  echo "Error => BASEDIR environment variable have to be defined. Aborting."
-  exit 1
-fi
 
 # removing leading / if present
 TRAILING=`echo "$BASEDIR" | sed 's/^.*\(.\)$/\1/'`
@@ -24,23 +28,13 @@ else
 fi
 
 LD_LIBRARY_PATH=${MYBASEDIR}/usr/local/lib; export LD_LIBRARY_PATH
-EZ=${MYBASEDIR}/usr/local/cluster
-
-export EZ
-log "Sourcing EZHA environment"
-. $EZ/env.sh
-
-[ ! -d $EZ -o ! -d $EZ/bin ] && {
-    log "Aborting : EZHA install directories not found" 
-    exit 1
-}
 
 create_directories()
 {
-    log "Creating EZHA directories structure"
-    [ ! -d $EZ/conf ] && mkdir -p $EZ/conf
-    [ ! -d $EZ/log/proc ] && mkdir -p $EZ/log/proc
-    [ ! -d $EZ/services ] && mkdir -p $EZ/services
+    log "Creating openha directories structure"
+    [ ! -d $CONF_D ] && mkdir -p $CONF_D
+    [ ! -d $PROC_D ] && mkdir -p $PROC_D
+    [ ! -d $SVC_D ] && mkdir -p $SVC_D
 }
 
 remove_old_symlinks()
@@ -100,7 +94,7 @@ systemd_launch()
     systemdsvc="opensvc-openha.service"
     
     log "systemd_launch : Copying systemd unit file to system"
-    cp -f $EZ/.systemd.opensvc-openha.service /etc/systemd/system/$systemdsvc
+    cp -f $SHARE_D/systemd.opensvc-openha.service /etc/systemd/system/$systemdsvc
     
     log "systemd_launch : setting perms on systemd unit file"
     chmod 644 /etc/systemd/system/$systemdsvc
@@ -121,12 +115,19 @@ chkconfig_launch()
        rm -f /etc/init.d/ezha
    fi
 
-   log "chkconfig_launch : copying launcher to /etc/init.d/ezha"
-   cp -f $EZ/ezha.init /etc/init.d/ezha
-   chmod 755 /etc/init.d/ezha
+   if test -f /etc/init.d/openha -o -h /etc/init.d/openha
+   then
+       log "chkconfig_launch : removing existing /etc/init.d/openha"
+       chkconfig --del openha >> /dev/null 2>&1
+       rm -f /etc/init.d/openha
+   fi
 
-   log "chkconfig_launch : enabling launcher /etc/init.d/ezha"
-   chkconfig --add ezha
+   log "chkconfig_launch : copying launcher to /etc/init.d/openha"
+   cp -f $SHARE_D/openha.init /etc/init.d/openha
+   chmod 755 /etc/init.d/openha
+
+   log "chkconfig_launch : enabling launcher /etc/init.d/openha"
+   chkconfig --add openha
 }
 
 updatercd_launch()
@@ -138,26 +139,35 @@ updatercd_launch()
        rm -f /etc/init.d/ezha
    fi
 
-   log "updatercd_launch : copying launcher to /etc/init.d/ezha"
-   cp -f $EZ/ezha.init /etc/init.d/ezha
-   chmod 755 /etc/init.d/ezha
+   if test -f /etc/init.d/openha -o -h /etc/init.d/openha
+   then
+       log "updatercd_launch : removing existing /etc/init.d/openha"
+       update-rc.d -f openha remove >> /dev/null 2>&1
+       rm -f /etc/init.d/openha
+   fi
 
-   log "updatercd_launch : enabling launcher /etc/init.d/ezha"
-   update-rc.d ezha defaults
+   log "updatercd_launch : copying launcher to /etc/init.d/openha"
+   cp -f $SHARE_D/openha.init /etc/init.d/openha
+   chmod 755 /etc/init.d/openha
+
+   log "updatercd_launch : enabling launcher /etc/init.d/openha"
+   update-rc.d openha defaults
 }
 
 legacy_launch()
 {
     log "legacy_launch : creating symlinks"
-    cp -f $EZ/ezha.init $EZ/ezha
-    sls="${MYBASEDIR}/etc/rc2.d/S99cluster ${MYBASEDIR}/etc/rc0.d/K01cluster ${MYBASEDIR}/etc/rcS.d/K01cluster"
+    cp -f $SHARE_D/openha.init $SHARE_D/openha
+    rm -f /etc/rc?.d/K01cluster
+    rm -f /etc/rc?.d/S99cluster
+    sls="${MYBASEDIR}/etc/rc2.d/S99openha ${MYBASEDIR}/etc/rc0.d/K01openha ${MYBASEDIR}/etc/rcS.d/K01openha"
     if [ `uname -s` = "Linux" ]
     then
-        sls="$sls ${MYBASEDIR}/etc/rc3.d/S99cluster"
+        sls="$sls ${MYBASEDIR}/etc/rc3.d/S99openha"
     fi
     for symlink in $sls
     do
-        ln -sf $EZ/ezha $symlink
+        ln -sf $SHARE_D/openha $symlink
 	if test $? -eq 0
 	then
           log "legacy_launch : adding $symlink"
@@ -165,6 +175,17 @@ legacy_launch()
           log "legacy_launch : error while adding $symlink"
 	fi
     done
+}
+
+migrate_to_fsh() {
+	[ "$(echo /etc/openha/*)" != "/etc/openha/*" ] && return
+	for cf in nodes monitor services
+	do
+		[ -f /usr/local/cluster/conf/$cf ] && {
+			log "cp /usr/local/cluster/conf/$cf /etc/openha"
+			cp /usr/local/cluster/conf/$cf /etc/openha
+		}
+	done
 }
 
 # start
@@ -189,5 +210,7 @@ then
 else
     legacy_launch
 fi
+
+migrate_to_fsh
 
 exit 0

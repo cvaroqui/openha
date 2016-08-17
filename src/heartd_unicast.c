@@ -72,7 +72,7 @@ char *argv[];
 
 	strncpy(ADDR, argv[2], 15);
 	FILE_KEY =
-	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",
+	    g_strconcat(getenv("EZ_VAR"), "/proc/", ADDR, "-", argv[3], "-",
 			argv[1], ".key", NULL);
 	pid = getpid();
 
@@ -98,7 +98,7 @@ char *argv[];
 
 	/* avoid EADDRINUSE error on bind() */
 	SHM_KEY =
-	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",
+	    g_strconcat(getenv("EZ_VAR"), "/proc/", ADDR, "-", argv[3], "-",
 			argv[1], ".key", NULL);
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {

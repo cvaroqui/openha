@@ -1,5 +1,5 @@
 #AC_INIT(configure.in)
-AC_INIT(openha, 0.4.4.osvc1)
+AC_INIT(openha, 0.5.0.osvc1)
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AC_CANONICAL_HOST
@@ -45,11 +45,12 @@ AM_CONDITIONAL(GNU, [test "x$gnu" = xyes])
 AC_ISC_POSIX
 CFLAGS=""
 dnl Checks for programs.
+AC_PROG_MKDIR_P
 AC_PROG_CC
 AM_PROG_CC_STDC
 AC_PATH_PROGS(PKGCONFIG, pkg-config)
 AC_HEADER_STDC
-AC_PREFIX_DEFAULT(/usr/local/cluster)
+AC_PREFIX_DEFAULT(/usr/local)
 LIBTOOL="$LIBTOOL --silent"
 AC_PROG_INSTALL
 
@@ -106,10 +107,10 @@ fi
 
 dnl Set PACKAGE DATA & DOC DIR
 dnl packagedatadir=share
-packagedocdir=doc
-packageprocdir=proc
-packagesrvdir=services
-packageconfdir=conf
+packagedocdir=/usr/share/doc/openha
+packageprocdir=/etc/openha/proc
+packagesrvdir=/var/lib/openha/services
+packageconfdir=/etc/openha
 
 dnl Set PACKAGE DIRS in config.h.
 packagehelpdir=${packagedatadir}/help

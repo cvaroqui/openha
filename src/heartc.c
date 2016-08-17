@@ -90,13 +90,13 @@ gchar *argv[];
 
 	f_stat = malloc(sizeof (stat));
 
-	if (getenv("EZ_LOG") == NULL) {
-		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
+	if (getenv("EZ_VAR") == NULL) {
+		halog(LOG_ERR, "environment variable EZ_VAR not defined ...");
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
 	SHM_KEY =
-	    g_strconcat(getenv("EZ_LOG"), "/proc/", ADDR, "-", argv[3], "-",
+	    g_strconcat(getenv("EZ_VAR"), "/proc/", ADDR, "-", argv[3], "-",
 			argv[1], ".key", NULL);
 
 	if ((fd = open(SHM_KEY, O_RDWR | O_CREAT, 00644)) == -1) {

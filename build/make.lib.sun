@@ -38,7 +38,7 @@ function prepare_chroot {
 	mkdir -p $CHROOT/services || return 1
 
 	cd $SOURCE_ROOT || return 1
-	tar cf - env.sh ezha.init bin doc | (cd $CHROOT ; tar xf - ) || return 1
+	tar cf - env.sh openha.init bin doc | (cd $CHROOT ; tar xf - ) || return 1
 	echo "version = \"$OPENHA_VERSION-$OPENHA_RELEASE\"" > $CHROOT/.openha.version || return 1
         $SUDO chown -R 0:0 $CHROOT || return 1
 	return 0

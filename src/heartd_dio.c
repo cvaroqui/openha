@@ -75,7 +75,7 @@ char *argv[];
 	NEW_KEY = g_strsplit(argv[1], "/", 10);
 	n = g_strjoinv(".", NEW_KEY),
 	    FILE_KEY =
-	    g_strconcat(getenv("EZ_LOG"), "/proc/", n, ".", argv[2], ".key",
+	    g_strconcat(getenv("EZ_VAR"), "/proc/", n, ".", argv[2], ".key",
 			NULL);
 	g_strfreev(NEW_KEY);
 	g_free(n);

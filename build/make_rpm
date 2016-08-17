@@ -26,26 +26,29 @@ cd $OPENHA
 git archive --prefix=openha-${VERSION}/ HEAD > $OPENHA/tmp/SOURCES/${CHROOT_BN}.tar
 
 cat - <<-EOF >$SPEC
-Summary: EASY high-availability software
+Summary: Easy heartbeat daemon
 Name: openha
 Version: $VERSION
 Release: $RELEASE%{?dist}
-License: GPL
+License: GPLv2
 Group: Utilities
-URL:        http://open-ha-cluster.sourceforge.net/
-Packager:   %{packager}
-Source0:     ${CHROOT_BN}.tar
-BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+URL: http://git.opensvc.com/?p=openha/.git
+Packager: OpenSVC
+Source0: ${CHROOT_BN}.tar
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define _source_filedigest_algorithm 1
 %define _binary_filedigest_algorithm 1
 %define _source_payload w9.gzdio
 %define _binary_payload w9.gzdio
 
 %package devel
-Summary: Development headers, documentation, and libraries for OpenHACluster.
+Summary: Development headers, documentation, and libraries for the heartbeat daemon.
 Group: Utilities
 
 %description
+This daemon can handle multiple heartbeat links and triggers user-defined
+actions when all heartbeats are down. OpenHA can be coupled to a CRM to form a
+full cluster stack.
 
 %description devel
 
@@ -55,7 +58,7 @@ Group: Utilities
 aclocal
 autoconf
 automake --add-missing
-./configure --prefix=/usr/local/cluster
+./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
 
 %build
 make clean
@@ -63,36 +66,56 @@ make
 
 %install
 rm -rf $CHROOT
-make install "DESTDIR=$CHROOT"
-mkdir -p $CHROOT/usr/local/cluster/log $CHROOT/usr/local/cluster/log/proc $CHROOT/usr/local/cluster/conf
-cp -f postinstall $CHROOT/usr/local/cluster/.postinstall
-cp -f preremove $CHROOT/usr/local/cluster/.preremove
-cp -f systemd.opensvc-openha.service $CHROOT/usr/local/cluster/.systemd.opensvc-openha.service
+make install-strip "DESTDIR=$CHROOT"
+cp -f postinstall $CHROOT/usr/share/openha/postinstall
+cp -f preremove $CHROOT/usr/share/openha/preremove
+cp -f systemd.opensvc-openha.service $CHROOT/usr/share/openha/systemd.opensvc-openha.service
 
 %clean
 rm -rf %{buildroot}
 
 %files
-%defattr(-, root, root)
+%defattr(0644, root, root)
 %doc COPYING AUTHORS README
-/usr/local/cluster/.postinstall
-/usr/local/cluster/.preremove
-/usr/local/cluster/.systemd.opensvc-openha.service
-/usr/local/cluster/*
+/usr/share/doc/openha/AUTHORS
+/usr/share/doc/openha/COPYING
+/usr/share/doc/openha/README
+/usr/share/openha/systemd.opensvc-openha.service
+
+%defattr(0755, root, root)
+/usr/share/openha/postinstall
+/usr/share/openha/preremove
+/usr/share/openha/init/openha.init
+/usr/bin/openha
+/usr/lib/openha/bin/hb
+/usr/lib/openha/bin/heartc
+/usr/lib/openha/bin/heartc_dio
+/usr/lib/openha/bin/heartc_raw
+/usr/lib/openha/bin/heartc_unicast
+/usr/lib/openha/bin/heartd
+/usr/lib/openha/bin/heartd_dio
+/usr/lib/openha/bin/heartd_raw
+/usr/lib/openha/bin/heartd_unicast
+/usr/lib/openha/bin/nmond
+/usr/lib/openha/bin/service
 
 %files devel
 
 %changelog
+* Wed Aug 17 2016 Christophe Varoqui <christophe.varoqui@opensvc.com> 0.5.0-10001
+– rpmlint fixes
 
 %preun
 if [ "$1" = 0 ] ; then
-/usr/local/cluster/.preremove
+/usr/share/openha/preremove
 fi
 
-%post
-/usr/local/cluster/.postinstall
+%post -p /usr/share/openha/postinstall
+
 EOF
 
 sudo rpmbuild --buildroot=$CHROOT --target=$ARCH --define "_topdir $OPENHA/tmp" --clean -bb $SPEC
+
+rpmlint $OPENHA/tmp/RPMS/$ARCH/openha-$VERSION-$RELEASE.$ARCH.rpm
 
 [ -x $PATH_SCRIPT/release_rpm ] && $PATH_SCRIPT/release_rpm $OPENHA/tmp/RPMS/$ARCH/openha-$VERSION-$RELEASE.$ARCH.rpm

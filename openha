@@ -1,0 +1,101 @@
+#!/bin/sh
+
+EZ_BIN=/usr/lib/openha/bin
+EZ_VAR=/var/lib/openha
+EZ_CONF=/etc/openha
+EZ_SERVICES=$EZ_CONF/services
+EZ_NODES=$EZ_CONF/nodes
+EZ_MONITOR=$EZ_CONF/monitor
+
+export EZ_BIN EZ_VAR EZ_SERVICS EZ_NODES EZ_MONITOR EZ_SERVICES EZ_NODES EZ_MONITOR
+
+if test -f "/etc/defaults/openha"
+then
+	# FreeBSD, Darwin
+	. "/etc/defaults/openha"
+elif test -f "/etc/default/openha"
+then
+	# Debian-like, Tru64, SunOS and HP-UX
+	. "/etc/default/openha"
+elif test -f "/etc/sysconfig/openha"
+then
+	# Red Hat-like
+	. "/etc/sysconfig/openha"
+elif test -f "/etc/rc.config.d/openha"
+then
+	# AIX
+	. "/etc/rc.config.d/openha"
+fi
+
+help() {
+	echo "$0 hb|service [options]" >&2
+	echo "$0 kill" >&2
+	echo "$0 ps" >&2
+	echo "$0 status" >&2
+}
+
+_status() {
+	echo "Hearbeat status:"
+	echo "----------------"
+	echo
+	$EZ_BIN/hb -s
+	echo
+	echo "Services status:"
+	echo "----------------"
+	echo
+	$EZ_BIN/service -s -c
+	echo
+}
+
+_ps() {
+	ps -ef | egrep "^UID|[h]eartd|[h]eartc|[n]mond"
+}
+
+_kill() {
+        pkill -f $EZ_BIN/nmond
+        pkill -f $EZ_BIN/heartc
+        pkill -f $EZ_BIN/heartd
+        pkill -f $EZ_BIN/heartc_unicast
+        pkill -f $EZ_BIN/heartd_unicast
+        pkill -f $EZ_BIN/heartc_raw
+        pkill -f $EZ_BIN/heartd_raw
+        pkill -f $EZ_BIN/heartc_dio
+        pkill -f $EZ_BIN/heartd_dio
+}
+
+if test $# -eq 0
+then
+	help
+	exit 1
+fi
+
+SUBSYSTEM=$1
+shift
+
+case $SUBSYSTEM in
+--help)
+	help
+	exit 1
+	;;
+status)
+	_status
+	;;
+ps)
+	_ps
+	;;
+kill)
+	_kill
+	;;
+service)
+	$EZ_BIN/service "$@"
+	;;
+hb)
+	$EZ_BIN/hb "$@"
+	;;
+*)
+	echo "unknown subsystem" >&2
+	exit 1
+	;;
+esac
+
+exit $?

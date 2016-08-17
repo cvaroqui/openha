@@ -65,11 +65,10 @@
 #define MAX_LOG_MSG_SIZE 1024
 #define BLKSIZE 512
 
-gchar *EZ;
 gchar *EZ_BIN;
+gchar *EZ_VAR;
 gchar *EZ_SERVICES;
 gchar *EZ_MONITOR;
-gchar *EZ_LOG;
 gchar *EZ_NODES;
 gchar *EZ_DEBUG;
 extern gchar progname[MAX_PROGNAME_SIZE];

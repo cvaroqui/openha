@@ -83,15 +83,15 @@ gchar *argv[];
 		exit(-1);
 	}
 
-	if (getenv("EZ_LOG") == NULL) {
-		halog(LOG_ERR, "environment variable EZ_LOG not defined ...");
+	if (getenv("EZ_VAR") == NULL) {
+		halog(LOG_ERR, "environment variable EZ_VAR not defined ...");
 		exit(-1);
 	}
 	setpriority(PRIO_PROCESS, 0, -15);
 	NEW_KEY = g_strsplit(argv[1], "/", 10);
 	n = g_strjoinv(".", NEW_KEY),
 	    SHM_KEY =
-	    g_strconcat(getenv("EZ_LOG"), "/proc/", n, ".", argv[2], ".key",
+	    g_strconcat(getenv("EZ_VAR"), "/proc/", n, ".", argv[2], ".key",
 			NULL);
 	g_strfreev(NEW_KEY);
 	g_free(n);

@@ -30,25 +30,19 @@ usage()
 {
 	fprintf(stderr, "Usage: hb [options] [target] ...\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr,
-		"Options: -s                                            show heartbeat status\n");
-	fprintf(stderr,
-		"         -r [-n node -t type -i interface -d address -p port]     remove heartbeat link\n");
-	fprintf(stderr,
-		"         -a [-n node -t type -i interface -d address -p port -T timeout]  add heartbeat link\n");
-	fprintf(stderr, "      where: \n");
-	fprintf(stderr,
-		"            node      = hostname of the host involved\n");
-	fprintf(stderr,
-		"            type      = net, dio (Linux only) or disk\n");
-	fprintf(stderr,
-		"            interface = network device or device fullpath\n");
-	fprintf(stderr,
-		"            address   = multicast address or block offset on device\n");
-	fprintf(stderr,
-		"            port      = udp port or nothing for a device\n");
-	fprintf(stderr,
-		"            timeout   = timeout before declaring the node down\n");
+	fprintf(stderr, "Options:\n");
+	fprintf(stderr, " -s                                                               show heartbeat status\n");
+	fprintf(stderr, " -r [-n node -t type -i interface -d address -p port]             remove heartbeat link\n");
+	fprintf(stderr, " -a [-n node -t type -i interface -d address -p port -T timeout]  add heartbeat link\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Where: \n");
+	fprintf(stderr, " node      = hostname of the host involved\n");
+	fprintf(stderr, " type      = net, dio (Linux only) or disk\n");
+	fprintf(stderr, " interface = network device or device fullpath\n");
+	fprintf(stderr, " address   = multicast address or block offset on device\n");
+	fprintf(stderr, " port      = udp port or nothing for a device\n");
+	fprintf(stderr, " timeout   = timeout before declaring the node down\n");
+	fprintf(stderr, "\n");
 	exit(-1);
 }
 
@@ -241,9 +235,9 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	int n;
 
 	tmp = g_malloc0(300);
-	tmp = g_strconcat(getenv("EZ"), "/.monitor.tmp", NULL);
+	tmp = g_strconcat(getenv("EZ_VAR"), "/.monitor.tmp", NULL);
 	if ((TMP = fopen(tmp, "w")) == NULL) {
-		fprintf(stderr, "unable to open $EZ/.monitor.tmp\n");
+		fprintf(stderr, "unable to open $EZ_VAR/.monitor.tmp\n");
 		return FALSE;
 	}
 
@@ -358,14 +352,14 @@ _hb_status(GList * list_heart, gint i)
 	if ((strcmp(hb_type, "net") == 0)
 	    || (strcmp(hb_type, "unicast") == 0)) {
 		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s-%s-%s.key",
-			 getenv("EZ_LOG"), addr_or_offset, port, dev);
+			 getenv("EZ_VAR"), addr_or_offset, port, dev);
 	} else {
 		gchar **v;
 		gchar *n;
 		v = g_strsplit(dev, "/", 10);
 		n = g_strjoinv(".", v);
 		snprintf(key_path, MAX_PATH_SIZE, "%s/proc/%s.%s.key",
-			 getenv("EZ_LOG"), n, addr_or_offset);
+			 getenv("EZ_VAR"), n, addr_or_offset);
 		g_free(n);
 		g_strfreev(v);
 	}

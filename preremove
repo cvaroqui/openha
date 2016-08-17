@@ -4,11 +4,6 @@
 
 BASEDIR=${BASEDIR:-/}
 
-if [ "X${BASEDIR}" = "X" ] ; then
-  echo "Error => BASEDIR environment variable have to be defined. Aborting."
-  exit 1
-fi
-
 # removing leading / if present
 TRAILING=`echo "$BASEDIR" | sed 's/^.*\(.\)$/\1/'`
 if [ "${TRAILING}" = "/" ] ; then
@@ -17,12 +12,13 @@ else
   MYBASEDIR=$BASEDIR
 fi
 
-LD_LIBRARY_PATH=${MYBASEDIR}/usr/local/lib; export LD_LIBRARY_PATH
-EZ=${MYBASEDIR}/usr/local/cluster
+[ ! -d $LOG_D ] && mkdir $LOD_D
 
-export EZ
-. $EZ/env.sh
-[ ! -d $EZ -o ! -d $EZ/bin ] && exit 1
+log () {
+    exec >> $LOG_D/postinstall.log 2>&1
+    DATE=`date +"%Y-%m-%d %H:%M:%S"`
+    printf "%b\n" "$DATE $*"
+}
 
 type systemctl >> /dev/null 2>&1 && {
     systemctl disable -q opensvc-openha.service
@@ -31,17 +27,40 @@ type systemctl >> /dev/null 2>&1 && {
 }
 
 type update-rc.d >> /dev/null 2>&1 && {
-    update-rc.d -f ezha remove
-    rm -f /etc/init.d/ezha
+   if test -f /etc/init.d/ezha -o -h /etc/init.d/ezha
+   then
+       log "updatercd_launch : removing existing /etc/init.d/ezha"
+       update-rc.d -f ezha remove >> /dev/null 2>&1
+       rm -f /etc/init.d/ezha
+   fi
+
+   if test -f /etc/init.d/openha -o -h /etc/init.d/openha
+   then
+       log "updatercd_launch : removing existing /etc/init.d/openha"
+       update-rc.d -f openha remove >> /dev/null 2>&1
+       rm -f /etc/init.d/openha
+   fi
 }
 
 type chkconfig >> /dev/null 2>&1 && {
-    chkconfig --del ezha >> /dev/null 2>&1
-    rm -f /etc/init.d/ezha
+   if test -f /etc/init.d/ezha -o -h /etc/init.d/ezha
+   then
+       log "chkconfig_launch : removing existing /etc/init.d/ezha"
+       chkconfig --del ezha >> /dev/null 2>&1
+       rm -f /etc/init.d/ezha
+   fi
+
+   if test -f /etc/init.d/openha -o -h /etc/init.d/openha
+   then
+       log "chkconfig_launch : removing existing /etc/init.d/openha"
+       chkconfig --del openha >> /dev/null 2>&1
+       rm -f /etc/init.d/openha
+   fi
 }
 
-[ -h ${MYBASEDIR}/etc/rc3.d/S99cluster ] && rm -f ${MYBASEDIR}/etc/rc3.d/S99cluster
-[ -h ${MYBASEDIR}/etc/rc0.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rc0.d/K01cluster
-[ -h ${MYBASEDIR}/etc/rcS.d/K01cluster ] && rm -f ${MYBASEDIR}/etc/rcS.d/K01cluster
+rm -f ${MYBASEDIR}/etc/rc?.d/S99openha
+rm -f ${MYBASEDIR}/etc/rc?.d/K01openha
+rm -f ${MYBASEDIR}/etc/rc?.d/S99cluster
+rm -f ${MYBASEDIR}/etc/rc?.d/K01cluster
 
 exit 0
