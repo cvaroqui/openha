@@ -22,3 +22,5 @@ src/heartc_raw
 src/heartd_raw
 src/heartc_dio
 src/heartd_dio
+src/heartc_unicast
+src/heartd_unicast
