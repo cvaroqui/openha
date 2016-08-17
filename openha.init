@@ -31,6 +31,7 @@
 #
 EZ_BIN=/usr/lib/openha/bin
 EZ_VAR=/var/lib/openha
+EZ_LOG=/var/log/openha
 EZ_CONF=/etc/openha
 EZ_SERVICES=$EZ_CONF/services
 EZ_NODES=$EZ_CONF/nodes
@@ -89,7 +90,7 @@ case "$1" in
 				logger -p $LOG_FACILITY.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				echo $FROZEN_STOP >$EZ_VAR/services/$SERVICE/STATE.$NODE
 			}
-			STATE=`cat $EZ/services/$SERVICE/STATE.$NODE`
+			STATE=`cat $EZ_VAR/services/$SERVICE/STATE.$NODE`
 			[ "$STATE" != "$FROZEN_STOP" ] && $EZ_BIN/service -A "$SERVICE" force-stop
 		done
 	fi
