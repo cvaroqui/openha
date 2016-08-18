@@ -28,7 +28,7 @@
 void
 usage()
 {
-	fprintf(stderr, "Usage: hb [options]\n");
+	fprintf(stderr, "Usage: openha hb [options]\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, " -s                                                             show heartbeat status\n");

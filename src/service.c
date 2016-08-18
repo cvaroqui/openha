@@ -280,23 +280,23 @@ char *argv[];
 void
 exit_usage(gchar * arg)
 {
-	fprintf(stderr,
-		"Usage: %s [-s] [-i Service] [-A Service Action] [-r Service] [-a service script primary secondary check_up_script]\n",
-		arg);
-	fprintf(stderr,
-		"Action in start|stop|freeze-stop|freeze-start|unfreeze|force-stop|force-start\n");
-	fprintf(stderr, "  try to change state of service on this node\n");
-	fprintf(stderr, "    start: start service\n");
-	fprintf(stderr,
-		"    stop: stop service...if other nodes are in stopped state, they will try a takeover\n");
-	fprintf(stderr,
-		"                      ...if other nodes are in frozen-stopped state, no takeover occur\n");
-	fprintf(stderr,
-		"    freeze-stop: set service to frozen-stop state(no takeover can occur...)\n");
-	fprintf(stderr, "    freeze-start: not implemented...\n");
-	fprintf(stderr,
-		"    unfreeze: change from [start|stop]-freeze to started|stopped...\n");
-	fprintf(stderr,
-		"    force-start|force-stop: force state change to [start|stop]\n");
+	fprintf(stderr, "Usage: openha service [options]\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Options:\n");
+	fprintf(stderr, " -s                                                   display services states\n");
+	fprintf(stderr, " -s -c                                                display columned services states\n");
+	fprintf(stderr, " -i service                                           display service info\n");
+	fprintf(stderr, " -A service action                                    trigger an action\n");
+	fprintf(stderr, " -r service                                           remove a service\n");
+	fprintf(stderr, " -a service script primary secondary check_up_script  add a service\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Where:\n");
+	fprintf(stderr, " service         = name of the service\n");
+	fprintf(stderr, " action          = start, stop, freeze-stop, freeze-start, unfreeze, force-stop or force-start\n");
+	fprintf(stderr, " script          = service launcher script fullpath\n");
+	fprintf(stderr, " primary         = the node considered primary for the service\n");
+	fprintf(stderr, " secondary       = the node considered secondary for the service\n");
+	fprintf(stderr, " check_up_script = the pre-start sanity check script fullpath\n");
+	fprintf(stderr, "\n");
 	exit(-1);
 }
