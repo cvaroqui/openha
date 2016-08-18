@@ -191,6 +191,38 @@ The node to consider secondary for the service. This node is not prefferred if b
 The full path of a script called before calling the \fIscript\fR. If the \fIcheck_up_script\fR return a non-zero value, the \fIscript\fR is not run and the service transitions to START_FAILED.
 .RE
 
+.SH SERVICE STATES
+The service state on a node is stored in \fI/var/lib/openha/services/<service>/<node>.STATE\fR. The service states on remote nodes are received in the heartbeat messages payload.
+.TP
+.B STOPPED \fR(\fI0\fR)
+The service is ready for take-over.
+.TP
+.B STOPPING \fR(\fI1\fR)
+A service stop is in progress. This transient state can be followed by either the STOPPED or STOP_FAILED state.
+.TP
+.B STARTED \fR(\fI2\fR)
+The service has been successfully started.
+.TP
+.B STARTING \fR(\fI3\fR)
+A service start is in progress. This transient state can be followed by either the STARTED or START_FAILED state.
+.TP
+.B START_FAILED \fR(\fI4\fR)
+The last service start failed. The service needs a manual intervention to recover from this state. \fBfreeze-stop\fR and \fBunfreeze\fR for example.
+.TP
+.B STOP_FAILED \fR(\fI5\fR)
+The last service stop failed. The service needs a manual intervention to recover from this state. \fBforce-stop\fR for example.
+.TP
+.B FROZEN_STOP \fR(\fI6\fR)
+The service has been successfully stopped and \fBnmond\fR can no longer start the service on the node.
+.TP
+.B START_READY \fR(\fI7\fR)
+The service was previously in the STOPPED state and \fBnmond\fR is synchronizing with the other nodes before deciding to follow on to the STARTING state or to rollback to the STOPPED state.
+.TP
+.B UNKNOWN \fR(\fI8\fR)
+The state of a service on a remote node the local node no longer receive heartbeats from. A STOPPED/UNKNOWN state will cause a takeover.
+.TP
+.B FORCE_STOP \fR(\fI9\fR)
+
 .SH AUTHORS
 .B openha
 was created by Samuel Godbillot and is now maintained by OpenSVC,
