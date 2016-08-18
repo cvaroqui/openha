@@ -9,7 +9,7 @@ SHARE_D=/usr/share/openha
 PROC_D=$LOG_D/proc
 SVC_D=$VAR_D/services
 
-[ ! -d $LOG_D ] && mkdir $LOD_D
+[ ! -d $LOG_D ] && mkdir $LOG_D
 
 log () {
     exec >> $LOG_D/postinstall.log 2>&1
