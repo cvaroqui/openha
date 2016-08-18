@@ -99,6 +99,7 @@ rm -rf %{buildroot}
 /usr/lib/openha/bin/nmond
 /usr/lib/openha/bin/service
 /var/log/openha
+/var/lib/openha
 
 %files devel
 
