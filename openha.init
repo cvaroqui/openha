@@ -90,7 +90,11 @@ case "$1" in
 				logger -p $LOG_FACILITY.debug -t openha "set local secondary instance of service $SERVICE in FROZEN_STOP state"
 				echo $FROZEN_STOP >$EZ_VAR/services/$SERVICE/STATE.$NODE
 			}
-			STATE=`cat $EZ_VAR/services/$SERVICE/STATE.$NODE`
+			[ -r $EZ_VAR/services/$SERVICE/STATE.$NODE ] && {
+				STATE=`cat $EZ_VAR/services/$SERVICE/STATE.$NODE`
+			} || {
+				STATE=
+			}
 			[ "$STATE" != "$FROZEN_STOP" ] && $EZ_BIN/service -A "$SERVICE" force-stop
 		done
 	fi
