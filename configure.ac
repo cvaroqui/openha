@@ -119,5 +119,6 @@ packagemenudir=${packagedatadir}
 AC_OUTPUT([
 Makefile
 src/Makefile
+man/Makefile
 ])
 

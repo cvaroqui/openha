@@ -80,6 +80,7 @@ rm -rf %{buildroot}
 /usr/share/doc/openha/AUTHORS
 /usr/share/doc/openha/COPYING
 /usr/share/doc/openha/README
+%{_mandir}/man1/openha.1*
 /usr/share/openha/systemd.opensvc-openha.service
 
 %defattr(0755, root, root)

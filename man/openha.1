@@ -1,0 +1,197 @@
+.TH OPENHA 1 "August 2016" "" "User's Manual"
+.SH NAME
+openha \- Heartbeat daemon administration
+
+.SH SYNOPSIS
+.TP
+.B openha status
+.TP
+.B openha ps
+.TP
+.B openha kill
+.TP
+.B openha hb -s
+.TP
+.B openha hb -a -n \fInode\fR \fB-t\fR \fInet\fR|\fIunicast\fR \fB-i\fR \fIinterface\fR \fB-d\fR \fIaddress\fR \fB-p\fR \fIport\fR \fB-T\fR \fItimeout\fR
+.TP
+.B openha hb -r -n \fInode\fR \fB-t\fR \fInet\fR|\fIunicast\fR \fB-i\fR \fIinterface\fR \fB-d\fR \fIaddress\fR \fB-p\fR \fIport\fR
+.TP
+.B openha hb -a -n \fInode\fR \fB-t\fR \fIdisk\fR|\fIdio\fR \fB-i\fR \fIinterface\fR \fB-d\fR \fIaddress\fR \fB-T\fR \fItimeout\fR
+.TP
+.B openha hb -r -n \fInode\fR \fB-t\fR \fIdisk\fR|\fIdio\fR \fB-i\fR \fIinterface\fR \fB-d\fR \fIaddress\fR
+.TP
+.B openha service -s \fR[\fB\-c\fR]
+.TP
+.B openha service -i \fIservice\fR
+.TP
+.B openha service -A \fIservice\fR \fIstart\fR|\fIstop\fR|\fIfreeze-stop\fR|\fIfreeze-start\fR|\fIunfreeze\fR|\fIforce-stop\fR|\fIforce-start\fR
+.TP
+.B openha service -r \fIservice\fR
+.TP
+.B openha service -a \fIservice\fR \fIservice\fR \fIscript\fR \fIprimary\fR \fIsecondary\fR \fIcheck_up_script\fR
+
+.SH DESCRIPTION
+The 
+.B openha
+command is used to configure heartbeat links, services that should be stopped 
+and started upon heartbeats events and system boot/shutdown, display heartbeats
+and services states, trigger service actions.
+
+.SH ACTIONS
+.TP
+.B status
+Display the heartbeats and services states.
+.TP
+.B ps
+Display the running system processes. nmond is the heartbeats aggregator and
+services manager. Every heartbeat link has a sender process (heartd) and a
+listener process (heartc).
+.TP
+.B kill
+Kill the nmond and all heartbeat processes.
+.TP
+.B openha hb -s
+Display heartbeats states.
+.TP
+.B openha hb -a
+Add a heartbeat link.
+.RS
+.TP
+.B \-n \fInode\fR
+The node on which the following arguments are used to start a sender process.
+For any other node, the following arguments are used to start a listener.
+.TP
+.B \-t \fInet\fR|\fIunicast\fR|\fIdisk\fR|\fIdio\fR
+The heartbeat driver to use for the link.
+.RS
+.TP
+.I net
+Multicast heartbeat driver.
+.TP
+.I unicast
+Unicast heartbeat driver.
+.TP
+.I disk
+Raw device heartbeat driver.
+.TP
+.I dio
+Direct I/O heartbeat driver. Linux only.
+.RE
+.TP
+.B \-i \fIinterface\fR
+The interface to send/listen on or device to read/write to.
+.TP
+.B \-d \fIaddress\fR
+The ip address to send/listen on or device offset to read/write to.
+.TP
+.B \-p \fIport\fR
+The tcp port to send/listen on.
+.TP
+.B \-T \fItimeout\fR
+The delay in seconds \fBnmond\fR waits before considering the heartbeat link is down if no heartbeat message has been received.
+.RE
+.TP
+.B openha hb -r
+Remove a heartbeat link.
+.RS
+.TP
+.B \-n \fInode\fR
+The node on which the following arguments are used to start a sender process.
+For any other node, the following arguments are used to start a listener.
+.TP
+.B \-t \fInet\fR|\fIunicast\fR|\fIdisk\fR|\fIdio\fR
+The heartbeat driver to use for the link.
+.RS
+.TP
+.I net
+Multicast heartbeat driver.
+.TP
+.I unicast
+Unicast heartbeat driver.
+.TP
+.I disk
+Raw device heartbeat driver.
+.TP
+.I dio
+Direct I/O heartbeat driver. Linux only.
+.RE
+.TP
+.B \-i \fIinterface\fR
+The interface to send/listen on or device to read/write to.
+.TP
+.B \-d \fIaddress\fR
+The ip address to send/listen on or device offset to read/write to.
+.TP
+.B \-p \fIport\fR
+The tcp port to send/listen on.
+.RE
+.TP
+.B openha service -s
+Display services states.
+.RS
+.TP
+.B -c
+Columned mode. Display a single line per service.
+.RE
+.TP
+.B openha service -i
+Display information on the specified service: role of the local node (primary or secondary) and service state on each node.
+.TP
+.B openha service -A
+Trigger an action on the service.
+.RS
+.TP
+.I start
+Start the service.
+.TP
+.I stop
+Stop the service. Be aware that \fBnmond\fR will can start decision as soon as the service is stopped.
+.TP
+.I freeze-stop
+Stop the service, leaving it in the FROZEN_STOP state to keep \fBnmond\fR from restarting it.
+.TP
+.I freeze-start
+Put the service in the FREEZE_START state, without calling the \fIscript\fR. In this state, \fBnmond\fR no longer triggers actions on this service.
+.TP
+.I unfreeze
+Transition from the FROZEN_STOP state to the STOPPED state, or from the FROZEN_START to the STARTED state
+.TP
+.I force-stop
+Transition to the STOPPED state without calling the \fIscript\fR. Be aware that \fBnmond\fR will can start decision as soon as the service is stopped.
+.TP
+.I force-start
+Transition to the STARTED state without calling the \fIscript\fR.
+.RE
+.TP
+.B openha service -r
+Remove a service.
+.RS
+.TP
+.I service
+The service to remove.
+.RE
+.TP
+.B openha service -a
+Add a service.
+.RS
+.TP
+.I service
+The service to add.
+.TP
+.I script
+The full path to the script to call to start or stop the service. The script is called with either \fIstart\fR or \fIstop\fR as first argument.
+.TP
+.I primary
+The node to consider primary for the service. This node is prefferred if both nodes have the service in the START_READY state.
+.TP
+.I secondary
+The node to consider secondary for the service. This node is not prefferred if both nodes have the service in the START_READY state.
+.TP
+.I check_up_script
+The full path of a script called before calling the \fIscript\fR. If the \fIcheck_up_script\fR return a non-zero value, the \fIscript\fR is not run and the service transitions to START_FAILED.
+.RE
+
+.SH AUTHORS
+.B openha
+was created by Samuel Godbillot and is now maintained by OpenSVC,
+<support@opensvc.com>.

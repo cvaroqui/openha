@@ -28,12 +28,12 @@
 void
 usage()
 {
-	fprintf(stderr, "Usage: hb [options] [target] ...\n");
+	fprintf(stderr, "Usage: hb [options]\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, " -s                                                               show heartbeat status\n");
-	fprintf(stderr, " -r [-n node -t type -i interface -d address -p port]             remove heartbeat link\n");
-	fprintf(stderr, " -a [-n node -t type -i interface -d address -p port -T timeout]  add heartbeat link\n");
+	fprintf(stderr, " -s                                                             show heartbeat status\n");
+	fprintf(stderr, " -r -n node -t type -i interface -d address -p port             remove heartbeat link\n");
+	fprintf(stderr, " -a -n node -t type -i interface -d address -p port -T timeout  add heartbeat link\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Where: \n");
 	fprintf(stderr, " node      = hostname of the host involved\n");

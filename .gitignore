@@ -24,3 +24,4 @@ src/heartc_dio
 src/heartd_dio
 src/heartc_unicast
 src/heartd_unicast
+*.gz
