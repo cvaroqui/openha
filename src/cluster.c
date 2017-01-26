@@ -497,7 +497,7 @@ Cmd(char *prg, gchar * argsin[2])
 			if (status == 0) {
 				return 0;
 			}
-			halog(0, "%s exitted with %d", prg, status);
+			halog(0, "%s exited with %d", prg, status);
 			return -1;
 		}
 		if (WIFSIGNALED(status)) {
