@@ -749,23 +749,24 @@ service_mod(gchar * name)
 
 	tmp = g_malloc0(300);
 	services = g_malloc0(300);
-	tmp = getenv("EZ_VAR");
-	services = getenv("EZ_SERVICES");
 
 	if (getenv("EZ_SERVICES") == 0) {
 		printf
 		    ("ERROR: environment variable EZ_SERVICES not defined !!!\n");
 		exit(-1);
 	}
+
+	strcpy(services, getenv("EZ_SERVICES"));
+	strcpy(tmp, getenv("EZ_SERVICES"));
+	strcat(tmp, ".tmp");
+
 	if ((EZ_SERVICES = fopen((char *) getenv("EZ_SERVICES"), "r+")) == NULL) {
 		perror("Error: unable to open $EZ_SERVICES");
 		exit(-1);
 	}
 
-	strcat(tmp, ".services.tmp");
-
 	if ((TMP = fopen(tmp, "w")) == NULL) {
-		perror("Error: unable to open $EZ_VAR/.services.tmp");
+		perror("Error: unable to open $EZ_SERVICES.tmp");
 		fclose(EZ_SERVICES);
 		exit(-1);
 	}

@@ -235,9 +235,9 @@ hb_remove(gchar * Node, gchar * Type, gchar * Interface, gchar * Addr,
 	int n;
 
 	tmp = g_malloc0(300);
-	tmp = g_strconcat(getenv("EZ_VAR"), "/.monitor.tmp", NULL);
+	tmp = g_strconcat(getenv("EZ_MONITOR"), ".tmp", NULL);
 	if ((TMP = fopen(tmp, "w")) == NULL) {
-		fprintf(stderr, "unable to open $EZ_VAR/.monitor.tmp\n");
+		fprintf(stderr, "unable to open $EZ_MONITOR.tmp\n");
 		return FALSE;
 	}
 
