@@ -29,7 +29,7 @@ cat - <<-EOF >$SPEC
 Summary: Easy heartbeat daemon
 Name: openha
 Version: $VERSION
-Release: $RELEASE%{?dist}
+Release: $RELEASE%{?custom_dist}
 License: GPLv2
 Group: Utilities
 URL: http://git.opensvc.com/?p=openha/.git
