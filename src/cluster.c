@@ -635,7 +635,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 	/* halog(LOG_DEBUG, "[get_status] enter"); */
 	gint i, j, size;
 	gint state;
-	gchar buff[1];
+	gchar buff[2];
 	FILE *fds;
 	gchar fpath[MAX_PATH_SIZE];
 	size = g_list_length(liste) / LIST_NB_ITEM;
@@ -665,6 +665,7 @@ get_status(GList * liste, gchar * node, gchar * service)
 			fclose(fds);
 			return STATE_UNKNOWN;
 		}
+		buff[1] = '\0';
 		state = atoi(buff);
 		fclose(fds);
 		return state;
@@ -1105,7 +1106,7 @@ change_status_stop(gint state, gint ostate, gchar * service, GHashTable * HT)
 			service, VAL[ostate], VAL[state]);
 	} else {
 		halog(LOG_NOTICE, "Cannot stop %s: service not in correct state (partner node is %s, we are %s)",
-			service, VAL[ostate],VAL[state]);
+			service, VAL[ostate], VAL[state]);
 		return -1;
 	}
 
