@@ -1,22 +1,16 @@
----------
-Changelog
----------
-
-Source tracking is available at http://git.opensvc.com/?p=openha/.git;a=summary
-
--------------------
 Installation Guides
 -------------------
 
-Initial documentation on SF
-=> http://open-ha-cluster.sourceforge.net/doc0.html
+The pre-2009 original documentation on SF:
 
-OpenSVC documentation
-=> http://docs.opensvc.com/howto.ha.html
-=> http://docs.opensvc.com/howto.getting.started.html#openha-integration
+* http://open-ha-cluster.sourceforge.net/doc0.html
 
--------
+OpenSVC documentation:
+
+* https://docs.opensvc.com/1.8/howto.ha.html
+* https://docs.opensvc.com/1.8/howto.getting.started.html
+
 Support
 -------
 
-If you need support, please contact <sales@opensvc.com>
+If you need professional support, please contact <sales@opensvc.com>.
